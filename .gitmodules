@@ -1,0 +1,3 @@
+[submodule "ao3"]
+	path = ao3
+	url = git@github.com:ladyofthelog/ao3.git
