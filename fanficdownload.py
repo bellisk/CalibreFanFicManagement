@@ -127,7 +127,7 @@ def downloader(args):
                     'calibredb search "Identifiers:url:{}" {}'.format(
                         url, path), shell=True, stderr=STDOUT, stdin=PIPE, )
                 lock.release()
-            except CalledProcessError as e:
+            except CalledProcessError:
                 # story is not in calibre
                 cur = url
                 moving = 'cd "{}" && '.format(loc)
@@ -144,20 +144,22 @@ def downloader(args):
 
                 try:
                     cur = get_files(loc, ".epub", True)[0]
+                    output += log(
+                        '\tDownloading with fanficfare, updating file "{}"'.format(cur),
+                        'GREEN',
+                        live)
+                    moving = ""
                 except IndexError:
-                    # calibre doesn't have this story in epub format: convert
-                    existing_file = get_files(loc, None, True)[0]
-                    epub = '.'.join(existing_file.split(".")[:-1] + ["epub"])
-                    res = check_output(
-                        'ebook-convert "{}" "{}"'.format(
-                            existing_file, epub), shell=True, stdin=PIPE, stderr=STDOUT)
-                    cur = get_files(loc, ".epub", True)[0]
-
-                output += log(
-                    '\tDownloading with fanficfare, updating file "{}"'.format(cur),
-                    'GREEN',
-                    live)
-                moving = ""
+                    # calibre doesn't have this story in epub format.
+                    # the ebook-convert and ebook-meta CLIs can't save an epub
+                    # with a source url in the way fanficfare expects, so
+                    # we'll download a new copy as if we didn't have it at all
+                    cur = url
+                    output += log(
+                        '\tNo epub for story id "{}" in calibre'.format(story_id),
+                        'BLUE',
+                        live)
+                    moving = 'cd "{}" && '.format(loc)
 
             res = check_output(
                 'cp personal.ini {}/personal.ini'.format(loc),
