@@ -1,0 +1,16 @@
+-e git+git@github.com:bellisk/ao3.git@964689979490ccbbec1bc0d699c5274da51a9387#egg=ao3&subdirectory=../../ao3
+beautifulsoup4==4.9.3
+certifi==2020.12.5
+chardet==4.0.0
+cloudscraper==1.2.50
+FanFicFare==3.27.0
+html2text==2020.1.16
+html5lib==1.1
+idna==2.10
+pyparsing==2.4.7
+requests==2.25.1
+requests-toolbelt==0.9.1
+six==1.15.0
+soupsieve==2.1
+urllib3==1.26.2
+webencodings==0.5.1
