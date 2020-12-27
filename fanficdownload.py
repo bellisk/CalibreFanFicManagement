@@ -73,12 +73,17 @@ def touch(fname, times=None):
 
 story_name = re.compile('(.*)-.*')
 
+# Responses from fanficfare that mean we won't update the story
 equal_chapters = re.compile('.* already contains \d* chapters.')
-chapter_difference = re.compile(
-    '.* contains \d* chapters, more than source: \d*.')
 bad_chapters = re.compile(
     ".* doesn't contain any recognizable chapters, probably from a different source.  Not updating.")
 no_url = re.compile('No story URL found in epub to update.')
+
+# Responses from fanficfare that mean we should force-update the story
+chapter_difference = re.compile(
+    '.* contains \d* chapters, more than source: \d*.')
+# Our tmp epub was just created, so if this is the only reason not to update,
+# we should ignore it and do the update
 more_chapters = re.compile(
     ".*File\(.*\.epub\) Updated\(.*\) more recently than Story\(.*\) - Skipping")
 
@@ -96,9 +101,9 @@ def get_files(mypath, filetype=None, fullpath=False):
         return ans
 
 
-def check_regexes(output):
+def check_fff_output(force, output):
     output = output.decode('utf-8')
-    if equal_chapters.search(output):
+    if not force and equal_chapters.search(output):
         raise ValueError(
             "Downloaded story already contains as many chapters as on the website.")
     if bad_chapters.search(output):
@@ -108,13 +113,13 @@ def check_regexes(output):
         raise ValueError("No URL in epub to update from. Fix the metadata.")
 
 
-def should_force_download(output):
+def should_force_download(force, output):
     output = output.decode('utf-8')
-    return chapter_difference.search(output) or more_chapters.search(output)
+    return force or chapter_difference.search(output) or more_chapters.search(output)
 
 
 def downloader(args):
-    url, inout_file, path, live = args
+    url, inout_file, path, force, live = args
     loc = mkdtemp()
     output = ""
     output += log("Working with url {}".format(url), 'HEADER', live)
@@ -171,17 +176,20 @@ def downloader(args):
                 moving, cur), 'BLUE', live)
             res = check_output('{}fanficfare -u "{}" --update-cover'.format(
                 moving, cur), shell=True, stderr=STDOUT, stdin=PIPE)
-            check_regexes(res)
-            if should_force_download(res):
+            check_fff_output(force, res)
+            if should_force_download(force, res):
                 output += log("\tForcing download update due to:",
                               'WARNING', live)
-                for line in res.split("\n"):
-                    if line:
-                        output += log("\t\t{}".format(line), 'WARNING', live)
+                if force:
+                    output += log("\t\tForce option set to true", 'WARNING', live)
+                else:
+                    for line in res.split(b"\n"):
+                        if line:
+                            output += log("\t\t{}".format(str(line)), 'WARNING', live)
                 res = check_output(
                     '{}fanficfare -u "{}" --force --update-cover'.format(
                         moving, cur), shell=True, stderr=STDOUT, stdin=PIPE)
-                check_regexes(res)
+                check_fff_output(force, res)
             cur = get_files(loc, '.epub', True)[0]
 
             if story_id:
@@ -237,7 +245,7 @@ def downloader(args):
             res = check_output(
                 'cd "{}" && fanficfare -u "{}" --update-cover'.format(
                     loc, url), shell=True, stderr=STDOUT, stdin=PIPE)
-            check_regexes(res)
+            check_fff_output(force, res)
             cur = get_files(loc, '.epub', True)[0]
             name = get_files(loc, '.epub', False)[0]
             rename(cur, name)
@@ -269,7 +277,7 @@ def init(l):
     lock = l
 
 
-def main(user, cookie, max_count, expand_series, inout_file, path, live):
+def main(user, cookie, max_count, expand_series, force, inout_file, path, live):
     if path:
         path = '--with-library "{}"'.format(path)
         try:
@@ -303,11 +311,11 @@ def main(user, cookie, max_count, expand_series, inout_file, path, live):
     for url in urls:
         log("\t{}".format(url), 'BLUE')
     if len(urls) == 1:
-        downloader([list(urls)[0], inout_file, path, True])
+        downloader([list(urls)[0], inout_file, path, force, True])
     else:
         l = Lock()
         p = Pool(1, initializer=init, initargs=(l,))
-        p.map(downloader, [[url, inout_file, path, live] for url in urls])
+        p.map(downloader, [[url, inout_file, path, force, live] for url in urls])
 
     return
 
@@ -359,6 +367,14 @@ if __name__ == "__main__":
     )
 
     option_parser.add_option(
+        '-f',
+        '--force',
+        action='store',
+        dest='force',
+        default=False,
+        help='Whether to force downloads of stories even when they have the same number of chapters locally as online.')
+
+    option_parser.add_option(
         '-i',
         '--input',
         action='store',
@@ -407,10 +423,13 @@ if __name__ == "__main__":
                 'login', 'cookie').strip())
         options.max_count = updater(
             int(options.max_count), config.getint(
-                'ao3', 'max_count'))
+                'import', 'max_count'))
         options.expand_series = updater(
             options.expand_series, config.getboolean(
-                'ao3', 'expand_series'))
+                'import', 'expand_series'))
+        options.force = updater(
+            options.force, config.getboolean(
+                'import', 'force'))
         options.input = updater(
             options.input, config.get(
                 'locations', 'input').strip())
@@ -429,6 +448,7 @@ if __name__ == "__main__":
         options.cookie,
         options.max_count,
         options.expand_series,
+        options.force,
         options.input,
         options.library,
         options.live)
