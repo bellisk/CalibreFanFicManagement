@@ -26,9 +26,20 @@ I want to:
   is also bookmarked
 
 ## Todo
-- set up basic script
-- log in to AO3
-- get my bookmarks
-- distinguish between series and story bookmarks
-- check whether each story is in my library
-- if not, or if yes and should be updated, import (using FFF/Calibre cli)
++ set up basic script
++ log in to AO3
++ pass in AO3 cookie info from commandline
++ get my bookmarks
++ distinguish between series and story bookmarks
++ check whether each story is in my library
++ if not, or if yes and should be updated, import (using FFF/Calibre cli)
++ get options from config file
+- handle multithreading better - mutex on calibredb?
+- add default number of days back to harvest bookmarks from
+
+## Usage
+- `pip install -r requirements.txt`
+- If needed, copy `config_template.ini` to `config.ini` and fill in
+- Copy [FanFicFare example config](https://github.com/JimmXinu/FanFicFare/blob/master/fanficfare/example.ini)
+  to `personal.ini` and fill in necessary fields
+- `python fanficdownload.py -C config.ini`
