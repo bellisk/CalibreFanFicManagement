@@ -8,11 +8,10 @@ import re
 from configparser import ConfigParser
 from tempfile import mkdtemp
 from shutil import rmtree
-import socket
 from time import strftime, localtime
 from errno import ENOENT
 
-from multiprocessing import Pool
+from multiprocessing import Lock, Pool
 
 logging.getLogger("fanficfare").setLevel(logging.ERROR)
 
@@ -123,24 +122,43 @@ def downloader(args):
     try:
         if path:
             try:
+                lock.acquire()
                 story_id = check_output(
                     'calibredb search "Identifiers:url:{}" {}'.format(
-                        url, path), shell=True, stderr=STDOUT, stdin=PIPE, ).decode('utf-8')
+                        url, path), shell=True, stderr=STDOUT, stdin=PIPE, )
+                lock.release()
+            except CalledProcessError as e:
+                # story is not in calibre
+                cur = url
+                moving = 'cd "{}" && '.format(loc)
+
+            if story_id is not None:
+                story_id = story_id.decode('utf-8')
                 output += log("\tStory is in calibre with id {}".format(story_id), 'BLUE', live)
                 output += log("\tExporting file", 'BLUE', live)
+                lock.acquire()
                 res = check_output(
                     'calibredb export {} --dont-save-cover --dont-write-opf --single-dir --to-dir "{}" {}'.format(
                         story_id, loc, path), shell=True, stdin=PIPE, stderr=STDOUT)
-                cur = get_files(loc, ".epub", True)[0]
+                lock.release()
+
+                try:
+                    cur = get_files(loc, ".epub", True)[0]
+                except IndexError:
+                    # calibre doesn't have this story in epub format: convert
+                    existing_file = get_files(loc, None, True)[0]
+                    epub = '.'.join(existing_file.split(".")[:-1] + ["epub"])
+                    res = check_output(
+                        'ebook-convert "{}" "{}"'.format(
+                            existing_file, epub), shell=True, stdin=PIPE, stderr=STDOUT)
+                    cur = get_files(loc, ".epub", True)[0]
+
                 output += log(
                     '\tDownloading with fanficfare, updating file "{}"'.format(cur),
                     'GREEN',
                     live)
                 moving = ""
-            except BaseException:
-                # story is not in calibre
-                cur = url
-                moving = 'cd "{}" && '.format(loc)
+
             res = check_output(
                 'cp personal.ini {}/personal.ini'.format(loc),
                 shell=True,
@@ -168,6 +186,7 @@ def downloader(args):
                 output += log("\tRemoving {} from library".format(story_id),
                               'BLUE', live)
                 try:
+                    lock.acquire()
                     res = check_output(
                         'calibredb remove {} {}'.format(
                             path,
@@ -176,27 +195,35 @@ def downloader(args):
                         stderr=STDOUT,
                         stdin=PIPE,
                     )
+                    lock.release()
                 except BaseException:
+                    lock.release()
                     if not live:
                         print(output.strip())
                     raise
 
             output += log("\tAdding {} to library".format(cur), 'BLUE', live)
             try:
+                lock.acquire()
                 res = check_output(
                     'calibredb add -d {} "{}"'.format(path, cur), shell=True, stderr=STDOUT, stdin=PIPE, )
+                lock.release()
             except Exception as e:
+                lock.release()
                 output += log(e)
                 if not live:
                     print(output.strip())
                 raise
             try:
+                lock.acquire()
                 res = check_output(
                     'calibredb search "Identifiers:url:{}" {}'.format(
                         url, path), shell=True, stderr=STDOUT, stdin=PIPE)
+                lock.release()
                 output += log("\tAdded {} to library with id {}".format(cur,
                                                                         res), 'GREEN', live)
             except CalledProcessError as e:
+                lock.release()
                 output += log(
                     "It's been added to library, but not sure what the ID is.",
                     'WARNING',
@@ -235,6 +262,11 @@ def downloader(args):
             fp.write("{}\n".format(url))
 
 
+def init(l):
+    global lock
+    lock = l
+
+
 def main(user, cookie, max_count, expand_series, inout_file, path, live):
     if path:
         path = '--with-library "{}"'.format(path)
@@ -271,7 +303,8 @@ def main(user, cookie, max_count, expand_series, inout_file, path, live):
     if len(urls) == 1:
         downloader([list(urls)[0], inout_file, path, True])
     else:
-        p = Pool()
+        l = Lock()
+        p = Pool(1, initializer=init, initargs=(l,))
         p.map(downloader, [[url, inout_file, path, live] for url in urls])
 
     return
