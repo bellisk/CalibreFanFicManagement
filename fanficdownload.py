@@ -1,8 +1,7 @@
 from ao3 import AO3
-from fanficfare import geturls
 from os import listdir, remove, rename, utime, devnull
 from os.path import isfile, join
-from subprocess import check_output, STDOUT, call, PIPE
+from subprocess import check_output, STDOUT, call, PIPE, CalledProcessError
 import logging
 from optparse import OptionParser
 import re
@@ -99,14 +98,20 @@ def get_files(mypath, filetype=None, fullpath=False):
 
 
 def check_regexes(output):
+    output = output.decode('utf-8')
     if equal_chapters.search(output):
         raise ValueError(
-            "Issue with story, site is broken. Story likely hasn't updated on site yet.")
+            "Downloaded story already contains as many chapters as on the website.")
     if bad_chapters.search(output):
         raise ValueError(
             "Something is messed up with the site or the epub. No chapters found.")
     if no_url.search(output):
         raise ValueError("No URL in epub to update from. Fix the metadata.")
+
+
+def should_force_download(output):
+    output = output.decode('utf-8')
+    return chapter_difference.search(output) or more_chapters.search(output)
 
 
 def downloader(args):
@@ -119,8 +124,8 @@ def downloader(args):
         if path:
             try:
                 story_id = check_output(
-                    'calibredb search "Identifiers:{}" {}'.format(
-                        url, path), shell=True, stderr=STDOUT, stdin=PIPE, )
+                    'calibredb search "Identifiers:url:{}" {}'.format(
+                        url, path), shell=True, stderr=STDOUT, stdin=PIPE, ).decode('utf-8')
                 output += log("\tStory is in calibre with id {}".format(story_id), 'BLUE', live)
                 output += log("\tExporting file", 'BLUE', live)
                 res = check_output(
@@ -147,7 +152,7 @@ def downloader(args):
             res = check_output('{}fanficfare -u "{}" --update-cover'.format(
                 moving, cur), shell=True, stderr=STDOUT, stdin=PIPE)
             check_regexes(res)
-            if chapter_difference.search(res) or more_chapters.search(res):
+            if should_force_download(res):
                 output += log("\tForcing download update due to:",
                               'WARNING', live)
                 for line in res.split("\n"):
@@ -187,16 +192,17 @@ def downloader(args):
                 raise
             try:
                 res = check_output(
-                    'calibredb search "Identifiers:{}" {}'.format(
+                    'calibredb search "Identifiers:url:{}" {}'.format(
                         url, path), shell=True, stderr=STDOUT, stdin=PIPE)
                 output += log("\tAdded {} to library with id {}".format(cur,
                                                                         res), 'GREEN', live)
-            except BaseException:
+            except CalledProcessError as e:
                 output += log(
                     "It's been added to library, but not sure what the ID is.",
                     'WARNING',
                     live)
                 output += log("Added /Story-file to library with id 0", 'GREEN', live)
+                output += log(e.output)
             remove(cur)
         else:
             res = check_output(
@@ -217,6 +223,8 @@ def downloader(args):
         rmtree(loc)
     except Exception as e:
         output += log("Exception: {}".format(e), 'FAIL', live)
+        if type(e) == CalledProcessError:
+            output += log(e.output.decode('utf-8'), 'FAIL', live)
         if not live:
             print(output.strip())
         try:
@@ -229,8 +237,7 @@ def downloader(args):
 
 def main(user, cookie, max_count, expand_series, inout_file, path, live):
     if path:
-        path = '--with-library "{}" --username calibre --password pornoboobies'.format(
-            path)
+        path = '--with-library "{}"'.format(path)
         try:
             with open(devnull, 'w') as nullout:
                 call(['calibredb'], stdout=nullout, stderr=nullout)
@@ -276,7 +283,7 @@ def get_ao3_bookmark_urls(cookie, expand_series, max_count, user):
     urls = ['https://archiveofourown.org/works/%s'
             % work_id for work_id in
             api.user.bookmarks_ids(max_count, expand_series)]
-    return urls
+    return set(urls)
 
 
 if __name__ == "__main__":
@@ -357,54 +364,27 @@ if __name__ == "__main__":
             return newval if newval != "" else option
 
 
-        try:
-            options.user = updater(
-                options.user, config.get(
-                    'login', 'user').strip())
-        except BaseException:
-            pass
-
-        try:
-            options.cookie = updater(
-                options.user, config.get(
-                    'login', 'cookie').strip())
-        except BaseException:
-            pass
-
-        try:
-            options.max_count = updater(
-                int(options.max_count), config.getint(
-                    'ao3', 'max_count').strip())
-        except BaseException:
-            pass
-
-        try:
-            options.expand_series = updater(
-                options.expand_series, config.getboolean(
-                    'ao3', 'expand_series'))
-        except BaseException:
-            pass
-
-        try:
-            options.input = updater(
-                options.input, config.get(
-                    'locations', 'input').strip())
-        except BaseException:
-            pass
-
-        try:
-            options.library = updater(
-                options.library, config.get(
-                    'locations', 'library').strip())
-        except BaseException:
-            pass
-
-        try:
-            options.live = updater(
-                options.live, config.getboolean(
-                    'output', 'live').strip())
-        except BaseException:
-            pass
+        options.user = updater(
+            options.user, config.get(
+                'login', 'user').strip())
+        options.cookie = updater(
+            options.user, config.get(
+                'login', 'cookie').strip())
+        options.max_count = updater(
+            int(options.max_count), config.getint(
+                'ao3', 'max_count'))
+        options.expand_series = updater(
+            options.expand_series, config.getboolean(
+                'ao3', 'expand_series'))
+        options.input = updater(
+            options.input, config.get(
+                'locations', 'input').strip())
+        options.library = updater(
+            options.library, config.get(
+                'locations', 'library').strip())
+        options.live = updater(
+            options.live, config.getboolean(
+                'output', 'live'))
 
     if not (options.user or options.cookie):
         raise ValueError("User or Cookie not given")
