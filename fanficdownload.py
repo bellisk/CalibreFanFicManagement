@@ -134,6 +134,7 @@ def downloader(args):
                 lock.release()
             except CalledProcessError:
                 # story is not in calibre
+                lock.release()
                 cur = url
                 moving = 'cd "{}" && '.format(loc)
 
