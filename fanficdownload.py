@@ -4,6 +4,7 @@ from ao3 import AO3
 from os import listdir, remove, rename, utime, devnull
 from os.path import isfile, join
 from subprocess import check_output, STDOUT, call, PIPE, CalledProcessError
+import json
 import logging
 from optparse import OptionParser
 import re
@@ -74,6 +75,7 @@ def touch(fname, times=None):
 
 
 story_name = re.compile('(.*)-.*')
+series_pattern = re.compile('(.*) \[(.*)\]')
 
 # Responses from fanficfare that mean we won't update the story
 equal_chapters = re.compile('.* already contains \d* chapters.')
@@ -118,6 +120,37 @@ def check_fff_output(force, output):
 def should_force_download(force, output):
     output = output.decode('utf-8')
     return force and (chapter_difference.search(output) or more_chapters.search(output))
+
+
+def get_series_options(metadata):
+    series_keys = ['series', 'series00', 'series01', 'series02', 'series03']
+    opts = ''
+    for key in series_keys:
+        if len(metadata[key]) > 0:
+            m = series_pattern.match(metadata[key])
+            opts += '--series="{}" --series-index={} '.format(m.group(1), m.group(2))
+
+    return opts
+
+
+def get_tags_options(metadata):
+    tag_keys = [
+        "ao3categories",
+        'characters',
+        'fandoms',
+        'freeformtags',
+        'ships',
+        'status',
+        'warnings',
+    ]
+    opts = '--tags='
+    for key in tag_keys:
+        if len(metadata[key]) > 0:
+            tags = metadata[key].split(', ')
+            for tag in tags:
+                opts += '"{}",'.format('fanfic.' + key + '.' + tag)
+
+    return opts
 
 
 def downloader(args):
@@ -175,6 +208,15 @@ def downloader(args):
                 stderr=STDOUT,
                 stdin=PIPE,
             )
+
+            output += log('\tRunning: {}fanficfare -j "{}"'.format(
+                moving, url), 'BLUE', live)
+            res = check_output('{}fanficfare -j "{}"'.format(
+                moving, url), shell=True, stderr=STDOUT, stdin=PIPE)
+            metadata = json.loads(res)
+            series_options = get_series_options(metadata)
+            tags_options = get_tags_options(metadata)
+
             output += log('\tRunning: {}fanficfare -u "{}" --update-cover'.format(
                 moving, cur), 'BLUE', live)
             res = check_output('{}fanficfare -u "{}" --update-cover'.format(
@@ -219,7 +261,8 @@ def downloader(args):
             try:
                 lock.acquire()
                 res = check_output(
-                    'calibredb add -d {} "{}"'.format(path, cur), shell=True, stderr=STDOUT, stdin=PIPE, )
+                    'calibredb add -d {} "{}" {} {}'.format(
+                        path, cur, series_options, tags_options), shell=True, stderr=STDOUT, stdin=PIPE, )
                 lock.release()
             except Exception as e:
                 lock.release()
