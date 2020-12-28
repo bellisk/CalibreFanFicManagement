@@ -311,12 +311,10 @@ def main(user, cookie, max_count, expand_series, force, inout_file, path, live):
     log("URLs to parse ({}):".format(len(urls)), 'HEADER')
     for url in urls:
         log("\t{}".format(url), 'BLUE')
-    if len(urls) == 1:
-        downloader([list(urls)[0], inout_file, path, force, True])
-    else:
-        l = Lock()
-        p = Pool(1, initializer=init, initargs=(l,))
-        p.map(downloader, [[url, inout_file, path, force, live] for url in urls])
+
+    l = Lock()
+    p = Pool(initializer=init, initargs=(l,))
+    p.map(downloader, [[url, inout_file, path, force, live] for url in urls])
 
     return
 
