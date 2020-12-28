@@ -354,7 +354,7 @@ if __name__ == "__main__":
         action='store',
         dest='max_count',
         default=20,
-        help='Maximum number of bookmarks to get from AO3. Default = 20 (one page of bookmarks).'
+        help='Maximum number of bookmarks to get from AO3. Default = 20 (one page of bookmarks). Enter \'none\' (or any string) to get all bookmarks.'
     )
 
     option_parser.add_option(
@@ -422,8 +422,13 @@ if __name__ == "__main__":
             options.user, config.get(
                 'login', 'cookie').strip())
         options.max_count = updater(
-            int(options.max_count), config.getint(
+            options.max_count, config.get(
                 'import', 'max_count'))
+        try:
+            options.max_count = int(options.max_count)
+        except ValueError as e:
+            options.max_count = None
+
         options.expand_series = updater(
             options.expand_series, config.getboolean(
                 'import', 'expand_series'))
