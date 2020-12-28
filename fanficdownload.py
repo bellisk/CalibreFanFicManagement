@@ -115,7 +115,7 @@ def check_fff_output(force, output):
 
 def should_force_download(force, output):
     output = output.decode('utf-8')
-    return force or chapter_difference.search(output) or more_chapters.search(output)
+    return force and (chapter_difference.search(output) or more_chapters.search(output))
 
 
 def downloader(args):
