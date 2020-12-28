@@ -82,6 +82,7 @@ equal_chapters = re.compile('.* already contains \d* chapters.')
 bad_chapters = re.compile(
     ".* doesn't contain any recognizable chapters, probably from a different source.  Not updating.")
 no_url = re.compile('No story URL found in epub to update.')
+too_many_requests = re.compile('Failed to read epub for update: \(HTTP Error 429: Too Many Requests\)')
 
 # Responses from fanficfare that mean we should force-update the story
 chapter_difference = re.compile(
@@ -115,6 +116,8 @@ def check_fff_output(force, output):
             "Something is messed up with the site or the epub. No chapters found.")
     if no_url.search(output):
         raise ValueError("No URL in epub to update from. Fix the metadata.")
+    if too_many_requests.search(output):
+        raise ValueError("Too many requests for now.")
 
 
 def should_force_download(force, output):
