@@ -1,3 +1,5 @@
+# Adapted from https://github.com/MrTyton/AutomatedFanfic
+
 from ao3 import AO3
 from os import listdir, remove, rename, utime, devnull
 from os.path import isfile, join
