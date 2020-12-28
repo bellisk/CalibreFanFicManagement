@@ -278,7 +278,7 @@ def init(l):
     lock = l
 
 
-def main(user, cookie, max_count, expand_series, force, inout_file, path, live):
+def main(user, cookie, max_count, expand_series, force, dry_run, inout_file, path, live):
     if path:
         path = '--with-library "{}"'.format(path)
         try:
@@ -312,14 +312,20 @@ def main(user, cookie, max_count, expand_series, force, inout_file, path, live):
     for url in urls:
         log("\t{}".format(url), 'BLUE')
 
-    l = Lock()
-    p = Pool(initializer=init, initargs=(l,))
-    p.map(downloader, [[url, inout_file, path, force, live] for url in urls])
+    if dry_run:
+        log("Not adding any stories to calibre because dry-run is set to True", 'HEADER')
+    else:
+        l = Lock()
+        p = Pool(initializer=init, initargs=(l,))
+        p.map(downloader, [[url, inout_file, path, force, live] for url in urls])
 
     return
 
 
 def get_ao3_bookmark_urls(cookie, expand_series, max_count, user):
+    if max_count == 0:
+        return set([])
+
     api = AO3()
     api.login(user, cookie)
     urls = ['https://archiveofourown.org/works/%s'
@@ -389,6 +395,14 @@ if __name__ == "__main__":
         help="calibre library db location. If none is passed, then this merely scrapes the AO3 bookmarks and error file for new stories and downloads them into the current directory.")
 
     option_parser.add_option(
+        '-d',
+        '--dry-run',
+        action='store',
+        dest='dry_run',
+        help='Dry run: only fetch bookmark links from AO3, don\'t add them to calibre'
+    )
+
+    option_parser.add_option(
         '-C',
         '--config',
         action='store',
@@ -434,6 +448,9 @@ if __name__ == "__main__":
         options.force = updater(
             options.force, config.getboolean(
                 'import', 'force'))
+        options.dry_run = updater(
+            options.dry_run, config.getboolean(
+                'import', 'dry_run'))
         options.input = updater(
             options.input, config.get(
                 'locations', 'input').strip())
@@ -453,6 +470,7 @@ if __name__ == "__main__":
         options.max_count,
         options.expand_series,
         options.force,
+        options.dry_run,
         options.input,
         options.library,
         options.live)
