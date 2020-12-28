@@ -1,6 +1,28 @@
 # CalibreFanFicManagement
 A commandline utility to fill my own needs for managing fanfic on Calibre.
 
+Currently, there is one script, `fanficdownload.py`, which is adapted from 
+[AutomatedFanFic](https://github.com/MrTyton/AutomatedFanfic). It will scrape
+bookmarks from a user's AO3 account, download the works as epub files and add
+them to a calibre library.
+
+Planned:
+- mass editing of calibre tags for fanfics
+- deduplicating AO3 bookmarks in cases where I have both a series and individual
+  works bookmarked
+- statistics about bookmarked/downloaded fics
+
+## Usage
+If you want to save bookmarks in a calibre library, you will need to install the
+[calibre CLI](https://manual.calibre-ebook.com/generated/en/cli-index.html).
+
+- Clone this repository and `cd` into the `CalibreFanFicManagement` directory
+- `pip install -r requirements.txt`
+- If needed, copy `config_template.ini` to `config.ini` and fill in
+- Copy [FanFicFare example config](https://github.com/JimmXinu/FanFicFare/blob/master/fanficfare/example.ini)
+  to `personal.ini` and fill in necessary fields
+- `python fanficdownload.py -C config.ini`
+
 ## Resources
 - [Calibre CLI](https://manual.calibre-ebook.com/generated/en/cli-index.html)
 - [FanFicFare](https://github.com/JimmXinu/FanFicFare)
@@ -24,22 +46,3 @@ I want to:
 ```
 - find out whether I have bookmarks for stories that are part of a series that
   is also bookmarked
-
-## Todo
-+ set up basic script
-+ log in to AO3
-+ pass in AO3 cookie info from commandline
-+ get my bookmarks
-+ distinguish between series and story bookmarks
-+ check whether each story is in my library
-+ if not, or if yes and should be updated, import (using FFF/Calibre cli)
-+ get options from config file
-- handle multithreading better - mutex on calibredb?
-- add default number of days back to harvest bookmarks from
-
-## Usage
-- `pip install -r requirements.txt`
-- If needed, copy `config_template.ini` to `config.ini` and fill in
-- Copy [FanFicFare example config](https://github.com/JimmXinu/FanFicFare/blob/master/fanficfare/example.ini)
-  to `personal.ini` and fill in necessary fields
-- `python fanficdownload.py -C config.ini`
