@@ -151,7 +151,9 @@ def get_tags_options(metadata):
         if len(metadata[key]) > 0:
             tags = metadata[key].split(', ')
             for tag in tags:
-                opts += '"{}",'.format('fanfic.' + key + '.' + tag.replace('"', '\''))
+                # Replace characters that give Calibre trouble in tags.
+                tag = tag.replace('"', '\'').replace('...', '…').replace('.', '．')
+                opts += '"{}",'.format('fanfic.' + key + '.' + tag)
 
     return opts
 
