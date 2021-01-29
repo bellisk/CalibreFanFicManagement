@@ -151,7 +151,7 @@ def get_tags_options(metadata):
         if len(metadata[key]) > 0:
             tags = metadata[key].split(', ')
             for tag in tags:
-                opts += '"{}",'.format('fanfic.' + key + '.' + tag)
+                opts += '"{}",'.format('fanfic.' + key + '.' + tag.replace('"', '\''))
 
     return opts
 
