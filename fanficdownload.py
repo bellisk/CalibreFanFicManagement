@@ -174,12 +174,13 @@ def downloader(args):
                 # story is not in calibre
                 lock.release()
                 cur = url
-                moving = 'cd "{}" && '.format(loc)
 
             if story_id is not None:
                 story_id = story_id.decode('utf-8')
                 output += log("\tStory is in calibre with id {}".format(story_id), 'BLUE', live)
                 output += log("\tExporting file", 'BLUE', live)
+                output += log('calibredb export {} --dont-save-cover --dont-write-opf --single-dir --to-dir "{}" {}'.format(
+                        story_id, loc, path), 'BLUE', live)
                 lock.acquire()
                 res = check_output(
                     'calibredb export {} --dont-save-cover --dont-write-opf --single-dir --to-dir "{}" {}'.format(
@@ -192,7 +193,6 @@ def downloader(args):
                         '\tDownloading with fanficfare, updating file "{}"'.format(cur),
                         'GREEN',
                         live)
-                    moving = ""
                 except IndexError:
                     # calibre doesn't have this story in epub format.
                     # the ebook-convert and ebook-meta CLIs can't save an epub
@@ -203,7 +203,6 @@ def downloader(args):
                         '\tNo epub for story id "{}" in calibre'.format(story_id),
                         'BLUE',
                         live)
-                    moving = 'cd "{}" && '.format(loc)
 
             res = check_output(
                 'cp personal.ini {}/personal.ini'.format(loc),
@@ -212,18 +211,18 @@ def downloader(args):
                 stdin=PIPE,
             )
 
-            output += log('\tRunning: {}fanficfare -j "{}"'.format(
-                moving, url), 'BLUE', live)
-            res = check_output('{}fanficfare -j "{}"'.format(
-                moving, url), shell=True, stderr=STDOUT, stdin=PIPE)
+            output += log('\tRunning: cd "{}" && fanficfare -j "{}"'.format(
+                loc, url), 'BLUE', live)
+            res = check_output('cd "{}" && fanficfare -j "{}"'.format(
+                loc, url), shell=True, stderr=STDOUT, stdin=PIPE)
             metadata = json.loads(res)
             series_options = get_series_options(metadata)
             tags_options = get_tags_options(metadata)
 
-            output += log('\tRunning: {}fanficfare -u "{}" --update-cover'.format(
-                moving, cur), 'BLUE', live)
-            res = check_output('{}fanficfare -u "{}" --update-cover'.format(
-                moving, cur), shell=True, stderr=STDOUT, stdin=PIPE)
+            output += log('\tRunning: cd "{}" && fanficfare -u "{}" --update-cover'.format(
+                loc, cur), 'BLUE', live)
+            res = check_output('cd "{}" && fanficfare -u "{}" --update-cover'.format(
+                loc, cur), shell=True, stderr=STDOUT, stdin=PIPE)
             check_fff_output(force, res)
             if should_force_download(force, res):
                 output += log("\tForcing download update due to:",
@@ -235,8 +234,8 @@ def downloader(args):
                         if line:
                             output += log("\t\t{}".format(str(line)), 'WARNING', live)
                 res = check_output(
-                    '{}fanficfare -u "{}" --force --update-cover'.format(
-                        moving, cur), shell=True, stderr=STDOUT, stdin=PIPE)
+                    'fanficfare -u "{}" --force --update-cover'.format(
+                        cur), shell=True, stderr=STDOUT, stdin=PIPE)
                 check_fff_output(force, res)
             cur = get_files(loc, '.epub', True)[0]
 
