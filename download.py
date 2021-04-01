@@ -1,20 +1,21 @@
 # encoding: utf-8
 # Adapted from https://github.com/MrTyton/AutomatedFanfic
 
-from ao3 import AO3
-from os import remove, rename, devnull
-from subprocess import check_output, STDOUT, call, PIPE, CalledProcessError
+from os import devnull, remove, rename
+from subprocess import call, check_output, STDOUT, PIPE, CalledProcessError
 import json
 import re
 from tempfile import mkdtemp
 from shutil import rmtree
-from errno import ENOENT
-from utils import get_files, log, set_up_options, touch
-
 from multiprocessing import Lock, Pool
+from errno import ENOENT
+
+from ao3_utils import get_ao3_bookmark_urls
+from calibre_utils import get_series_options, get_tags_options
+from utils import get_files, log, touch
+
 
 story_name = re.compile('(.*)-.*')
-series_pattern = re.compile('(.*) \[(.*)\]')
 
 # Responses from fanficfare that mean we won't update the story
 equal_chapters = re.compile('.* already contains \d* chapters.')
@@ -49,39 +50,6 @@ def check_fff_output(force, output):
 def should_force_download(force, output):
     output = output.decode('utf-8')
     return force and (chapter_difference.search(output) or more_chapters.search(output))
-
-
-def get_series_options(metadata):
-    series_keys = ['series', 'series00', 'series01', 'series02', 'series03']
-    opts = ''
-    for key in series_keys:
-        if len(metadata[key]) > 0:
-            m = series_pattern.match(metadata[key])
-            opts += '--series="{}" --series-index={} '.format(m.group(1), m.group(2))
-
-    return opts
-
-
-def get_tags_options(metadata):
-    tag_keys = [
-        "ao3categories",
-        'characters',
-        'fandoms',
-        'freeformtags',
-        'ships',
-        'status',
-        'warnings',
-    ]
-    opts = '--tags='
-    for key in tag_keys:
-        if len(metadata[key]) > 0:
-            tags = metadata[key].split(', ')
-            for tag in tags:
-                # Replace characters that give Calibre trouble in tags.
-                tag = tag.replace('"', '\'').replace('...', '…').replace('.', '．')
-                opts += '"{}",'.format('fanfic.' + key + '.' + tag)
-
-    return opts
 
 
 def downloader(args):
@@ -298,22 +266,3 @@ def download(options):
         p.map(downloader, [[url, inout_file, path, options.force, options.live] for url in urls])
 
     return
-
-
-def get_ao3_bookmark_urls(cookie, expand_series, max_count, user):
-    if max_count == 0:
-        return set([])
-
-    api = AO3()
-    api.login(user, cookie)
-    urls = ['https://archiveofourown.org/works/%s'
-            % work_id for work_id in
-            api.user.bookmarks_ids(max_count, expand_series)]
-    return set(urls)
-
-
-if __name__ == "__main__":
-    command, options = set_up_options()
-    permitted_commands = {'download': download}
-
-    eval(command + "(options)", permitted_commands, {'options': options})
