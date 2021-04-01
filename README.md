@@ -1,7 +1,7 @@
 # CalibreFanFicManagement
 A commandline utility to fill my own needs for managing fanfic on Calibre.
 
-Currently, there is one script, `fanficdownload.py`, which is adapted from 
+Currently, there is one command, `download`, which is adapted from 
 [AutomatedFanFic](https://github.com/MrTyton/AutomatedFanfic). It will scrape
 bookmarks from a user's AO3 account, download the works as epub files and add
 them to a calibre library.
@@ -26,13 +26,14 @@ If you want to save bookmarks in a calibre library, you will need to install the
 - If needed, copy `config_template.ini` to `config.ini` and fill in
 - Copy [FanFicFare example config](https://github.com/JimmXinu/FanFicFare/blob/master/fanficfare/example.ini)
   to `personal.ini` and fill in necessary fields
-- `python fanficdownload.py -C config.ini`
+- `python fanficmanagement.py download -C config.ini`
+- For help: `python fanficmanagement.py -h`
 
 ## Resources
 - [Calibre CLI](https://manual.calibre-ebook.com/generated/en/cli-index.html)
 - [FanFicFare](https://github.com/JimmXinu/FanFicFare)
 - Unofficial [ao3 client](https://github.com/ladyofthelog/ao3.git)
-- [AutomatedFanFic](https://github.com/MrTyton/AutomatedFanfic) as example code
+- [AutomatedFanFic](https://github.com/MrTyton/AutomatedFanfic)
 
 ## Requirements
 I want to:
