@@ -274,6 +274,9 @@ def init(l):
 
 
 def download(options):
+    if not (options.user and options.cookie):
+        raise ValueError("User and Cookie are required for downloading from AO3")
+
     path = options.library
     if path:
         path = '--with-library "{}"'.format(path)
