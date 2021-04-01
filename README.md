@@ -14,6 +14,8 @@ Planned:
 - download fics from Marked for Later as well as bookmarks
 - downloading fics back to a certain date, rather than up to a certain number
 - handling series links as well as work links
+- change config handling so that command-line options override config ones,
+  not vice versa
 
 ## Usage
 If you want to save bookmarks in a calibre library, you will need to install the
