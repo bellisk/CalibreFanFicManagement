@@ -16,6 +16,7 @@ Planned:
 - handling series links as well as work links
 - change config handling so that command-line options override config ones,
   not vice versa
+- import from page with list of urls, e.g. collection or author page
 
 ## Usage
 If you want to save bookmarks in a calibre library, you will need to install the
