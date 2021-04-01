@@ -15,6 +15,7 @@ from calibre_utils import get_series_options, get_tags_options
 from utils import get_files, log, touch
 
 story_name = re.compile("(.*)-.*")
+story_url = re.compile("(https://archiveofourown.org/works/\d*).*")
 
 # Responses from fanficfare that mean we won't update the story
 equal_chapters = re.compile(".* already contains \d* chapters.")
@@ -54,6 +55,28 @@ def check_fff_output(force, output):
 def should_force_download(force, output):
     output = output.decode("utf-8")
     return force and (chapter_difference.search(output) or more_chapters.search(output))
+
+
+def get_metadata(output):
+    """
+    When we download an epub and get the json metadata from fanficfare, we get all the
+    output from the command, including lines that are useless to us. Here we get rid of
+    those, so we can load the metadata as json.
+    """
+    output = output.split(b'\n')
+    n = 0
+    line = output[n]
+    while line != b'{':
+        n += 1
+        line = output[n]
+
+    output = b'\n'.join(output[n:])
+    return json.loads(output)
+
+
+def get_url_without_chapter(url):
+    m = story_url.match(url)
+    return m.group(1)
 
 
 def downloader(args):
@@ -129,34 +152,21 @@ def downloader(args):
             )
 
             output += log(
-                '\tRunning: cd "{}" && fanficfare -j "{}"'.format(loc, url),
+                '\tRunning: cd "{}" && fanficfare -j -u "{}" --update-cover'.format(loc, cur),
                 "BLUE",
                 live,
             )
             res = check_output(
-                'cd "{}" && fanficfare -j "{}"'.format(loc, url),
-                shell=True,
-                stderr=STDOUT,
-                stdin=PIPE,
-            )
-            metadata = json.loads(res)
-            series_options = get_series_options(metadata)
-            tags_options = get_tags_options(metadata)
-
-            output += log(
-                '\tRunning: cd "{}" && fanficfare -u "{}" --update-cover'.format(
-                    loc, cur
-                ),
-                "BLUE",
-                live,
-            )
-            res = check_output(
-                'cd "{}" && fanficfare -u "{}" --update-cover'.format(loc, cur),
+                'cd "{}" && fanficfare -j -u "{}" --update-cover'.format(loc, cur),
                 shell=True,
                 stderr=STDOUT,
                 stdin=PIPE,
             )
             check_fff_output(force, res)
+            metadata = get_metadata(res)
+            series_options = get_series_options(metadata)
+            tags_options = get_tags_options(metadata)
+
             if should_force_download(force, res):
                 output += log("\tForcing download update due to:", "WARNING", live)
                 if force:
@@ -214,7 +224,7 @@ def downloader(args):
             try:
                 lock.acquire()
                 res = check_output(
-                    'calibredb search "Identifiers:url:{}" {}'.format(url, path),
+                    'calibredb search "Identifiers:url:{}" {}'.format(get_url_without_chapter(url), path),
                     shell=True,
                     stderr=STDOUT,
                     stdin=PIPE,
