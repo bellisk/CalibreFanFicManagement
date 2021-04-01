@@ -365,7 +365,7 @@ def main(user, cookie, max_count, expand_series, force, dry_run, inout_file, pat
         log("Not adding any stories to calibre because dry-run is set to True", 'HEADER')
     else:
         l = Lock()
-        p = Pool(initializer=init, initargs=(l,))
+        p = Pool(1, initializer=init, initargs=(l,))
         p.map(downloader, [[url, inout_file, path, force, live] for url in urls])
 
     return
