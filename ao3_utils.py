@@ -9,7 +9,8 @@ def get_ao3_bookmark_urls(cookie, expand_series, max_count, user):
 
     api = AO3()
     api.login(user, cookie)
-    urls = ['https://archiveofourown.org/works/%s'
-            % work_id for work_id in
-            api.user.bookmarks_ids(max_count, expand_series)]
+    urls = [
+        "https://archiveofourown.org/works/%s" % work_id
+        for work_id in api.user.bookmarks_ids(max_count, expand_series)
+    ]
     return set(urls)
