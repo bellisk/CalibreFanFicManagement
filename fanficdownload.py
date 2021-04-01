@@ -13,7 +13,6 @@ from utils import get_files, log, set_up_options, touch
 
 from multiprocessing import Lock, Pool
 
-
 story_name = re.compile('(.*)-.*')
 series_pattern = re.compile('(.*) \[(.*)\]')
 
@@ -108,7 +107,8 @@ def downloader(args):
                 story_id = story_id.decode('utf-8')
                 output += log("\tStory is in calibre with id {}".format(story_id), 'BLUE', live)
                 output += log("\tExporting file", 'BLUE', live)
-                output += log('calibredb export {} --dont-save-cover --dont-write-opf --single-dir --to-dir "{}" {}'.format(
+                output += log(
+                    'calibredb export {} --dont-save-cover --dont-write-opf --single-dir --to-dir "{}" {}'.format(
                         story_id, loc, path), 'BLUE', live)
                 lock.acquire()
                 res = check_output(
@@ -254,7 +254,8 @@ def init(l):
     lock = l
 
 
-def main(user, cookie, max_count, expand_series, force, dry_run, inout_file, path, live):
+def download(options):
+    path = options.library
     if path:
         path = '--with-library "{}"'.format(path)
         try:
@@ -266,6 +267,7 @@ def main(user, cookie, max_count, expand_series, force, dry_run, inout_file, pat
                     'FAIL')
                 return
 
+    inout_file = options.input
     touch(inout_file)
 
     with open(inout_file, "r") as fp:
@@ -275,7 +277,7 @@ def main(user, cookie, max_count, expand_series, force, dry_run, inout_file, pat
         fp.write("")
 
     try:
-        urls |= get_ao3_bookmark_urls(cookie, expand_series, max_count, user)
+        urls |= get_ao3_bookmark_urls(options.cookie, options.expand_series, options.max_count, options.user)
     except BaseException:
         with open(inout_file, "w") as fp:
             for cur in urls:
@@ -288,12 +290,12 @@ def main(user, cookie, max_count, expand_series, force, dry_run, inout_file, pat
     for url in urls:
         log("\t{}".format(url), 'BLUE')
 
-    if dry_run:
+    if options.dry_run:
         log("Not adding any stories to calibre because dry-run is set to True", 'HEADER')
     else:
         l = Lock()
         p = Pool(1, initializer=init, initargs=(l,))
-        p.map(downloader, [[url, inout_file, path, force, live] for url in urls])
+        p.map(downloader, [[url, inout_file, path, options.force, options.live] for url in urls])
 
     return
 
@@ -311,14 +313,7 @@ def get_ao3_bookmark_urls(cookie, expand_series, max_count, user):
 
 
 if __name__ == "__main__":
-    options = set_up_options()
-    main(
-        options.user,
-        options.cookie,
-        options.max_count,
-        options.expand_series,
-        options.force,
-        options.dry_run,
-        options.input,
-        options.library,
-        options.live)
+    command, options = set_up_options()
+    permitted_commands = {'download': download}
+
+    eval(command + "(options)", permitted_commands, {'options': options})

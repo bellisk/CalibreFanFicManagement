@@ -78,7 +78,13 @@ def get_files(mypath, filetype=None, fullpath=False):
 
 
 def set_up_options():
-    option_parser = OptionParser(usage="usage: %prog [flags]")
+    usage = '''usage: python %prog [command] [flags]
+    
+Commands available:
+    
+download    Download fics from AO3 and save to Calibre library
+    '''
+    option_parser = OptionParser(usage=usage)
 
     option_parser.add_option(
         '-u',
@@ -161,15 +167,18 @@ def set_up_options():
 
     (options, args) = option_parser.parse_args()
 
+    if len(args) != 1:
+        raise ValueError("Please input exactly one command, e.g. 'download'")
+
+    command = args[0]
+
     if options.config:
         touch(options.config)
         config = ConfigParser(allow_no_value=True)
         config.read(options.config)
 
-
         def updater(option, newval):
             return newval if newval != "" else option
-
 
         options.user = updater(
             options.user, config.get(
@@ -207,4 +216,4 @@ def set_up_options():
     if not (options.user or options.cookie):
         raise ValueError("User or Cookie not given")
 
-    return options
+    return command, options
