@@ -34,6 +34,7 @@ If you want to save bookmarks in a calibre library, you will need to install the
 - [Calibre CLI](https://manual.calibre-ebook.com/generated/en/cli-index.html)
 - [FanFicFare](https://github.com/JimmXinu/FanFicFare)
 - Unofficial [ao3 client](https://github.com/ladyofthelog/ao3.git)
+  and [my fork](https://github.com/bellisk/ao3) with custom changes
 - [AutomatedFanFic](https://github.com/MrTyton/AutomatedFanfic)
 
 ## Requirements
