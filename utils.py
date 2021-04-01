@@ -101,8 +101,7 @@ download    Download fics from AO3 and save to Calibre library
         "--max-count",
         action="store",
         dest="max_count",
-        default=20,
-        help="Maximum number of bookmarks to get from AO3. Default = 20 (one page of bookmarks). Enter 'none' (or any string) to get all bookmarks.",
+        help="Maximum number of bookmarks to get from AO3. Enter 'none' (or any string) to get all bookmarks.",
     )
 
     option_parser.add_option(
@@ -110,8 +109,7 @@ download    Download fics from AO3 and save to Calibre library
         "--expand-series",
         action="store",
         dest="expand_series",
-        default=False,
-        help="Whether to get all works from a bookmarked series. Default = false.",
+        help="Whether to get all works from a bookmarked series.",
     )
 
     option_parser.add_option(
@@ -119,7 +117,6 @@ download    Download fics from AO3 and save to Calibre library
         "--force",
         action="store",
         dest="force",
-        default=False,
         help="Whether to force downloads of stories even when they have the same number of chapters locally as online.",
     )
 
@@ -128,7 +125,6 @@ download    Download fics from AO3 and save to Calibre library
         "--input",
         action="store",
         dest="input",
-        default="./fanfiction.txt",
         help="Error file. Any urls that fail will be output here, and file will be read to find any urls that failed previously. If file does not exist will create. File is overwitten every time the program is run.",
     )
 
@@ -177,32 +173,29 @@ download    Download fics from AO3 and save to Calibre library
         config.read(options.config)
 
         def updater(option, newval):
-            return newval if newval != "" else option
+            return newval if newval is not None else option
 
-        options.user = updater(options.user, config.get("login", "user").strip())
-        options.cookie = updater(options.user, config.get("login", "cookie").strip())
+        options.user = updater(config.get("login", "user").strip(), options.user)
+        options.cookie = updater(config.get("login", "cookie").strip(), options.cookie)
         options.max_count = updater(
-            options.max_count, config.get("import", "max_count")
+            config.get("import", "max_count"), options.max_count
         )
         try:
             options.max_count = int(options.max_count)
-        except ValueError as e:
+        except ValueError:
             options.max_count = None
 
         options.expand_series = updater(
-            options.expand_series, config.getboolean("import", "expand_series")
+            config.getboolean("import", "expand_series"), options.expand_series
         )
-        options.force = updater(options.force, config.getboolean("import", "force"))
+        options.force = updater(config.getboolean("import", "force"), options.force)
         options.dry_run = updater(
-            options.dry_run, config.getboolean("import", "dry_run")
+            config.getboolean("import", "dry_run"), options.dry_run
         )
-        options.input = updater(options.input, config.get("locations", "input").strip())
+        options.input = updater(config.get("locations", "input").strip(), options.input)
         options.library = updater(
-            options.library, config.get("locations", "library").strip()
+            config.get("locations", "library").strip(), options.library
         )
-        options.live = updater(options.live, config.getboolean("output", "live"))
-
-    if not (options.user or options.cookie):
-        raise ValueError("User or Cookie not given")
+        options.live = updater(config.getboolean("output", "live"), options.live)
 
     return command, options
