@@ -3,6 +3,7 @@
 
 import json
 import re
+from datetime import datetime
 from errno import ENOENT
 from multiprocessing import Lock, Pool
 from os import devnull, remove, rename
@@ -318,17 +319,25 @@ def download(options):
     if source not in ["bookmarks", "later"]:
         log("'source' option should be one of 'bookmarks' or 'later', not {}"
             .format(source))
+        return
+
+    if options.since:
+        try:
+            oldest_date = datetime.strptime(options.since, '%d.%m.%Y')
+        except ValueError:
+            log("'since' option should have format 'DD.MM.YYYY'")
+            return
 
     try:
         if source == "later":
             log("Getting URLs from Marked for Later")
             urls |= get_ao3_marked_for_later_urls(
-                options.cookie, options.max_count, options.user
+                options.cookie, options.max_count, options.user, oldest_date
             )
         else:
             log("Getting URLs from Bookmarks")
             urls |= get_ao3_bookmark_urls(
-                options.cookie, options.expand_series, options.max_count, options.user
+                options.cookie, options.expand_series, options.max_count, options.user, oldest_date
             )
     except BaseException:
         with open(inout_file, "w") as fp:
