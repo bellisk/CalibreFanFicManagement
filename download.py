@@ -10,7 +10,7 @@ from shutil import rmtree
 from subprocess import PIPE, STDOUT, CalledProcessError, call, check_output
 from tempfile import mkdtemp
 
-from ao3_utils import get_ao3_bookmark_urls
+from ao3_utils import get_ao3_bookmark_urls, get_ao3_marked_for_later_urls
 from calibre_utils import get_series_options, get_tags_options
 from utils import get_files, log, touch
 
@@ -314,10 +314,22 @@ def download(options):
     with open(inout_file, "w") as fp:
         fp.write("")
 
+    source = options.source
+    if source not in ["bookmarks", "later"]:
+        log("'source' option should be one of 'bookmarks' or 'later', not {}"
+            .format(source))
+
     try:
-        urls |= get_ao3_bookmark_urls(
-            options.cookie, options.expand_series, options.max_count, options.user
-        )
+        if source == "later":
+            log("Getting URLs from Marked for Later")
+            urls |= get_ao3_marked_for_later_urls(
+                options.cookie, options.max_count, options.user
+            )
+        else:
+            log("Getting URLs from Bookmarks")
+            urls |= get_ao3_bookmark_urls(
+                options.cookie, options.expand_series, options.max_count, options.user
+            )
     except BaseException:
         with open(inout_file, "w") as fp:
             for cur in urls:
@@ -334,6 +346,8 @@ def download(options):
         log(
             "Not adding any stories to calibre because dry-run is set to True", "HEADER"
         )
+
+        return
     else:
         l = Lock()
         p = Pool(1, initializer=init, initargs=(l,))
@@ -341,5 +355,3 @@ def download(options):
             downloader,
             [[url, inout_file, path, options.force, options.live] for url in urls],
         )
-
-    return
