@@ -16,7 +16,7 @@ def get_ao3_bookmark_urls(cookie, expand_series, max_count, user):
     return set(urls)
 
 
-def get_ao3_marked_for_later_urls(cookie, expand_series, max_count, user):
+def get_ao3_marked_for_later_urls(cookie, max_count, user):
     if max_count == 0:
         return set([])
 
@@ -24,6 +24,6 @@ def get_ao3_marked_for_later_urls(cookie, expand_series, max_count, user):
     api.login(user, cookie)
     urls = [
         "https://archiveofourown.org/works/%s" % work_id
-        for work_id in api.user.marked_for_later_ids(max_count, expand_series)
+        for work_id in api.user.marked_for_later_ids(max_count)
     ]
     return set(urls)
