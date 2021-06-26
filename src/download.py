@@ -11,9 +11,10 @@ from shutil import rmtree
 from subprocess import PIPE, STDOUT, CalledProcessError, call, check_output
 from tempfile import mkdtemp
 
-from ao3_utils import get_ao3_bookmark_urls, get_ao3_marked_for_later_urls
-from calibre_utils import get_series_options, get_tags_options
-from utils import get_files, log, touch
+from .ao3_utils import get_ao3_bookmark_urls, get_ao3_marked_for_later_urls
+from .calibre_utils import get_series_options, get_tags_options
+from .exceptions import StoryUpToDateException
+from .utils import get_files, log, touch
 
 story_name = re.compile("(.*)-.*")
 story_url = re.compile("(https://archiveofourown.org/works/\d*).*")
@@ -40,9 +41,7 @@ more_chapters = re.compile(
 def check_fff_output(force, output):
     output = output.decode("utf-8")
     if not force and equal_chapters.search(output):
-        raise ValueError(
-            "Downloaded story already contains as many chapters as on the website."
-        )
+        raise StoryUpToDateException()
     if bad_chapters.search(output):
         raise ValueError(
             "Something is messed up with the site or the epub. No chapters found."
@@ -279,8 +278,9 @@ def downloader(args):
             rmtree(loc)
         except BaseException:
             pass
-        with open(inout_file, "a") as fp:
-            fp.write("{}\n".format(url))
+        if type(e) != StoryUpToDateException:
+            with open(inout_file, "a") as fp:
+                fp.write("{}\n".format(url))
 
 
 def init(l):
@@ -321,6 +321,7 @@ def download(options):
             .format(source))
         return
 
+    oldest_date = None
     if options.since:
         try:
             oldest_date = datetime.strptime(options.since, '%d.%m.%Y')
