@@ -80,7 +80,7 @@ def get_url_without_chapter(url):
 
 
 def downloader(args):
-    url, inout_file, path, force, live = args
+    url, inout_file, fanficfare_config, path, force, live = args
     loc = mkdtemp()
     output = ""
     output += log("Working with url {}".format(url), "HEADER", live)
@@ -145,7 +145,7 @@ def downloader(args):
                     )
 
             res = check_output(
-                "cp personal.ini {}/personal.ini".format(loc),
+                "cp {} {}/personal.ini".format(fanficfare_config, loc),
                 shell=True,
                 stderr=STDOUT,
                 stdin=PIPE,
@@ -363,5 +363,5 @@ def download(options):
         p = Pool(1, initializer=init, initargs=(l,))
         p.map(
             downloader,
-            [[url, inout_file, path, options.force, options.live] for url in urls],
+            [[url, inout_file, options.fanficfare_config, path, options.force, options.live] for url in urls],
         )
