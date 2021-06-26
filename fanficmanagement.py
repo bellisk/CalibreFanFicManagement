@@ -1,7 +1,7 @@
 # encoding: utf-8
 
-from download import download
-from utils import set_up_options
+from src.download import download
+from src.utils import set_up_options
 
 if __name__ == "__main__":
     command, options = set_up_options()

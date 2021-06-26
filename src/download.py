@@ -3,6 +3,7 @@
 
 import json
 import re
+from datetime import datetime
 from errno import ENOENT
 from multiprocessing import Lock, Pool
 from os import devnull, remove, rename
@@ -10,9 +11,10 @@ from shutil import rmtree
 from subprocess import PIPE, STDOUT, CalledProcessError, call, check_output
 from tempfile import mkdtemp
 
-from ao3_utils import get_ao3_bookmark_urls
-from calibre_utils import get_series_options, get_tags_options
-from utils import get_files, log, touch
+from .ao3_utils import get_ao3_bookmark_urls, get_ao3_marked_for_later_urls
+from .calibre_utils import get_series_options, get_tags_options
+from .exceptions import StoryUpToDateException
+from .utils import get_files, log, touch
 
 story_name = re.compile("(.*)-.*")
 story_url = re.compile("(https://archiveofourown.org/works/\d*).*")
@@ -39,9 +41,7 @@ more_chapters = re.compile(
 def check_fff_output(force, output):
     output = output.decode("utf-8")
     if not force and equal_chapters.search(output):
-        raise ValueError(
-            "Downloaded story already contains as many chapters as on the website."
-        )
+        raise StoryUpToDateException()
     if bad_chapters.search(output):
         raise ValueError(
             "Something is messed up with the site or the epub. No chapters found."
@@ -80,7 +80,7 @@ def get_url_without_chapter(url):
 
 
 def downloader(args):
-    url, inout_file, path, force, live = args
+    url, inout_file, fanficfare_config, path, force, live = args
     loc = mkdtemp()
     output = ""
     output += log("Working with url {}".format(url), "HEADER", live)
@@ -145,7 +145,7 @@ def downloader(args):
                     )
 
             res = check_output(
-                "cp personal.ini {}/personal.ini".format(loc),
+                "cp {} {}/personal.ini".format(fanficfare_config, loc),
                 shell=True,
                 stderr=STDOUT,
                 stdin=PIPE,
@@ -278,8 +278,9 @@ def downloader(args):
             rmtree(loc)
         except BaseException:
             pass
-        with open(inout_file, "a") as fp:
-            fp.write("{}\n".format(url))
+        if type(e) != StoryUpToDateException:
+            with open(inout_file, "a") as fp:
+                fp.write("{}\n".format(url))
 
 
 def init(l):
@@ -314,10 +315,31 @@ def download(options):
     with open(inout_file, "w") as fp:
         fp.write("")
 
+    source = options.source
+    if source not in ["bookmarks", "later"]:
+        log("'source' option should be one of 'bookmarks' or 'later', not {}"
+            .format(source))
+        return
+
+    oldest_date = None
+    if options.since:
+        try:
+            oldest_date = datetime.strptime(options.since, '%d.%m.%Y')
+        except ValueError:
+            log("'since' option should have format 'DD.MM.YYYY'")
+            return
+
     try:
-        urls |= get_ao3_bookmark_urls(
-            options.cookie, options.expand_series, options.max_count, options.user
-        )
+        if source == "later":
+            log("Getting URLs from Marked for Later")
+            urls |= get_ao3_marked_for_later_urls(
+                options.cookie, options.max_count, options.user, oldest_date
+            )
+        else:
+            log("Getting URLs from Bookmarks")
+            urls |= get_ao3_bookmark_urls(
+                options.cookie, options.expand_series, options.max_count, options.user, oldest_date
+            )
     except BaseException:
         with open(inout_file, "w") as fp:
             for cur in urls:
@@ -334,12 +356,12 @@ def download(options):
         log(
             "Not adding any stories to calibre because dry-run is set to True", "HEADER"
         )
+
+        return
     else:
         l = Lock()
         p = Pool(1, initializer=init, initargs=(l,))
         p.map(
             downloader,
-            [[url, inout_file, path, options.force, options.live] for url in urls],
+            [[url, inout_file, options.fanficfare_config, path, options.force, options.live] for url in urls],
         )
-
-    return

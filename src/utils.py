@@ -97,11 +97,27 @@ download    Download fics from AO3 and save to Calibre library
     )
 
     option_parser.add_option(
+        "-s",
+        "--source",
+        action="store",
+        dest="source",
+        help="'bookmarks' to download bookmarks (default), 'later' to download works marked for later"
+    )
+
+    option_parser.add_option(
         "-m",
         "--max-count",
         action="store",
         dest="max_count",
-        help="Maximum number of bookmarks to get from AO3. Enter 'none' (or any string) to get all bookmarks.",
+        help="Maximum number of fics to get from AO3. Enter 'none' (or any string) to get all bookmarks.",
+    )
+
+    option_parser.add_option(
+        "-S",
+        "--since",
+        action="store",
+        dest="since",
+        help="DD.MM.YYYY. The date since which fics should be downloaded (date bookmarked for bookmarks, date last visited for marked-for-later).",
     )
 
     option_parser.add_option(
@@ -149,7 +165,15 @@ download    Download fics from AO3 and save to Calibre library
         "--config",
         action="store",
         dest="config",
-        help="Config file for inputs. Blank config file is provided. No default. If an option is present in whatever config file is passed it, the option will overwrite whatever is passed in through command line arguments unless the option is blank. Do not put any quotation marks in the options.",
+        help="Config file for inputs. Blank config file is provided. No default. Commandline options overrule config file. Do not put any quotation marks in the options.",
+    )
+
+    option_parser.add_option(
+        "-F",
+        "--fanficfare-config",
+        action="store",
+        dest="fanficfare_config",
+        help="Config file for fanficfare.",
     )
 
     option_parser.add_option(
@@ -192,10 +216,17 @@ download    Download fics from AO3 and save to Calibre library
         options.dry_run = updater(
             config.getboolean("import", "dry_run"), options.dry_run
         )
-        options.input = updater(config.get("locations", "input").strip(), options.input)
+        options.source = updater(config.get("import", "source").strip(), options.source)
+        options.since = updater(config.get("import", "since").strip(), options.since)
+
         options.library = updater(
             config.get("locations", "library").strip(), options.library
         )
+        options.input = updater(config.get("locations", "input").strip(), options.input)
+        options.fanficfare_config = updater(
+            config.get("locations", "fanficfare_config").strip(), options.fanficfare_config
+        )
+
         options.live = updater(config.getboolean("output", "live"), options.live)
 
     return command, options
