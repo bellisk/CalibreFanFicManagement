@@ -307,12 +307,14 @@ def download(options):
                 )
                 return
 
-    source = options.source
-    for s in source:
-        if s not in ["bookmarks", "later"]:
-            log("Valid 'source' options are 'bookmarks' or 'later', not {}"
-                .format(s))
-            return
+    source = ["bookmarks", "later"]
+    if len(options.source) > 0:
+        for s in options.source:
+            if s not in ["bookmarks", "later"]:
+                log("Valid 'source' options are 'bookmarks' or 'later', not {}"
+                    .format(s))
+                return
+        source = options.source
 
     oldest_date = None
     if options.since:

@@ -101,8 +101,7 @@ download    Download fics from AO3 and save to Calibre library
         "--source",
         action="store",
         dest="source",
-        default="bookmarks",
-        help="Comma-separated. Add 'bookmarks' to download bookmarks (default), 'later' to download works marked for later"
+        help="Comma-separated. Add 'bookmarks' to download bookmarks, 'later' to download works marked for later. Default is both."
     )
 
     option_parser.add_option(
