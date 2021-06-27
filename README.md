@@ -11,10 +11,9 @@ Planned:
 - deduplicating AO3 bookmarks in cases where I have both a series and individual
   works bookmarked
 - statistics about bookmarked/downloaded fics
-- download fics from Marked for Later as well as bookmarks
-- downloading fics back to a certain date, rather than up to a certain number
-- handling series links as well as work links
 - import from page with list of urls, e.g. collection or author page
+- import all works from author
+- import all works from your subscriptions
 
 ## Usage
 If you want to save bookmarks in a calibre library, you will need to install the
