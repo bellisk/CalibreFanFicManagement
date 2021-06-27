@@ -166,46 +166,25 @@ def downloader(args):
                 stderr=STDOUT,
                 stdin=PIPE,
             )
-            check_fff_output(force, res)
+            check_fff_output(res)
             metadata = get_metadata(res)
             series_options = get_series_options(metadata)
             tags_options = get_tags_options(metadata)
 
             if should_force_download(force, res):
-                output += log("\tForcing download update due to:", "WARNING", live)
-                if force:
-                    output += log("\t\tForce option set to true", "WARNING", live)
-                else:
-                    for line in res.split(b"\n"):
-                        if line:
-                            output += log("\t\t{}".format(str(line)), "WARNING", live)
+                output += log("\tForcing download update. FanFicFare error message:", "WARNING", live)
+                for line in res.split(b"\n"):
+                    if line == b"{":
+                        break
+                    output += log("\t\t{}".format(str(line)), "WARNING", live)
                 res = check_output(
-                    'fanficfare -u "{}" --force --update-cover'.format(cur),
+                    'cd "{}" && fanficfare -u "{}" --force --update-cover'.format(loc, cur),
                     shell=True,
                     stderr=STDOUT,
                     stdin=PIPE,
                 )
-                check_fff_output(force, res)
+                check_fff_output(res)
             cur = get_files(loc, ".epub", True)[0]
-
-            if story_id:
-                output += log(
-                    "\tRemoving {} from library".format(story_id), "BLUE", live
-                )
-                try:
-                    lock.acquire()
-                    res = check_output(
-                        "calibredb remove {} {}".format(path, story_id),
-                        shell=True,
-                        stderr=STDOUT,
-                        stdin=PIPE,
-                    )
-                    lock.release()
-                except BaseException:
-                    lock.release()
-                    if not live:
-                        print(output.strip())
-                    raise
 
             output += log("\tAdding {} to library".format(cur), "BLUE", live)
             try:
@@ -248,15 +227,34 @@ def downloader(args):
                 )
                 output += log("Added /Story-file to library with id 0", "GREEN", live)
                 output += log(e.output)
-            remove(cur)
+
+            if story_id:
+                output += log(
+                    "\tRemoving {} from library".format(story_id), "BLUE", live
+                )
+                try:
+                    lock.acquire()
+                    res = check_output(
+                        "calibredb remove {} {}".format(path, story_id),
+                        shell=True,
+                        stderr=STDOUT,
+                        stdin=PIPE,
+                    )
+                    lock.release()
+                except BaseException:
+                    lock.release()
+                    if not live:
+                        print(output.strip())
+                    raise
         else:
+            # We have no path to a calibre library, so just download the story.
             res = check_output(
                 'cd "{}" && fanficfare -u "{}" --update-cover'.format(loc, url),
                 shell=True,
                 stderr=STDOUT,
                 stdin=PIPE,
             )
-            check_fff_output(force, res)
+            check_fff_output(res)
             cur = get_files(loc, ".epub", True)[0]
             name = get_files(loc, ".epub", False)[0]
             rename(cur, name)
@@ -267,6 +265,7 @@ def downloader(args):
                 "GREEN",
                 live,
             )
+
         if not live:
             print(output.strip())
         rmtree(loc)
