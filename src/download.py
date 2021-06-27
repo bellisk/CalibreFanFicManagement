@@ -13,7 +13,12 @@ from tempfile import mkdtemp
 
 from .ao3_utils import get_ao3_bookmark_urls, get_ao3_marked_for_later_urls
 from .calibre_utils import get_series_options, get_tags_options
-from .exceptions import BadDataException, MoreChaptersLocallyException, StoryUpToDateException, TooManyRequestsException
+from .exceptions import (
+    BadDataException,
+    MoreChaptersLocallyException,
+    StoryUpToDateException,
+    TooManyRequestsException,
+)
 from .utils import get_files, log, touch
 
 story_name = re.compile("(.*)-.*")
@@ -172,13 +177,19 @@ def downloader(args):
             tags_options = get_tags_options(metadata)
 
             if should_force_download(force, res):
-                output += log("\tForcing download update. FanFicFare error message:", "WARNING", live)
+                output += log(
+                    "\tForcing download update. FanFicFare error message:",
+                    "WARNING",
+                    live,
+                )
                 for line in res.split(b"\n"):
                     if line == b"{":
                         break
                     output += log("\t\t{}".format(str(line)), "WARNING", live)
                 res = check_output(
-                    'cd "{}" && fanficfare -u "{}" --force --update-cover'.format(loc, cur),
+                    'cd "{}" && fanficfare -u "{}" --force --update-cover'.format(
+                        loc, cur
+                    ),
                     shell=True,
                     stderr=STDOUT,
                     stdin=PIPE,
@@ -311,15 +322,18 @@ def download(options):
     if len(options.source) > 0:
         for s in options.source:
             if s not in ["bookmarks", "later"]:
-                log("Valid 'source' options are 'bookmarks' or 'later', not {}"
-                    .format(s))
+                log(
+                    "Valid 'source' options are 'bookmarks' or 'later', not {}".format(
+                        s
+                    )
+                )
                 return
         source = options.source
 
     oldest_date = None
     if options.since:
         try:
-            oldest_date = datetime.strptime(options.since, '%d.%m.%Y')
+            oldest_date = datetime.strptime(options.since, "%d.%m.%Y")
         except ValueError:
             log("'since' option should have format 'DD.MM.YYYY'")
             return
@@ -348,7 +362,11 @@ def download(options):
         if "bookmarks" in source:
             log("Getting URLs from Bookmarks", "HEADER")
             urls |= get_ao3_bookmark_urls(
-                options.cookie, options.expand_series, options.max_count, options.user, oldest_date
+                options.cookie,
+                options.expand_series,
+                options.max_count,
+                options.user,
+                oldest_date,
             )
             url_count = len(urls) - url_count
             log("{} URLs from bookmarks".format(url_count), "GREEN")
@@ -375,5 +393,15 @@ def download(options):
         p = Pool(1, initializer=init, initargs=(l,))
         p.map(
             downloader,
-            [[url, inout_file, options.fanficfare_config, path, options.force, options.live] for url in urls],
+            [
+                [
+                    url,
+                    inout_file,
+                    options.fanficfare_config,
+                    path,
+                    options.force,
+                    options.live,
+                ]
+                for url in urls
+            ],
         )

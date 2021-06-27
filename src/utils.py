@@ -101,7 +101,7 @@ download    Download fics from AO3 and save to Calibre library
         "--source",
         action="store",
         dest="source",
-        help="Comma-separated. Add 'bookmarks' to download bookmarks, 'later' to download works marked for later. Default is both."
+        help="Comma-separated. Add 'bookmarks' to download bookmarks, 'later' to download works marked for later. Default is both.",
     )
 
     option_parser.add_option(
@@ -217,7 +217,7 @@ download    Download fics from AO3 and save to Calibre library
             config.getboolean("import", "dry_run"), options.dry_run
         )
         options.source = updater(config.get("import", "source").strip(), options.source)
-        options.source = options.source.split(',')
+        options.source = options.source.split(",")
         options.since = updater(config.get("import", "since").strip(), options.since)
 
         options.library = updater(
@@ -225,7 +225,8 @@ download    Download fics from AO3 and save to Calibre library
         )
         options.input = updater(config.get("locations", "input").strip(), options.input)
         options.fanficfare_config = updater(
-            config.get("locations", "fanficfare_config").strip(), options.fanficfare_config
+            config.get("locations", "fanficfare_config").strip(),
+            options.fanficfare_config,
         )
 
         options.live = updater(config.getboolean("output", "live"), options.live)
