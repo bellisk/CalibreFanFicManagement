@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 # encoding: utf-8
 
 from src.download import download
