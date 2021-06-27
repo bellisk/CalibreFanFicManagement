@@ -13,7 +13,7 @@ from tempfile import mkdtemp
 
 from .ao3_utils import get_ao3_bookmark_urls, get_ao3_marked_for_later_urls
 from .calibre_utils import get_series_options, get_tags_options
-from .exceptions import StoryUpToDateException
+from .exceptions import BadDataException, MoreChaptersLocallyException, StoryUpToDateException, TooManyRequestsException
 from .utils import get_files, log, touch
 
 story_name = re.compile("(.*)-.*")
@@ -28,9 +28,9 @@ no_url = re.compile("No story URL found in epub to update.")
 too_many_requests = re.compile(
     "Failed to read epub for update: \(HTTP Error 429: Too Many Requests\)"
 )
+chapter_difference = re.compile(".* contains \d* chapters, more than source: \d*.")
 
 # Responses from fanficfare that mean we should force-update the story
-chapter_difference = re.compile(".* contains \d* chapters, more than source: \d*.")
 # Our tmp epub was just created, so if this is the only reason not to update,
 # we should ignore it and do the update
 more_chapters = re.compile(
@@ -38,23 +38,25 @@ more_chapters = re.compile(
 )
 
 
-def check_fff_output(force, output):
+def check_fff_output(output):
     output = output.decode("utf-8")
-    if not force and equal_chapters.search(output):
+    if equal_chapters.search(output):
         raise StoryUpToDateException()
     if bad_chapters.search(output):
-        raise ValueError(
+        raise BadDataException(
             "Something is messed up with the site or the epub. No chapters found."
         )
     if no_url.search(output):
-        raise ValueError("No URL in epub to update from. Fix the metadata.")
+        raise BadDataException("No URL in epub to update from. Fix the metadata.")
     if too_many_requests.search(output):
-        raise ValueError("Too many requests for now.")
+        raise TooManyRequestsException()
+    if chapter_difference.search(output):
+        raise MoreChaptersLocallyException()
 
 
 def should_force_download(force, output):
     output = output.decode("utf-8")
-    return force and (chapter_difference.search(output) or more_chapters.search(output))
+    return force and more_chapters.search(output)
 
 
 def get_metadata(output):
@@ -164,46 +166,25 @@ def downloader(args):
                 stderr=STDOUT,
                 stdin=PIPE,
             )
-            check_fff_output(force, res)
+            check_fff_output(res)
             metadata = get_metadata(res)
             series_options = get_series_options(metadata)
             tags_options = get_tags_options(metadata)
 
             if should_force_download(force, res):
-                output += log("\tForcing download update due to:", "WARNING", live)
-                if force:
-                    output += log("\t\tForce option set to true", "WARNING", live)
-                else:
-                    for line in res.split(b"\n"):
-                        if line:
-                            output += log("\t\t{}".format(str(line)), "WARNING", live)
+                output += log("\tForcing download update. FanFicFare error message:", "WARNING", live)
+                for line in res.split(b"\n"):
+                    if line == b"{":
+                        break
+                    output += log("\t\t{}".format(str(line)), "WARNING", live)
                 res = check_output(
-                    'fanficfare -u "{}" --force --update-cover'.format(cur),
+                    'cd "{}" && fanficfare -u "{}" --force --update-cover'.format(loc, cur),
                     shell=True,
                     stderr=STDOUT,
                     stdin=PIPE,
                 )
-                check_fff_output(force, res)
+                check_fff_output(res)
             cur = get_files(loc, ".epub", True)[0]
-
-            if story_id:
-                output += log(
-                    "\tRemoving {} from library".format(story_id), "BLUE", live
-                )
-                try:
-                    lock.acquire()
-                    res = check_output(
-                        "calibredb remove {} {}".format(path, story_id),
-                        shell=True,
-                        stderr=STDOUT,
-                        stdin=PIPE,
-                    )
-                    lock.release()
-                except BaseException:
-                    lock.release()
-                    if not live:
-                        print(output.strip())
-                    raise
 
             output += log("\tAdding {} to library".format(cur), "BLUE", live)
             try:
@@ -246,15 +227,34 @@ def downloader(args):
                 )
                 output += log("Added /Story-file to library with id 0", "GREEN", live)
                 output += log(e.output)
-            remove(cur)
+
+            if story_id:
+                output += log(
+                    "\tRemoving {} from library".format(story_id), "BLUE", live
+                )
+                try:
+                    lock.acquire()
+                    res = check_output(
+                        "calibredb remove {} {}".format(path, story_id),
+                        shell=True,
+                        stderr=STDOUT,
+                        stdin=PIPE,
+                    )
+                    lock.release()
+                except BaseException:
+                    lock.release()
+                    if not live:
+                        print(output.strip())
+                    raise
         else:
+            # We have no path to a calibre library, so just download the story.
             res = check_output(
                 'cd "{}" && fanficfare -u "{}" --update-cover'.format(loc, url),
                 shell=True,
                 stderr=STDOUT,
                 stdin=PIPE,
             )
-            check_fff_output(force, res)
+            check_fff_output(res)
             cur = get_files(loc, ".epub", True)[0]
             name = get_files(loc, ".epub", False)[0]
             rename(cur, name)
@@ -265,6 +265,7 @@ def downloader(args):
                 "GREEN",
                 live,
             )
+
         if not live:
             print(output.strip())
         rmtree(loc)
