@@ -306,20 +306,12 @@ def download(options):
                 )
                 return
 
-    inout_file = options.input
-    touch(inout_file)
-
-    with open(inout_file, "r") as fp:
-        urls = set([x.replace("\n", "") for x in fp.readlines()])
-
-    with open(inout_file, "w") as fp:
-        fp.write("")
-
     source = options.source
-    if source not in ["bookmarks", "later"]:
-        log("'source' option should be one of 'bookmarks' or 'later', not {}"
-            .format(source))
-        return
+    for s in source:
+        if s not in ["bookmarks", "later"]:
+            log("Valid 'source' options are 'bookmarks' or 'later', not {}"
+                .format(s))
+            return
 
     oldest_date = None
     if options.since:
@@ -329,17 +321,34 @@ def download(options):
             log("'since' option should have format 'DD.MM.YYYY'")
             return
 
+    inout_file = options.input
+    touch(inout_file)
+
+    with open(inout_file, "r") as fp:
+        urls = set([x.replace("\n", "") for x in fp.readlines()])
+
+    url_count = len(urls)
+    log("{} URLs from file".format(url_count), "GREEN")
+
+    with open(inout_file, "w") as fp:
+        fp.write("")
+
     try:
-        if source == "later":
-            log("Getting URLs from Marked for Later")
+        if "later" in source:
+            log("Getting URLs from Marked for Later", "HEADER")
             urls |= get_ao3_marked_for_later_urls(
                 options.cookie, options.max_count, options.user, oldest_date
             )
-        else:
-            log("Getting URLs from Bookmarks")
+            url_count = len(urls) - url_count
+            log("{} URLs from Marked for Later".format(url_count), "GREEN")
+
+        if "bookmarks" in source:
+            log("Getting URLs from Bookmarks", "HEADER")
             urls |= get_ao3_bookmark_urls(
                 options.cookie, options.expand_series, options.max_count, options.user, oldest_date
             )
+            url_count = len(urls) - url_count
+            log("{} URLs from bookmarks".format(url_count), "GREEN")
     except BaseException:
         with open(inout_file, "w") as fp:
             for cur in urls:

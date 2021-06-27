@@ -101,7 +101,8 @@ download    Download fics from AO3 and save to Calibre library
         "--source",
         action="store",
         dest="source",
-        help="'bookmarks' to download bookmarks (default), 'later' to download works marked for later"
+        default="bookmarks",
+        help="Comma-separated. Add 'bookmarks' to download bookmarks (default), 'later' to download works marked for later"
     )
 
     option_parser.add_option(
@@ -217,6 +218,7 @@ download    Download fics from AO3 and save to Calibre library
             config.getboolean("import", "dry_run"), options.dry_run
         )
         options.source = updater(config.get("import", "source").strip(), options.source)
+        options.source = options.source.split(',')
         options.since = updater(config.get("import", "since").strip(), options.since)
 
         options.library = updater(
