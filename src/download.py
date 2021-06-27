@@ -13,7 +13,7 @@ from tempfile import mkdtemp
 
 from .ao3_utils import get_ao3_bookmark_urls, get_ao3_marked_for_later_urls
 from .calibre_utils import get_series_options, get_tags_options
-from .exceptions import StoryUpToDateException
+from .exceptions import BadDataException, MoreChaptersLocallyException, StoryUpToDateException, TooManyRequestsException
 from .utils import get_files, log, touch
 
 story_name = re.compile("(.*)-.*")
@@ -28,9 +28,9 @@ no_url = re.compile("No story URL found in epub to update.")
 too_many_requests = re.compile(
     "Failed to read epub for update: \(HTTP Error 429: Too Many Requests\)"
 )
+chapter_difference = re.compile(".* contains \d* chapters, more than source: \d*.")
 
 # Responses from fanficfare that mean we should force-update the story
-chapter_difference = re.compile(".* contains \d* chapters, more than source: \d*.")
 # Our tmp epub was just created, so if this is the only reason not to update,
 # we should ignore it and do the update
 more_chapters = re.compile(
@@ -38,23 +38,25 @@ more_chapters = re.compile(
 )
 
 
-def check_fff_output(force, output):
+def check_fff_output(output):
     output = output.decode("utf-8")
-    if not force and equal_chapters.search(output):
+    if equal_chapters.search(output):
         raise StoryUpToDateException()
     if bad_chapters.search(output):
-        raise ValueError(
+        raise BadDataException(
             "Something is messed up with the site or the epub. No chapters found."
         )
     if no_url.search(output):
-        raise ValueError("No URL in epub to update from. Fix the metadata.")
+        raise BadDataException("No URL in epub to update from. Fix the metadata.")
     if too_many_requests.search(output):
-        raise ValueError("Too many requests for now.")
+        raise TooManyRequestsException()
+    if chapter_difference.search(output):
+        raise MoreChaptersLocallyException()
 
 
 def should_force_download(force, output):
     output = output.decode("utf-8")
-    return force and (chapter_difference.search(output) or more_chapters.search(output))
+    return force and more_chapters.search(output)
 
 
 def get_metadata(output):
