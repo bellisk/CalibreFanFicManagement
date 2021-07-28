@@ -360,14 +360,28 @@ def download(options):
             log("{} URLs from Marked for Later".format(url_count), "GREEN")
 
         if "bookmarks" in source:
-            log("Getting URLs from Bookmarks", "HEADER")
+            log("Getting URLs from Bookmarks (sorted by bookmarking date)", "HEADER")
             urls |= get_ao3_bookmark_urls(
                 options.cookie,
                 options.expand_series,
                 options.max_count,
                 options.user,
                 oldest_date,
+                sort_by_updated=False
             )
+            # If we're getting bookmarks back to oldest_date, this should
+            # include works that have been updated since that date, as well as
+            # works bookmarked since that date.
+            if oldest_date:
+                log("Getting URLs from Bookmarks (sorted by updated date)", "HEADER")
+                urls |= get_ao3_bookmark_urls(
+                    options.cookie,
+                    options.expand_series,
+                    options.max_count,
+                    options.user,
+                    oldest_date,
+                    sort_by_updated=True
+                )
             url_count = len(urls) - url_count
             log("{} URLs from bookmarks".format(url_count), "GREEN")
     except BaseException:
