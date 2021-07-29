@@ -243,6 +243,9 @@ def downloader(args):
                 output += log("Added /Story-file to library with id 0", "GREEN", live)
                 output += log(e.output)
 
+            # Set the wordcount of the story using the new story id
+            # calibredb set_custom --with-library "/home/rae/Calibre Library" words 6369 10000
+
             if story_id:
                 output += log(
                     "\tRemoving {} from library".format(story_id), "BLUE", live
@@ -314,6 +317,11 @@ def download(options):
         try:
             with open(devnull, "w") as nullout:
                 call(["calibredb"], stdout=nullout, stderr=nullout)
+            # Todo: check that Words column exists:
+            # call calibredb custom_columns --with-library "/home/rae/Calibre Library"
+            # and check that `words ([some int])` is in the output
+            # Todo: if it's not present, create it:
+            # call calibredb add_custom_column --with-library "/home/rae/Calibre Library" words Words int
         except OSError as e:
             if e.errno == ENOENT:
                 log(
