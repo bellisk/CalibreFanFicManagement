@@ -425,9 +425,8 @@ def download(options):
             urls |= get_ao3_marked_for_later_urls(
                 options.cookie, options.max_count, options.user, oldest_date
             )
-            url_count = len(urls) - url_count
-            log("{} URLs from Marked for Later".format(url_count), "GREEN")
-
+            log("{} URLs from Marked for Later".format(len(urls) - url_count), "GREEN")
+            url_count = len(urls)
         if "bookmarks" in source:
             log("Getting URLs from Bookmarks (sorted by bookmarking date)", "HEADER")
             urls |= get_ao3_bookmark_urls(
@@ -451,8 +450,7 @@ def download(options):
                     oldest_date,
                     sort_by_updated=True
                 )
-            url_count = len(urls) - url_count
-            log("{} URLs from bookmarks".format(url_count), "GREEN")
+            log("{} URLs from bookmarks".format(len(urls) - url_count), "GREEN")
     except BaseException:
         with open(inout_file, "w") as fp:
             for cur in urls:
