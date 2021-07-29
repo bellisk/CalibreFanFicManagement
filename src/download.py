@@ -232,6 +232,7 @@ def downloader(args):
                 output += log(
                     "\tAdded {} to library with id {}".format(cur, res), "GREEN", live
                 )
+                new_story_id = str(res)
             except CalledProcessError as e:
                 lock.release()
                 output += log(
