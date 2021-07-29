@@ -85,6 +85,7 @@ def get_metadata(output):
 
 
 def get_url_without_chapter(url):
+    url = url.replace('http://', 'https://')
     m = story_url.match(url)
     return m.group(1)
 
@@ -119,7 +120,7 @@ def get_new_story_id(bytestring):
 
 def downloader(args):
     url, inout_file, fanficfare_config, path, force, live = args
-    url = url.replace('http://', 'https://')
+    url = get_url_without_chapter(url)
 
     loc = mkdtemp()
     output = ""
@@ -254,7 +255,7 @@ def downloader(args):
                 lock.acquire()
                 res = check_output(
                     'calibredb search "Identifiers:url:{}" {}'.format(
-                        get_url_without_chapter(url), path
+                        url, path
                     ),
                     shell=True,
                     stderr=STDOUT,
