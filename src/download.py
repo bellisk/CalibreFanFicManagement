@@ -86,6 +86,11 @@ def get_url_without_chapter(url):
     return m.group(1)
 
 
+def get_new_story_id(bytestring):
+    # We get something like b'123,124,125' and want the last id as a string
+    return str(bytestring).split(',')[-1].strip("'")
+
+
 def downloader(args):
     url, inout_file, fanficfare_config, path, force, live = args
     url = url.replace('http://', 'https://')
@@ -94,6 +99,7 @@ def downloader(args):
     output = ""
     output += log("Working with url {}".format(url), "HEADER", live)
     story_id = None
+    new_story_id = None
     try:
         if path:
             try:
@@ -177,7 +183,7 @@ def downloader(args):
             metadata = get_metadata(res)
             series_options = get_series_options(metadata)
             tags_options = get_tags_options(metadata)
-            words = get_word_count(metadata)
+            word_count = get_word_count(metadata)
 
             if should_force_download(force, res):
                 output += log(
@@ -232,7 +238,7 @@ def downloader(args):
                 output += log(
                     "\tAdded {} to library with id {}".format(cur, res), "GREEN", live
                 )
-                new_story_id = str(res)
+                new_story_id = get_new_story_id(res)
             except CalledProcessError as e:
                 lock.release()
                 output += log(
@@ -242,9 +248,31 @@ def downloader(args):
                 )
                 output += log("Added /Story-file to library with id 0", "GREEN", live)
                 output += log(e.output)
+                raise
 
             # Set the wordcount of the story using the new story id
             # calibredb set_custom --with-library "/home/rae/Calibre Library" words 6369 10000
+            if new_story_id:
+                output += log("\tSetting word count of {} on story {}".format(word_count, new_story_id), "BLUE", live)
+                try:
+                    lock.acquire()
+                    res = check_output(
+                        'calibredb set_custom {} words {} {}'.format(
+                            path, new_story_id, word_count
+                        ),
+                        shell=True,
+                        stderr=STDOUT,
+                        stdin=PIPE,
+                    )
+                    lock.release()
+                except CalledProcessError as e:
+                    lock.release()
+                    output += log(
+                        "Error setting word count.",
+                        "WARNING",
+                        live,
+                    )
+                    output += log(e.output)
 
             if story_id:
                 output += log(

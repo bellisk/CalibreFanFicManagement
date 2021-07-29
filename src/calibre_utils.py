@@ -1,4 +1,5 @@
 # encoding: utf-8
+import locale
 import re
 
 series_pattern = re.compile("(.*) \[(.*)\]")
@@ -39,5 +40,4 @@ def get_tags_options(metadata):
 
 
 def get_word_count(metadata):
-    # get word count from field numWords and return it as an integer
-    pass
+    return locale.atoi(metadata.get("numWords", 0))
