@@ -86,6 +86,29 @@ def get_url_without_chapter(url):
     return m.group(1)
 
 
+def check_or_create_words_column(path):
+    res = check_output(
+        'calibredb custom_columns {}'.format(
+            path
+        ),
+        shell=True,
+        stderr=STDOUT,
+        stdin=PIPE,
+    )
+    columns = str(res).split('\\n')
+    for c in columns:
+        if c.startswith('words ('):
+            return
+
+    log("Adding custom column 'words' to Calibre library")
+    check_output(
+        "calibredb add_custom_column {} words Words int".format(path),
+        shell=True,
+        stderr=STDOUT,
+        stdin=PIPE,
+    )
+
+
 def get_new_story_id(bytestring):
     # We get something like b'123,124,125' and want the last id as a string
     return str(bytestring).split(',')[-1].strip("'")
@@ -250,8 +273,6 @@ def downloader(args):
                 output += log(e.output)
                 raise
 
-            # Set the wordcount of the story using the new story id
-            # calibredb set_custom --with-library "/home/rae/Calibre Library" words 6369 10000
             if new_story_id:
                 output += log("\tSetting word count of {} on story {}".format(word_count, new_story_id), "BLUE", live)
                 try:
@@ -345,18 +366,22 @@ def download(options):
         try:
             with open(devnull, "w") as nullout:
                 call(["calibredb"], stdout=nullout, stderr=nullout)
-            # Todo: check that Words column exists:
-            # call calibredb custom_columns --with-library "/home/rae/Calibre Library"
-            # and check that `words ([some int])` is in the output
-            # Todo: if it's not present, create it:
-            # call calibredb add_custom_column --with-library "/home/rae/Calibre Library" words Words int
         except OSError as e:
             if e.errno == ENOENT:
                 log(
-                    "Calibredb is not installed on this system. Cannot search the calibre library or update it.",
+                    "Calibredb is not installed on this system. Cannot search the Calibre library or update it.",
                     "FAIL",
                 )
                 return
+        try:
+            check_or_create_words_column(path)
+        except CalledProcessError as e:
+            log(
+                "Error while making sure 'words' column exists in Calibre library",
+                "FAIL",
+            )
+            log(e.output)
+            return
 
     source = ["bookmarks", "later"]
     if len(options.source) > 0:
