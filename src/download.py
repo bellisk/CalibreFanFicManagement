@@ -135,14 +135,14 @@ def downloader(args):
                 )
                 lock.release()
             except CalledProcessError:
-                # story is not in calibre
+                # story is not in Calibre
                 lock.release()
                 cur = url
 
             if story_id is not None:
                 story_id = story_id.decode("utf-8")
                 output += log(
-                    "\tStory is in calibre with id {}".format(story_id), "BLUE", live
+                    "\tStory is in Calibre with id {}".format(story_id), "BLUE", live
                 )
                 output += log("\tExporting file", "BLUE", live)
                 output += log(
@@ -171,13 +171,13 @@ def downloader(args):
                         live,
                     )
                 except IndexError:
-                    # calibre doesn't have this story in epub format.
+                    # Calibre doesn't have this story in epub format.
                     # the ebook-convert and ebook-meta CLIs can't save an epub
                     # with a source url in the way fanficfare expects, so
                     # we'll download a new copy as if we didn't have it at all
                     cur = url
                     output += log(
-                        '\tNo epub for story id "{}" in calibre'.format(story_id),
+                        '\tNo epub for story id "{}" in Calibre'.format(story_id),
                         "BLUE",
                         live,
                     )
@@ -314,7 +314,7 @@ def downloader(args):
                         print(output.strip())
                     raise
         else:
-            # We have no path to a calibre library, so just download the story.
+            # We have no path to a Calibre library, so just download the story.
             res = check_output(
                 'cd "{}" && fanficfare -u "{}" --update-cover'.format(loc, url),
                 shell=True,
@@ -463,7 +463,7 @@ def download(options):
 
     if options.dry_run:
         log(
-            "Not adding any stories to calibre because dry-run is set to True", "HEADER"
+            "Not adding any stories to Calibre because dry-run is set to True", "HEADER"
         )
 
         return
