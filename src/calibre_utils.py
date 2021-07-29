@@ -16,11 +16,14 @@ def get_series_options(metadata):
 
 
 def get_tags_options(metadata):
+    # Todo: also get the number of words out with key `numWords` and save that as new column
+    # (not in this function)
     tag_keys = [
         "ao3categories",
         "characters",
         "fandoms",
         "freeformtags",
+        "rating",
         "ships",
         "status",
         "warnings",
