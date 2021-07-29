@@ -12,7 +12,7 @@ from subprocess import PIPE, STDOUT, CalledProcessError, call, check_output
 from tempfile import mkdtemp
 
 from .ao3_utils import get_ao3_bookmark_urls, get_ao3_marked_for_later_urls
-from .calibre_utils import get_series_options, get_tags_options
+from .calibre_utils import get_series_options, get_tags_options, get_word_count
 from .exceptions import (
     BadDataException,
     MoreChaptersLocallyException,
@@ -177,6 +177,7 @@ def downloader(args):
             metadata = get_metadata(res)
             series_options = get_series_options(metadata)
             tags_options = get_tags_options(metadata)
+            words = get_word_count(metadata)
 
             if should_force_download(force, res):
                 output += log(
