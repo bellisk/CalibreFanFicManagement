@@ -25,7 +25,6 @@ story_name = re.compile("(.*)-.*")
 story_url = re.compile("(https://archiveofourown.org/works/\d*).*")
 
 # Responses from fanficfare that mean we won't update the story
-equal_chapters = re.compile(".* already contains \d* chapters.")
 bad_chapters = re.compile(
     ".* doesn't contain any recognizable chapters, probably from a different source.  Not updating."
 )
@@ -35,18 +34,22 @@ too_many_requests = re.compile(
 )
 chapter_difference = re.compile(".* contains \d* chapters, more than source: \d*.")
 
-# Responses from fanficfare that mean we should force-update the story
+# Response from fanficfare that mean we should force-update the story
+# We might have the same number of chapters but know that there have been
+# updates we want to get
+equal_chapters = re.compile(".* already contains \d* chapters.")
+
+# Response from fanficfare that means we should update the story, even if
+# force is set to false
 # Our tmp epub was just created, so if this is the only reason not to update,
 # we should ignore it and do the update
-more_chapters = re.compile(
+updated_more_recently = re.compile(
     ".*File\(.*\.epub\) Updated\(.*\) more recently than Story\(.*\) - Skipping"
 )
 
 
 def check_fff_output(output):
     output = output.decode("utf-8")
-    if equal_chapters.search(output):
-        raise StoryUpToDateException()
     if bad_chapters.search(output):
         raise BadDataException(
             "Something is messed up with the site or the epub. No chapters found."
@@ -61,7 +64,7 @@ def check_fff_output(output):
 
 def should_force_download(force, output):
     output = output.decode("utf-8")
-    return force and more_chapters.search(output)
+    return updated_more_recently.search(output) or (force and equal_chapters.search(output))
 
 
 def get_metadata(output):
