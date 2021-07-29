@@ -88,6 +88,8 @@ def get_url_without_chapter(url):
 
 def downloader(args):
     url, inout_file, fanficfare_config, path, force, live = args
+    url = url.replace('http://', 'https://')
+
     loc = mkdtemp()
     output = ""
     output += log("Working with url {}".format(url), "HEADER", live)
