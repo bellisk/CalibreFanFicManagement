@@ -12,7 +12,7 @@ from subprocess import PIPE, STDOUT, CalledProcessError, call, check_output
 from tempfile import mkdtemp
 
 from .ao3_utils import get_ao3_bookmark_urls, get_ao3_marked_for_later_urls
-from .calibre_utils import get_series_options, get_tags_options
+from .calibre_utils import get_series_options, get_tags_options, get_word_count
 from .exceptions import (
     BadDataException,
     MoreChaptersLocallyException,
@@ -86,6 +86,34 @@ def get_url_without_chapter(url):
     return m.group(1)
 
 
+def check_or_create_words_column(path):
+    res = check_output(
+        'calibredb custom_columns {}'.format(
+            path
+        ),
+        shell=True,
+        stderr=STDOUT,
+        stdin=PIPE,
+    )
+    columns = str(res).split('\\n')
+    for c in columns:
+        if c.startswith('words ('):
+            return
+
+    log("Adding custom column 'words' to Calibre library")
+    check_output(
+        "calibredb add_custom_column {} words Words int".format(path),
+        shell=True,
+        stderr=STDOUT,
+        stdin=PIPE,
+    )
+
+
+def get_new_story_id(bytestring):
+    # We get something like b'123,124,125' and want the last id as a string
+    return str(bytestring).split(',')[-1].strip("'")
+
+
 def downloader(args):
     url, inout_file, fanficfare_config, path, force, live = args
     url = url.replace('http://', 'https://')
@@ -94,6 +122,7 @@ def downloader(args):
     output = ""
     output += log("Working with url {}".format(url), "HEADER", live)
     story_id = None
+    new_story_id = None
     try:
         if path:
             try:
@@ -106,14 +135,14 @@ def downloader(args):
                 )
                 lock.release()
             except CalledProcessError:
-                # story is not in calibre
+                # story is not in Calibre
                 lock.release()
                 cur = url
 
             if story_id is not None:
                 story_id = story_id.decode("utf-8")
                 output += log(
-                    "\tStory is in calibre with id {}".format(story_id), "BLUE", live
+                    "\tStory is in Calibre with id {}".format(story_id), "BLUE", live
                 )
                 output += log("\tExporting file", "BLUE", live)
                 output += log(
@@ -142,13 +171,13 @@ def downloader(args):
                         live,
                     )
                 except IndexError:
-                    # calibre doesn't have this story in epub format.
+                    # Calibre doesn't have this story in epub format.
                     # the ebook-convert and ebook-meta CLIs can't save an epub
                     # with a source url in the way fanficfare expects, so
                     # we'll download a new copy as if we didn't have it at all
                     cur = url
                     output += log(
-                        '\tNo epub for story id "{}" in calibre'.format(story_id),
+                        '\tNo epub for story id "{}" in Calibre'.format(story_id),
                         "BLUE",
                         live,
                     )
@@ -177,6 +206,7 @@ def downloader(args):
             metadata = get_metadata(res)
             series_options = get_series_options(metadata)
             tags_options = get_tags_options(metadata)
+            word_count = get_word_count(metadata)
 
             if should_force_download(force, res):
                 output += log(
@@ -231,6 +261,7 @@ def downloader(args):
                 output += log(
                     "\tAdded {} to library with id {}".format(cur, res), "GREEN", live
                 )
+                new_story_id = get_new_story_id(res)
             except CalledProcessError as e:
                 lock.release()
                 output += log(
@@ -240,6 +271,29 @@ def downloader(args):
                 )
                 output += log("Added /Story-file to library with id 0", "GREEN", live)
                 output += log(e.output)
+                raise
+
+            if new_story_id:
+                output += log("\tSetting word count of {} on story {}".format(word_count, new_story_id), "BLUE", live)
+                try:
+                    lock.acquire()
+                    res = check_output(
+                        'calibredb set_custom {} words {} {}'.format(
+                            path, new_story_id, word_count
+                        ),
+                        shell=True,
+                        stderr=STDOUT,
+                        stdin=PIPE,
+                    )
+                    lock.release()
+                except CalledProcessError as e:
+                    lock.release()
+                    output += log(
+                        "Error setting word count.",
+                        "WARNING",
+                        live,
+                    )
+                    output += log(e.output)
 
             if story_id:
                 output += log(
@@ -260,7 +314,7 @@ def downloader(args):
                         print(output.strip())
                     raise
         else:
-            # We have no path to a calibre library, so just download the story.
+            # We have no path to a Calibre library, so just download the story.
             res = check_output(
                 'cd "{}" && fanficfare -u "{}" --update-cover'.format(loc, url),
                 shell=True,
@@ -315,10 +369,19 @@ def download(options):
         except OSError as e:
             if e.errno == ENOENT:
                 log(
-                    "Calibredb is not installed on this system. Cannot search the calibre library or update it.",
+                    "Calibredb is not installed on this system. Cannot search the Calibre library or update it.",
                     "FAIL",
                 )
                 return
+        try:
+            check_or_create_words_column(path)
+        except CalledProcessError as e:
+            log(
+                "Error while making sure 'words' column exists in Calibre library",
+                "FAIL",
+            )
+            log(e.output)
+            return
 
     source = ["bookmarks", "later"]
     if len(options.source) > 0:
@@ -400,7 +463,7 @@ def download(options):
 
     if options.dry_run:
         log(
-            "Not adding any stories to calibre because dry-run is set to True", "HEADER"
+            "Not adding any stories to Calibre because dry-run is set to True", "HEADER"
         )
 
         return

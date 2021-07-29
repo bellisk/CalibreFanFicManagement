@@ -1,4 +1,5 @@
 # encoding: utf-8
+import locale
 import re
 
 series_pattern = re.compile("(.*) \[(.*)\]")
@@ -16,8 +17,6 @@ def get_series_options(metadata):
 
 
 def get_tags_options(metadata):
-    # Todo: also get the number of words out with key `numWords` and save that as new column
-    # (not in this function)
     tag_keys = [
         "ao3categories",
         "characters",
@@ -38,3 +37,7 @@ def get_tags_options(metadata):
                 opts += '"{}",'.format("fanfic." + key + "." + tag)
 
     return opts
+
+
+def get_word_count(metadata):
+    return locale.atoi(metadata.get("numWords", 0))
