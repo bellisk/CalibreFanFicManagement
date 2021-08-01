@@ -364,6 +364,57 @@ def init(l):
     lock = l
 
 
+def get_urls(inout_file, source, options, oldest_date):
+    with open(inout_file, "r") as fp:
+        urls = set([x.replace("\n", "") for x in fp.readlines()])
+
+    url_count = len(urls)
+    log("{} URLs from file".format(url_count), "GREEN")
+
+    with open(inout_file, "w") as fp:
+        fp.write("")
+
+    try:
+        if "later" in source:
+            log("Getting URLs from Marked for Later", "HEADER")
+            urls |= get_ao3_marked_for_later_urls(
+                options.cookie, options.max_count, options.user, oldest_date
+            )
+            log("{} URLs from Marked for Later".format(len(urls) - url_count), "GREEN")
+            url_count = len(urls)
+        if "bookmarks" in source:
+            log("Getting URLs from Bookmarks (sorted by bookmarking date)", "HEADER")
+            urls |= get_ao3_bookmark_urls(
+                options.cookie,
+                options.expand_series,
+                options.max_count,
+                options.user,
+                oldest_date,
+                sort_by_updated=False,
+            )
+            # If we're getting bookmarks back to oldest_date, this should
+            # include works that have been updated since that date, as well as
+            # works bookmarked since that date.
+            if oldest_date:
+                log("Getting URLs from Bookmarks (sorted by updated date)", "HEADER")
+                urls |= get_ao3_bookmark_urls(
+                    options.cookie,
+                    options.expand_series,
+                    options.max_count,
+                    options.user,
+                    oldest_date,
+                    sort_by_updated=True,
+                )
+            log("{} URLs from bookmarks".format(len(urls) - url_count), "GREEN")
+    except Exception as e:
+        with open(inout_file, "w") as fp:
+            for cur in urls:
+                fp.write("{}\n".format(cur))
+        log("Error getting urls: {}".format(e.output.decode("utf-8")))
+
+    return urls
+
+
 def download(options):
     if not (options.user and options.cookie):
         raise ValueError("User and Cookie are required for downloading from AO3")
@@ -414,52 +465,7 @@ def download(options):
     inout_file = options.input
     touch(inout_file)
 
-    with open(inout_file, "r") as fp:
-        urls = set([x.replace("\n", "") for x in fp.readlines()])
-
-    url_count = len(urls)
-    log("{} URLs from file".format(url_count), "GREEN")
-
-    with open(inout_file, "w") as fp:
-        fp.write("")
-
-    try:
-        if "later" in source:
-            log("Getting URLs from Marked for Later", "HEADER")
-            urls |= get_ao3_marked_for_later_urls(
-                options.cookie, options.max_count, options.user, oldest_date
-            )
-            log("{} URLs from Marked for Later".format(len(urls) - url_count), "GREEN")
-            url_count = len(urls)
-        if "bookmarks" in source:
-            log("Getting URLs from Bookmarks (sorted by bookmarking date)", "HEADER")
-            urls |= get_ao3_bookmark_urls(
-                options.cookie,
-                options.expand_series,
-                options.max_count,
-                options.user,
-                oldest_date,
-                sort_by_updated=False,
-            )
-            # If we're getting bookmarks back to oldest_date, this should
-            # include works that have been updated since that date, as well as
-            # works bookmarked since that date.
-            if oldest_date:
-                log("Getting URLs from Bookmarks (sorted by updated date)", "HEADER")
-                urls |= get_ao3_bookmark_urls(
-                    options.cookie,
-                    options.expand_series,
-                    options.max_count,
-                    options.user,
-                    oldest_date,
-                    sort_by_updated=True,
-                )
-            log("{} URLs from bookmarks".format(len(urls) - url_count), "GREEN")
-    except BaseException:
-        with open(inout_file, "w") as fp:
-            for cur in urls:
-                fp.write("{}\n".format(cur))
-        return
+    urls = get_urls(inout_file, source, options, oldest_date)
 
     if not urls:
         return
