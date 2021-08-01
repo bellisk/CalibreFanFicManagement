@@ -99,7 +99,7 @@ def check_or_create_words_column(path):
         stderr=STDOUT,
         stdin=PIPE,
     )
-    columns = str(res).split('\\n')
+    columns = res.decode("utf-8").split('\n')
     for c in columns:
         if c.startswith('words ('):
             return
@@ -115,7 +115,7 @@ def check_or_create_words_column(path):
 
 def get_new_story_id(bytestring):
     # We get something like b'123,124,125' and want the last id as a string
-    return str(bytestring).split(',')[-1].strip("'")
+    return bytestring.decode("utf-8").split(',')[-1]
 
 
 def downloader(args):
