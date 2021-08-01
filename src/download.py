@@ -456,7 +456,7 @@ def download(options):
             if s not in SOURCES:
                 log(
                     "Valid 'source' options are {}, not {}".format(
-                        ', '.join(SOURCES), s
+                        ", ".join(SOURCES), s
                     )
                 )
                 return
