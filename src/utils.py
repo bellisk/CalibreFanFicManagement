@@ -112,7 +112,8 @@ Default is 'bookmarks,later'.""",
         "--max-count",
         action="store",
         dest="max_count",
-        help="Maximum number of fics to get from AO3. Enter 'none' (or any string) to get all bookmarks.",
+        help="""Maximum number of fics to get from AO3. Enter 'none' (or any string) to
+get all bookmarks.""",
     )
 
     option_parser.add_option(
@@ -120,7 +121,8 @@ Default is 'bookmarks,later'.""",
         "--since",
         action="store",
         dest="since",
-        help="DD.MM.YYYY. The date since which fics should be downloaded (date bookmarked for bookmarks, date last visited for marked-for-later).",
+        help="""DD.MM.YYYY. The date since which fics should be downloaded (date 
+bookmarked for bookmarks, date last visited for marked-for-later).""",
     )
 
     option_parser.add_option(
@@ -136,7 +138,8 @@ Default is 'bookmarks,later'.""",
         "--force",
         action="store",
         dest="force",
-        help="Whether to force downloads of stories even when they have the same number of chapters locally as online.",
+        help="""Whether to force downloads of stories even when they have the same
+number of chapters locally as online.""",
     )
 
     option_parser.add_option(
@@ -144,7 +147,9 @@ Default is 'bookmarks,later'.""",
         "--input",
         action="store",
         dest="input",
-        help="Error file. Any urls that fail will be output here, and file will be read to find any urls that failed previously. If file does not exist will create. File is overwitten every time the program is run.",
+        help="""Error file. Any urls that fail will be output here, and file will be
+read to find any urls that failed previously. If file does not exist will create. File
+is overwitten every time the program is run.""",
     )
 
     option_parser.add_option(
@@ -152,7 +157,8 @@ Default is 'bookmarks,later'.""",
         "--library",
         action="store",
         dest="library",
-        help="calibre library db location. If none is passed, then this merely scrapes the AO3 bookmarks and error file for new stories and downloads them into the current directory.",
+        help="""calibre library db location. If none is passed, then this merely 
+downloads stories into the current directory as epub files.""",
     )
 
     option_parser.add_option(
@@ -168,7 +174,9 @@ Default is 'bookmarks,later'.""",
         "--config",
         action="store",
         dest="config",
-        help="Config file for inputs. Blank config file is provided. No default. Commandline options overrule config file. Do not put any quotation marks in the options.",
+        help="""Config file for inputs. Blank config file is provided. No default.
+Commandline options overrule config file.
+Do not put any quotation marks in the options.""",
     )
 
     option_parser.add_option(
@@ -184,7 +192,8 @@ Default is 'bookmarks,later'.""",
         "--output",
         action="store_true",
         dest="live",
-        help="Include this if you want all the output to be saved and posted live. Useful when multithreading.",
+        help="""Include this if you want all the output to be saved and posted live.
+Useful when multithreading.""",
     )
 
     (options, args) = option_parser.parse_args()
