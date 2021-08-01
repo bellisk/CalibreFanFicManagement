@@ -3,6 +3,7 @@
 
 import json
 import re
+import sys
 from datetime import datetime
 from errno import ENOENT
 from multiprocessing import Lock, Pool
@@ -379,43 +380,45 @@ def get_urls(inout_file, source, options, oldest_date):
     with open(inout_file, "w") as fp:
         fp.write("")
 
-    try:
-        if SOURCE_LATER in source:
-            log("Getting URLs from Marked for Later", "HEADER")
-            urls |= get_ao3_marked_for_later_urls(
-                options.cookie, options.max_count, options.user, oldest_date
-            )
-            log("{} URLs from Marked for Later".format(len(urls) - url_count), "GREEN")
-            url_count = len(urls)
-        if SOURCE_BOOKMARKS in source:
-            log("Getting URLs from Bookmarks (sorted by bookmarking date)", "HEADER")
+    if SOURCE_LATER in source:
+        log("Getting URLs from Marked for Later", "HEADER")
+        urls |= get_ao3_marked_for_later_urls(
+            options.cookie, options.max_count, options.user, oldest_date
+        )
+        log("{} URLs from Marked for Later".format(len(urls) - url_count), "GREEN")
+        url_count = len(urls)
+
+    if SOURCE_BOOKMARKS in source:
+        log("Getting URLs from Bookmarks (sorted by bookmarking date)", "HEADER")
+        urls |= get_ao3_bookmark_urls(
+            options.cookie,
+            options.expand_series,
+            options.max_count,
+            options.user,
+            oldest_date,
+            sort_by_updated=False,
+        )
+        # If we're getting bookmarks back to oldest_date, this should
+        # include works that have been updated since that date, as well as
+        # works bookmarked since that date.
+        if oldest_date:
+            log("Getting URLs from Bookmarks (sorted by updated date)", "HEADER")
             urls |= get_ao3_bookmark_urls(
                 options.cookie,
                 options.expand_series,
                 options.max_count,
                 options.user,
                 oldest_date,
-                sort_by_updated=False,
+                sort_by_updated=True,
             )
-            # If we're getting bookmarks back to oldest_date, this should
-            # include works that have been updated since that date, as well as
-            # works bookmarked since that date.
-            if oldest_date:
-                log("Getting URLs from Bookmarks (sorted by updated date)", "HEADER")
-                urls |= get_ao3_bookmark_urls(
-                    options.cookie,
-                    options.expand_series,
-                    options.max_count,
-                    options.user,
-                    oldest_date,
-                    sort_by_updated=True,
-                )
-            log("{} URLs from bookmarks".format(len(urls) - url_count), "GREEN")
-    except Exception as e:
-        with open(inout_file, "w") as fp:
-            for cur in urls:
-                fp.write("{}\n".format(cur))
-        log("Error getting urls: {}".format(e.output.decode("utf-8")))
+        log("{} URLs from bookmarks".format(len(urls) - url_count), "GREEN")
+
+    if SOURCE_STDIN in source:
+        stdin_urls = set()
+        for line in sys.stdin:
+            stdin_urls.add(line.rstrip())
+        urls |= stdin_urls
+        log("{} URLs from STDIN".format(len(stdin_urls)), "GREEN")
 
     return urls
 
@@ -470,11 +473,19 @@ def download(options):
     inout_file = options.input
     touch(inout_file)
 
-    urls = get_urls(inout_file, source, options, oldest_date)
+    urls = []
+    try:
+        urls = get_urls(inout_file, source, options, oldest_date)
+    except Exception as e:
+        with open(inout_file, "w") as fp:
+            for cur in urls:
+                fp.write("{}\n".format(cur))
+        log("Error getting urls: {}".format(e.output.decode("utf-8")))
 
     if not urls:
         return
-    log("URLs to parse ({}):".format(len(urls)), "HEADER")
+
+    log("Unique URLs to fetch ({}):".format(len(urls)), "HEADER")
     for url in urls:
         log("\t{}".format(url), "BLUE")
 
@@ -482,7 +493,6 @@ def download(options):
         log(
             "Not adding any stories to Calibre because dry-run is set to True", "HEADER"
         )
-
         return
     else:
         l = Lock()
