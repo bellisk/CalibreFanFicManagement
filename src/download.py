@@ -23,6 +23,7 @@ from .exceptions import (
     BadDataException,
     MoreChaptersLocallyException,
     StoryUpToDateException,
+    TempFileUpdatedMoreRecentlyException,
     TooManyRequestsException,
 )
 from .utils import get_files, log, touch
@@ -62,6 +63,8 @@ updated_more_recently = re.compile(
 
 def check_fff_output(output):
     output = output.decode("utf-8")
+    if equal_chapters.search(output):
+        raise StoryUpToDateException()
     if bad_chapters.search(output):
         raise BadDataException(
             "Something is messed up with the site or the epub. No chapters found."
@@ -72,13 +75,8 @@ def check_fff_output(output):
         raise TooManyRequestsException()
     if chapter_difference.search(output):
         raise MoreChaptersLocallyException()
-
-
-def should_force_download(force, output):
-    output = output.decode("utf-8")
-    return updated_more_recently.search(output) or (
-        force and equal_chapters.search(output)
-    )
+    if updated_more_recently.search(output):
+        raise TempFileUpdatedMoreRecentlyException
 
 
 def get_metadata(output):
@@ -218,31 +216,41 @@ def downloader(args):
                 stderr=STDOUT,
                 stdin=PIPE,
             )
-            check_fff_output(res)
+            try:
+                # Throws an exception if we couldn't/shouldn't update the epub
+                check_fff_output(res)
+            except Exception as e:
+                if type(e) == TempFileUpdatedMoreRecentlyException or (
+                    force and type(e) == StoryUpToDateException
+                ):
+                    output += log(
+                        "\tForcing download update. FanFicFare error message:",
+                        "WARNING",
+                        live,
+                    )
+                    for line in res.split(b"\n"):
+                        if line == b"{":
+                            break
+                        output += log("\t\t{}".format(str(line)), "WARNING", live)
+                    res = check_output(
+                        'cd "{}" && fanficfare -u -j "{}" --force --update-cover'.format(
+                            loc, cur
+                        ),
+                        shell=True,
+                        stderr=STDOUT,
+                        stdin=PIPE,
+                    )
+                    print(res)
+                    check_fff_output(res)
+                elif type(e) == HTTPError:
+                    raise TooManyRequestsException()
+                else:
+                    raise e
+
             metadata = get_metadata(res)
             series_options = get_series_options(metadata)
             tags_options = get_tags_options(metadata)
             word_count = get_word_count(metadata)
-
-            if should_force_download(force, res):
-                output += log(
-                    "\tForcing download update. FanFicFare error message:",
-                    "WARNING",
-                    live,
-                )
-                for line in res.split(b"\n"):
-                    if line == b"{":
-                        break
-                    output += log("\t\t{}".format(str(line)), "WARNING", live)
-                res = check_output(
-                    'cd "{}" && fanficfare -u "{}" --force --update-cover'.format(
-                        loc, cur
-                    ),
-                    shell=True,
-                    stderr=STDOUT,
-                    stdin=PIPE,
-                )
-                check_fff_output(res)
             cur = get_files(loc, ".epub", True)[0]
 
             output += log("\tAdding {} to library".format(cur), "BLUE", live)
@@ -497,7 +505,7 @@ def download(options):
         with open(inout_file, "w") as fp:
             for cur in urls:
                 fp.write("{}\n".format(cur))
-        log("Error getting urls: {}".format(e.output.decode("utf-8")))
+        log("Error getting urls: {}".format(e))
 
     if not urls:
         return
