@@ -36,31 +36,29 @@ def get_files(mypath, filetype=None, fullpath=False):
 
 def get_existing_tag_string(story_id):
     metadata = check_output(
-        'calibredb show_metadata {} {}'.format(
-            path, story_id
-        ),
+        "calibredb show_metadata {} {}".format(path, story_id),
         shell=True,
         stdin=PIPE,
         stderr=STDOUT,
     )
-    metadata = metadata.split(b'\n')
-    existing_tag_string = ''
+    metadata = metadata.split(b"\n")
+    existing_tag_string = ""
     for line in metadata:
-        line = line.decode('utf-8')
-        if line.startswith('Tags'):
-            tags = line[len('Tags                : '):].split(', ')
+        line = line.decode("utf-8")
+        if line.startswith("Tags"):
+            tags = line[len("Tags                : ") :].split(", ")
             for tag in tags:
                 existing_tag_string += '"{}",'.format(tag)
             return existing_tag_string
 
 
 if __name__ == "__main__":
-    with open('ao3books.csv', 'r') as f:
+    with open("ao3books.csv", "r") as f:
         ids = f.readlines()
 
     for story_id in ids:
         # Chop off a ZWNBSP at the start and the \n at the end
-        story_id = story_id[:len(story_id) - 1].replace('﻿', '')
+        story_id = story_id[: len(story_id) - 1].replace("﻿", "")
         print(story_id)
         loc = mkdtemp()
         check_output(
@@ -73,15 +71,15 @@ if __name__ == "__main__":
         )
         story_file = get_files(loc, ".epub", True)[0]
         book = epub.read_epub(story_file)
-        title_page = book.get_item_with_id('title_page')
+        title_page = book.get_item_with_id("title_page")
         html = str(title_page.get_body_content())
 
         m2 = word_count_pattern.search(html)
         if m2:
             word_count = m2.group(1)
-            word_count = word_count.replace(',', '')
+            word_count = word_count.replace(",", "")
             check_output(
-                'calibredb set_custom {} words {} {}'.format(
+                "calibredb set_custom {} words {} {}".format(
                     path, story_id, word_count
                 ),
                 shell=True,
@@ -97,11 +95,11 @@ if __name__ == "__main__":
             rating = m1.group(1)
             tag_string = existing_tag_string + '"fanfic.rating.' + rating + '"'
 
-            command = 'calibredb set_metadata {} --field tags:{} {}'.format(
+            command = "calibredb set_metadata {} --field tags:{} {}".format(
                 path, tag_string, story_id
             )
             result = check_output(
-                'calibredb set_metadata {} --field tags:{} {}'.format(
+                "calibredb set_metadata {} --field tags:{} {}".format(
                     path, tag_string, story_id
                 ),
                 shell=True,
@@ -109,7 +107,7 @@ if __name__ == "__main__":
                 stdin=PIPE,
             )
 
-            print(result.decode('utf-8'))
+            print(result.decode("utf-8"))
         else:
             print("No rating found!")
 

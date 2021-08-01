@@ -64,7 +64,9 @@ def check_fff_output(output):
 
 def should_force_download(force, output):
     output = output.decode("utf-8")
-    return updated_more_recently.search(output) or (force and equal_chapters.search(output))
+    return updated_more_recently.search(output) or (
+        force and equal_chapters.search(output)
+    )
 
 
 def get_metadata(output):
@@ -85,23 +87,21 @@ def get_metadata(output):
 
 
 def get_url_without_chapter(url):
-    url = url.replace('http://', 'https://')
+    url = url.replace("http://", "https://")
     m = story_url.match(url)
     return m.group(1)
 
 
 def check_or_create_words_column(path):
     res = check_output(
-        'calibredb custom_columns {}'.format(
-            path
-        ),
+        "calibredb custom_columns {}".format(path),
         shell=True,
         stderr=STDOUT,
         stdin=PIPE,
     )
-    columns = res.decode("utf-8").split('\n')
+    columns = res.decode("utf-8").split("\n")
     for c in columns:
-        if c.startswith('words ('):
+        if c.startswith("words ("):
             return
 
     log("Adding custom column 'words' to Calibre library")
@@ -115,7 +115,7 @@ def check_or_create_words_column(path):
 
 def get_new_story_id(bytestring):
     # We get something like b'123,124,125' and want the last id as a string
-    return bytestring.decode("utf-8").split(',')[-1]
+    return bytestring.decode("utf-8").split(",")[-1]
 
 
 def downloader(args):
@@ -254,9 +254,7 @@ def downloader(args):
             try:
                 lock.acquire()
                 res = check_output(
-                    'calibredb search "Identifiers:url:{}" {}'.format(
-                        url, path
-                    ),
+                    'calibredb search "Identifiers:url:{}" {}'.format(url, path),
                     shell=True,
                     stderr=STDOUT,
                     stdin=PIPE,
@@ -278,11 +276,17 @@ def downloader(args):
                 raise
 
             if new_story_id:
-                output += log("\tSetting word count of {} on story {}".format(word_count, new_story_id), "BLUE", live)
+                output += log(
+                    "\tSetting word count of {} on story {}".format(
+                        word_count, new_story_id
+                    ),
+                    "BLUE",
+                    live,
+                )
                 try:
                     lock.acquire()
                     res = check_output(
-                        'calibredb set_custom {} words {} {}'.format(
+                        "calibredb set_custom {} words {} {}".format(
                             path, new_story_id, word_count
                         ),
                         shell=True,
@@ -435,7 +439,7 @@ def download(options):
                 options.max_count,
                 options.user,
                 oldest_date,
-                sort_by_updated=False
+                sort_by_updated=False,
             )
             # If we're getting bookmarks back to oldest_date, this should
             # include works that have been updated since that date, as well as
@@ -448,7 +452,7 @@ def download(options):
                     options.max_count,
                     options.user,
                     oldest_date,
-                    sort_by_updated=True
+                    sort_by_updated=True,
                 )
             log("{} URLs from bookmarks".format(len(urls) - url_count), "GREEN")
     except BaseException:

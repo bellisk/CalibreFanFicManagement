@@ -7,7 +7,7 @@ from src.utils import set_up_options
 
 if __name__ == "__main__":
     # The locale for AO3, for converting formatted numbers.
-    locale.setlocale(locale.LC_ALL,  'en_US.UTF-8')
+    locale.setlocale(locale.LC_ALL, "en_US.UTF-8")
     command, options = set_up_options()
     permitted_commands = {"download": download}
 
