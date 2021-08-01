@@ -21,6 +21,11 @@ from .exceptions import (
 )
 from .utils import get_files, log, touch
 
+SOURCE_BOOKMARKS = "bookmarks"
+SOURCE_LATER = "later"
+SOURCE_STDIN = "stdin"
+SOURCES = [SOURCE_BOOKMARKS, SOURCE_LATER, SOURCE_STDIN]
+
 story_name = re.compile("(.*)-.*")
 story_url = re.compile("(https://archiveofourown.org/works/\d*).*")
 
@@ -375,14 +380,14 @@ def get_urls(inout_file, source, options, oldest_date):
         fp.write("")
 
     try:
-        if "later" in source:
+        if SOURCE_LATER in source:
             log("Getting URLs from Marked for Later", "HEADER")
             urls |= get_ao3_marked_for_later_urls(
                 options.cookie, options.max_count, options.user, oldest_date
             )
             log("{} URLs from Marked for Later".format(len(urls) - url_count), "GREEN")
             url_count = len(urls)
-        if "bookmarks" in source:
+        if SOURCE_BOOKMARKS in source:
             log("Getting URLs from Bookmarks (sorted by bookmarking date)", "HEADER")
             urls |= get_ao3_bookmark_urls(
                 options.cookie,
@@ -442,13 +447,13 @@ def download(options):
             log(e.output)
             return
 
-    source = ["bookmarks", "later"]
+    source = [SOURCE_BOOKMARKS, SOURCE_LATER]
     if len(options.source) > 0:
         for s in options.source:
-            if s not in ["bookmarks", "later"]:
+            if s not in SOURCES:
                 log(
-                    "Valid 'source' options are 'bookmarks' or 'later', not {}".format(
-                        s
+                    "Valid 'source' options are {}, not {}".format(
+                        ', '.join(SOURCES), s
                     )
                 )
                 return
