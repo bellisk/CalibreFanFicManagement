@@ -11,8 +11,13 @@ from os import devnull, rename
 from shutil import rmtree
 from subprocess import PIPE, STDOUT, CalledProcessError, call, check_output
 from tempfile import mkdtemp
+from urllib.error import HTTPError
 
-from .ao3_utils import get_ao3_bookmark_urls, get_ao3_marked_for_later_urls
+from .ao3_utils import (
+    get_ao3_bookmark_urls,
+    get_ao3_marked_for_later_urls,
+    get_ao3_work_subscription_urls,
+)
 from .calibre_utils import get_series_options, get_tags_options, get_word_count
 from .exceptions import (
     BadDataException,
@@ -25,7 +30,8 @@ from .utils import get_files, log, touch
 SOURCE_BOOKMARKS = "bookmarks"
 SOURCE_LATER = "later"
 SOURCE_STDIN = "stdin"
-SOURCES = [SOURCE_BOOKMARKS, SOURCE_LATER, SOURCE_STDIN]
+SOURCE_SUBSCRIPTIONS = "subscriptions"
+SOURCES = [SOURCE_BOOKMARKS, SOURCE_LATER, SOURCE_STDIN, SOURCE_SUBSCRIPTIONS]
 
 story_name = re.compile("(.*)-.*")
 story_url = re.compile("(https://archiveofourown.org/works/\d*).*")
@@ -412,6 +418,16 @@ def get_urls(inout_file, source, options, oldest_date):
                 sort_by_updated=True,
             )
         log("{} URLs from bookmarks".format(len(urls) - url_count), "GREEN")
+        url_count = len(urls)
+
+    if SOURCE_SUBSCRIPTIONS in source:
+        log("Getting URLS from Subscribed Works", "HEADER")
+        urls |= get_ao3_work_subscription_urls(
+            options.cookie,
+            options.max_count,
+            options.user,
+        )
+        log("{} URLs from subscriptions".format(len(urls) - url_count), "GREEN")
 
     if SOURCE_STDIN in source:
         stdin_urls = set()
@@ -450,6 +466,7 @@ def download(options):
             log(e.output)
             return
 
+    # Default sources
     source = [SOURCE_BOOKMARKS, SOURCE_LATER]
     if len(options.source) > 0:
         for s in options.source:
