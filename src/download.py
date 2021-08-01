@@ -6,7 +6,7 @@ import re
 from datetime import datetime
 from errno import ENOENT
 from multiprocessing import Lock, Pool
-from os import devnull, remove, rename
+from os import devnull, rename
 from shutil import rmtree
 from subprocess import PIPE, STDOUT, CalledProcessError, call, check_output
 from tempfile import mkdtemp
