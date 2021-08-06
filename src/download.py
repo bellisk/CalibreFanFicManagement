@@ -17,7 +17,7 @@ from .ao3_utils import (
     get_ao3_bookmark_urls,
     get_ao3_marked_for_later_urls,
     get_ao3_work_subscription_urls,
-    get_ao3_series_subscription_urls,
+    get_ao3_series_subscription_urls, get_ao3_user_subscription_urls,
 )
 from .calibre_utils import get_series_options, get_tags_options, get_word_count
 from .exceptions import (
@@ -449,6 +449,15 @@ def get_urls(inout_file, source, options, oldest_date):
     if SOURCE_SERIES_SUBSCRIPTIONS in source:
         log("Getting URLS from Subscribed Series", "HEADER")
         urls |= get_ao3_series_subscription_urls(
+            options.cookie,
+            options.max_count,
+            options.user,
+        )
+        log("{} URLs from series subscriptions".format(len(urls) - url_count), "GREEN")
+
+    if SOURCE_USER_SUBSCRIPTIONS in source:
+        log("Getting URLS from Subscribed Users", "HEADER")
+        urls |= get_ao3_user_subscription_urls(
             options.cookie,
             options.max_count,
             options.user,
