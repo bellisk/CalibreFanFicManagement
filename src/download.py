@@ -31,8 +31,17 @@ from .utils import get_files, log, touch
 SOURCE_BOOKMARKS = "bookmarks"
 SOURCE_LATER = "later"
 SOURCE_STDIN = "stdin"
-SOURCE_SUBSCRIPTIONS = "subscriptions"
-SOURCES = [SOURCE_BOOKMARKS, SOURCE_LATER, SOURCE_STDIN, SOURCE_SUBSCRIPTIONS]
+SOURCE_WORK_SUBSCRIPTIONS = "work_subscriptions"
+SOURCE_SERIES_SUBSCRIPTIONS = "series_subscriptions"
+SOURCE_USER_SUBSCRIPTIONS = "user_subscriptions"
+SOURCES = [
+    SOURCE_BOOKMARKS,
+    SOURCE_LATER,
+    SOURCE_STDIN,
+    SOURCE_WORK_SUBSCRIPTIONS,
+    SOURCE_SERIES_SUBSCRIPTIONS,
+    SOURCE_USER_SUBSCRIPTIONS,
+]
 
 story_name = re.compile("(.*)-.*")
 story_url = re.compile("(https://archiveofourown.org/works/\d*).*")
@@ -428,14 +437,14 @@ def get_urls(inout_file, source, options, oldest_date):
         log("{} URLs from bookmarks".format(len(urls) - url_count), "GREEN")
         url_count = len(urls)
 
-    if SOURCE_SUBSCRIPTIONS in source:
+    if SOURCE_WORK_SUBSCRIPTIONS in source:
         log("Getting URLS from Subscribed Works", "HEADER")
         urls |= get_ao3_work_subscription_urls(
             options.cookie,
             options.max_count,
             options.user,
         )
-        log("{} URLs from subscriptions".format(len(urls) - url_count), "GREEN")
+        log("{} URLs from work subscriptions".format(len(urls) - url_count), "GREEN")
 
     if SOURCE_STDIN in source:
         stdin_urls = set()
