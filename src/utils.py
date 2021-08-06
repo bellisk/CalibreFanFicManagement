@@ -103,7 +103,11 @@ download    Download fics from AO3 and save to Calibre library
         dest="source",
         help="""Comma-separated.
 'bookmarks': user's bookmarks. 'later': works marked for later.
-'subscriptions': works subscribed to. 'stdin': read AO3 urls from stdin.
+'work_subscriptions': all works subscribed to.
+'series_subscriptions': all works from all series subscribed to.
+'user_subscriptions': all works from all users subscribed to.
+'all_subscriptions': all works from all works, series and users subscribed to.
+'stdin': read AO3 urls from stdin.
 Default is 'bookmarks,later'.""",
     )
 

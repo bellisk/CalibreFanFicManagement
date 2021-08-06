@@ -17,6 +17,7 @@ from .ao3_utils import (
     get_ao3_bookmark_urls,
     get_ao3_marked_for_later_urls,
     get_ao3_work_subscription_urls,
+    get_ao3_series_subscription_urls, get_ao3_user_subscription_urls,
 )
 from .calibre_utils import get_series_options, get_tags_options, get_word_count
 from .exceptions import (
@@ -31,8 +32,19 @@ from .utils import get_files, log, touch
 SOURCE_BOOKMARKS = "bookmarks"
 SOURCE_LATER = "later"
 SOURCE_STDIN = "stdin"
-SOURCE_SUBSCRIPTIONS = "subscriptions"
-SOURCES = [SOURCE_BOOKMARKS, SOURCE_LATER, SOURCE_STDIN, SOURCE_SUBSCRIPTIONS]
+SOURCE_WORK_SUBSCRIPTIONS = "work_subscriptions"
+SOURCE_SERIES_SUBSCRIPTIONS = "series_subscriptions"
+SOURCE_USER_SUBSCRIPTIONS = "user_subscriptions"
+SOURCE_ALL_SUBSCRIPTIONS = "all_subscriptions"
+SOURCES = [
+    SOURCE_BOOKMARKS,
+    SOURCE_LATER,
+    SOURCE_STDIN,
+    SOURCE_WORK_SUBSCRIPTIONS,
+    SOURCE_SERIES_SUBSCRIPTIONS,
+    SOURCE_USER_SUBSCRIPTIONS,
+    SOURCE_ALL_SUBSCRIPTIONS,
+]
 
 story_name = re.compile("(.*)-.*")
 story_url = re.compile("(https://archiveofourown.org/works/\d*).*")
@@ -240,7 +252,6 @@ def downloader(args):
                         stderr=STDOUT,
                         stdin=PIPE,
                     )
-                    print(res)
                     check_fff_output(res)
                 elif type(e) == HTTPError:
                     raise TooManyRequestsException()
@@ -428,14 +439,32 @@ def get_urls(inout_file, source, options, oldest_date):
         log("{} URLs from bookmarks".format(len(urls) - url_count), "GREEN")
         url_count = len(urls)
 
-    if SOURCE_SUBSCRIPTIONS in source:
+    if SOURCE_WORK_SUBSCRIPTIONS in source or SOURCE_ALL_SUBSCRIPTIONS in source:
         log("Getting URLS from Subscribed Works", "HEADER")
         urls |= get_ao3_work_subscription_urls(
             options.cookie,
             options.max_count,
             options.user,
         )
-        log("{} URLs from subscriptions".format(len(urls) - url_count), "GREEN")
+        log("{} URLs from work subscriptions".format(len(urls) - url_count), "GREEN")
+
+    if SOURCE_SERIES_SUBSCRIPTIONS in source or SOURCE_ALL_SUBSCRIPTIONS in source:
+        log("Getting URLS from Subscribed Series", "HEADER")
+        urls |= get_ao3_series_subscription_urls(
+            options.cookie,
+            options.max_count,
+            options.user,
+        )
+        log("{} URLs from series subscriptions".format(len(urls) - url_count), "GREEN")
+
+    if SOURCE_USER_SUBSCRIPTIONS in source or SOURCE_ALL_SUBSCRIPTIONS in source:
+        log("Getting URLS from Subscribed Users", "HEADER")
+        urls |= get_ao3_user_subscription_urls(
+            options.cookie,
+            options.max_count,
+            options.user,
+        )
+        log("{} URLs from user subscriptions".format(len(urls) - url_count), "GREEN")
 
     if SOURCE_STDIN in source:
         stdin_urls = set()
