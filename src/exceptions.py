@@ -35,3 +35,9 @@ class TooManyRequestsException(Exception):
     def __init__(self):
         self.message = "Too many requests for now."
         super().__init__(self.message)
+
+
+class InvalidConfig(Exception):
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)

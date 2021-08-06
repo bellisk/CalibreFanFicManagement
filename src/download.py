@@ -25,7 +25,7 @@ from .exceptions import (
     MoreChaptersLocallyException,
     StoryUpToDateException,
     TempFileUpdatedMoreRecentlyException,
-    TooManyRequestsException,
+    TooManyRequestsException, InvalidConfig,
 )
 from .utils import get_files, log, touch
 
@@ -36,6 +36,7 @@ SOURCE_WORK_SUBSCRIPTIONS = "work_subscriptions"
 SOURCE_SERIES_SUBSCRIPTIONS = "series_subscriptions"
 SOURCE_USER_SUBSCRIPTIONS = "user_subscriptions"
 SOURCE_ALL_SUBSCRIPTIONS = "all_subscriptions"
+DEFAULT_SOURCES = [SOURCE_BOOKMARKS, SOURCE_LATER]
 SOURCES = [
     SOURCE_BOOKMARKS,
     SOURCE_LATER,
@@ -476,9 +477,28 @@ def get_urls(inout_file, source, options, oldest_date):
     return urls
 
 
+def get_oldest_date(options, source):
+    last_updated_file = options.last_updated_file
+    touch(last_updated_file)
+
+    if options.since_last_update:
+        with open(last_updated_file, "r") as f:
+            since = json.loads(f.read())
+            log()
+
+    if options.since:
+        try:
+            return {"since": datetime.strptime(options.since, "%d.%m.%Y")}
+        except ValueError:
+            raise InvalidConfig("'since' option should have format 'DD.MM.YYYY'")
+
+    return None
+
+
 def download(options):
     if not (options.user and options.cookie):
-        raise ValueError("User and Cookie are required for downloading from AO3")
+        log("User and Cookie are required for downloading from AO3", "FAIL")
+        return
 
     path = options.library
     if path:
@@ -504,7 +524,7 @@ def download(options):
             return
 
     # Default sources
-    source = [SOURCE_BOOKMARKS, SOURCE_LATER]
+    source = DEFAULT_SOURCES
     if len(options.source) > 0:
         for s in options.source:
             if s not in SOURCES:
@@ -516,13 +536,10 @@ def download(options):
                 return
         source = options.source
 
-    oldest_date = None
-    if options.since:
-        try:
-            oldest_date = datetime.strptime(options.since, "%d.%m.%Y")
-        except ValueError:
-            log("'since' option should have format 'DD.MM.YYYY'")
-            return
+    try:
+        oldest_date = get_oldest_date(options, source)
+    except InvalidConfig as e:
+        log(e.message, "FAIL")
 
     inout_file = options.input
     touch(inout_file)

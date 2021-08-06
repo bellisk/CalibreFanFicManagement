@@ -130,6 +130,20 @@ bookmarked for bookmarks, date last visited for marked-for-later).""",
     )
 
     option_parser.add_option(
+        "-L",
+        "--since-last-update",
+        action="store_true",
+        dest="since_last_update",
+        help="""Only fetch work ids from AO3 for works that have been changed since the
+last update, as saved in the last_update_file. For bookmarked works, this fetches works 
+that have been bookmarked or updated since the last update. For marked-for-later works, 
+it fetches works that have been marked-for-later since the last update. For works from
+subscriptions, it fetches works that have been posted or updated since the last update.
+Lists of work urls (from the input file or from stdin) will be handled without checking 
+any dates. This option overrides --since.""",
+    )
+
+    option_parser.add_option(
         "-e",
         "--expand-series",
         action="store",
@@ -168,7 +182,7 @@ downloads stories into the current directory as epub files.""",
     option_parser.add_option(
         "-d",
         "--dry-run",
-        action="store",
+        action="store_true",
         dest="dry_run",
         help="Dry run: only fetch bookmark links from AO3, don't add them to calibre",
     )
@@ -198,6 +212,15 @@ Do not put any quotation marks in the options.""",
         dest="live",
         help="""Include this if you want all the output to be saved and posted live.
 Useful when multithreading.""",
+    )
+
+    option_parser.add_option(
+        "-U",
+        "--last-update-file",
+        action="store",
+        dest="last_update_file",
+        help="""Json file storing dates of last successful update from various sources.
+Example: {"later": "01.01.2021", "bookmarks": "02.01.2021"}"""
     )
 
     (options, args) = option_parser.parse_args()
@@ -235,6 +258,10 @@ Useful when multithreading.""",
         options.source = updater(config.get("import", "source").strip(), options.source)
         options.source = options.source.split(",")
         options.since = updater(config.get("import", "since").strip(), options.since)
+        options.since_last_update = updater(
+            config.getboolean("import", "since_last_update").strip(),
+            options.since_last_update,
+        )
 
         options.library = updater(
             config.get("locations", "library").strip(), options.library
@@ -243,6 +270,10 @@ Useful when multithreading.""",
         options.fanficfare_config = updater(
             config.get("locations", "fanficfare_config").strip(),
             options.fanficfare_config,
+        )
+        options.last_update_file = updater(
+            config.get("locations", "last_update_file").strip(),
+            options.last_update_file,
         )
 
         options.live = updater(config.getboolean("output", "live"), options.live)
