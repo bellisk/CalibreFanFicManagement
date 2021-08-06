@@ -53,8 +53,12 @@ def get_ao3_series_subscription_urls(cookie, max_count, user):
     api = AO3()
     api.login(user, cookie)
     series_ids = api.user.series_subscription_ids(max_count)
-    urls = [
-        "https://archiveofourown.org/works/%s" % work_id
-        for work_id in api.user.work_subscription_ids(max_count)
-    ]
+
+    urls = []
+    for s in series_ids:
+        urls += [
+            "https://archiveofourown.org/works/%s" % work_id
+            for work_id in api.series_work_ids(s)
+        ]
+
     return set(urls)
