@@ -220,7 +220,7 @@ Useful when multithreading.""",
         action="store",
         dest="last_update_file",
         help="""Json file storing dates of last successful update from various sources.
-Example: {"later": "01.01.2021", "bookmarks": "02.01.2021"}"""
+Example: {"later": "01.01.2021", "bookmarks": "02.01.2021"}""",
     )
 
     (options, args) = option_parser.parse_args()
@@ -259,7 +259,7 @@ Example: {"later": "01.01.2021", "bookmarks": "02.01.2021"}"""
         options.source = options.source.split(",")
         options.since = updater(config.get("import", "since").strip(), options.since)
         options.since_last_update = updater(
-            config.getboolean("import", "since_last_update").strip(),
+            config.getboolean("import", "since_last_update"),
             options.since_last_update,
         )
 
