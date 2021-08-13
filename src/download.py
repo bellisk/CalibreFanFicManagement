@@ -32,7 +32,6 @@ from .exceptions import (
 )
 from .utils import get_files, log, touch
 
-SOURCE_ALL = "all"
 SOURCE_BOOKMARKS = "bookmarks"
 SOURCE_LATER = "later"
 SOURCE_STDIN = "stdin"
@@ -41,8 +40,8 @@ SOURCE_SERIES_SUBSCRIPTIONS = "series_subscriptions"
 SOURCE_USER_SUBSCRIPTIONS = "user_subscriptions"
 SOURCE_ALL_SUBSCRIPTIONS = "all_subscriptions"
 DEFAULT_SOURCES = [SOURCE_BOOKMARKS, SOURCE_LATER]
+SUBSCRIPTION_SOURCES = [SOURCE_SERIES_SUBSCRIPTIONS, SOURCE_USER_SUBSCRIPTIONS, SOURCE_WORK_SUBSCRIPTIONS]
 SOURCES = [
-    SOURCE_ALL,
     SOURCE_BOOKMARKS,
     SOURCE_LATER,
     SOURCE_STDIN,
@@ -516,6 +515,13 @@ def get_oldest_date(options, sources):
     for s in sources:
         if not oldest_date_per_source.get(s):
             oldest_date_per_source[s] = since
+
+    # If we have a date for all_subscriptions but not for the individual subscriptions,
+    # use that date.
+    if oldest_date_per_source.get(SOURCE_ALL_SUBSCRIPTIONS):
+        for s in SUBSCRIPTION_SOURCES:
+            if s in sources and not oldest_date_per_source.get(s):
+                oldest_date_per_source[s] = oldest_date_per_source.get(SOURCE_ALL_SUBSCRIPTIONS)
 
     log("Dates of last update per source:", "BLUE")
     log(oldest_date_per_source, "BLUE")
