@@ -40,7 +40,11 @@ SOURCE_SERIES_SUBSCRIPTIONS = "series_subscriptions"
 SOURCE_USER_SUBSCRIPTIONS = "user_subscriptions"
 SOURCE_ALL_SUBSCRIPTIONS = "all_subscriptions"
 DEFAULT_SOURCES = [SOURCE_BOOKMARKS, SOURCE_LATER]
-SUBSCRIPTION_SOURCES = [SOURCE_SERIES_SUBSCRIPTIONS, SOURCE_USER_SUBSCRIPTIONS, SOURCE_WORK_SUBSCRIPTIONS]
+SUBSCRIPTION_SOURCES = [
+    SOURCE_SERIES_SUBSCRIPTIONS,
+    SOURCE_USER_SUBSCRIPTIONS,
+    SOURCE_WORK_SUBSCRIPTIONS,
+]
 SOURCES = [
     SOURCE_BOOKMARKS,
     SOURCE_LATER,
@@ -518,7 +522,9 @@ def get_oldest_date(options, sources):
             if last_updates_text:
                 last_updates = json.loads(last_updates_text)
         except JSONDecodeError:
-            raise InvalidConfig("{} should be valid json".format(options.last_update_file))
+            raise InvalidConfig(
+                "{} should be valid json".format(options.last_update_file)
+            )
 
         oldest_date_per_source = {
             s: datetime.strptime(last_updates.get(s), DATE_FORMAT)
@@ -551,9 +557,7 @@ def get_sources(source_input):
     for s in source_input:
         if s not in SOURCES:
             raise InvalidConfig(
-                "Valid 'source' options are {}, not {}".format(
-                    ", ".join(SOURCES), s
-                )
+                "Valid 'source' options are {}, not {}".format(", ".join(SOURCES), s)
             )
         if s == SOURCE_ALL_SUBSCRIPTIONS:
             sources.extend(SUBSCRIPTION_SOURCES)
