@@ -101,6 +101,7 @@ download    Download fics from AO3 and save to Calibre library
         "--source",
         action="store",
         dest="source",
+        default="bookmarks,later",
         help="""Comma-separated.
 'bookmarks': user's bookmarks. 'later': works marked for later.
 'work_subscriptions': all works subscribed to. Using this with --since or
@@ -109,7 +110,7 @@ download    Download fics from AO3 and save to Calibre library
 'user_subscriptions': all works from all users subscribed to.
 'all_subscriptions': all works from all works, series and users subscribed to.
 'stdin': read AO3 urls from stdin.
-Default is 'bookmarks,later'.""",
+Default: %default.""",
     )
 
     option_parser.add_option(
@@ -148,7 +149,7 @@ any dates. This option overrides --since.""",
     option_parser.add_option(
         "-e",
         "--expand-series",
-        action="store",
+        action="store_true",
         dest="expand_series",
         help="Whether to get all works from a bookmarked series.",
     )
@@ -156,7 +157,7 @@ any dates. This option overrides --since.""",
     option_parser.add_option(
         "-f",
         "--force",
-        action="store",
+        action="store_true",
         dest="force",
         help="""Whether to force downloads of stories even when they have the same
 number of chapters locally as online.""",
@@ -221,9 +222,10 @@ Useful when multithreading.""",
         "--last-update-file",
         action="store",
         dest="last_update_file",
+        default="last_update.json",
         help="""Json file storing dates of last successful update from various sources.
 Example: {"later": "01.01.2021", "bookmarks": "02.01.2021"}.
-Default is 'last_update.json', will be created if it doesn't exist.""",
+Will be created if it doesn't exist. Default: %default""",
     )
 
     (options, args) = option_parser.parse_args()
