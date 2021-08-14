@@ -101,14 +101,16 @@ download    Download fics from AO3 and save to Calibre library
         "--source",
         action="store",
         dest="source",
+        default="bookmarks,later",
         help="""Comma-separated.
 'bookmarks': user's bookmarks. 'later': works marked for later.
-'work_subscriptions': all works subscribed to.
+'work_subscriptions': all works subscribed to. Using this with --since or
+--since-last-update is slow!
 'series_subscriptions': all works from all series subscribed to.
 'user_subscriptions': all works from all users subscribed to.
 'all_subscriptions': all works from all works, series and users subscribed to.
 'stdin': read AO3 urls from stdin.
-Default is 'bookmarks,later'.""",
+Default: %default.""",
     )
 
     option_parser.add_option(
@@ -126,13 +128,28 @@ get all bookmarks.""",
         action="store",
         dest="since",
         help="""DD.MM.YYYY. The date since which fics should be downloaded (date 
-bookmarked for bookmarks, date last visited for marked-for-later).""",
+bookmarked or updated for bookmarks, date last visited for marked-for-later).
+Using this with source=work_subscriptions is slow!""",
+    )
+
+    option_parser.add_option(
+        "-L",
+        "--since-last-update",
+        action="store_true",
+        dest="since_last_update",
+        help="""Only fetch work ids from AO3 for works that have been changed since the
+last update, as saved in the last_update_file. For bookmarked works, this fetches works 
+that have been bookmarked or updated since the last update. For marked-for-later works, 
+it fetches works that have been marked-for-later since the last update. For works from
+subscriptions, it fetches works that have been posted or updated since the last update.
+Lists of work urls (from the input file or from stdin) will be handled without checking 
+any dates. This option overrides --since.""",
     )
 
     option_parser.add_option(
         "-e",
         "--expand-series",
-        action="store",
+        action="store_true",
         dest="expand_series",
         help="Whether to get all works from a bookmarked series.",
     )
@@ -140,7 +157,7 @@ bookmarked for bookmarks, date last visited for marked-for-later).""",
     option_parser.add_option(
         "-f",
         "--force",
-        action="store",
+        action="store_true",
         dest="force",
         help="""Whether to force downloads of stories even when they have the same
 number of chapters locally as online.""",
@@ -168,7 +185,7 @@ downloads stories into the current directory as epub files.""",
     option_parser.add_option(
         "-d",
         "--dry-run",
-        action="store",
+        action="store_true",
         dest="dry_run",
         help="Dry run: only fetch bookmark links from AO3, don't add them to calibre",
     )
@@ -198,6 +215,17 @@ Do not put any quotation marks in the options.""",
         dest="live",
         help="""Include this if you want all the output to be saved and posted live.
 Useful when multithreading.""",
+    )
+
+    option_parser.add_option(
+        "-U",
+        "--last-update-file",
+        action="store",
+        dest="last_update_file",
+        default="last_update.json",
+        help="""Json file storing dates of last successful update from various sources.
+Example: {"later": "01.01.2021", "bookmarks": "02.01.2021"}.
+Will be created if it doesn't exist. Default: %default""",
     )
 
     (options, args) = option_parser.parse_args()
@@ -235,6 +263,10 @@ Useful when multithreading.""",
         options.source = updater(config.get("import", "source").strip(), options.source)
         options.source = options.source.split(",")
         options.since = updater(config.get("import", "since").strip(), options.since)
+        options.since_last_update = updater(
+            config.getboolean("import", "since_last_update"),
+            options.since_last_update,
+        )
 
         options.library = updater(
             config.get("locations", "library").strip(), options.library
@@ -243,6 +275,10 @@ Useful when multithreading.""",
         options.fanficfare_config = updater(
             config.get("locations", "fanficfare_config").strip(),
             options.fanficfare_config,
+        )
+        options.last_update_file = updater(
+            config.get("locations", "last_update_file").strip(),
+            options.last_update_file,
         )
 
         options.live = updater(config.getboolean("output", "live"), options.live)

@@ -6,6 +6,7 @@ import re
 import sys
 from datetime import datetime
 from errno import ENOENT
+from json.decoder import JSONDecodeError
 from multiprocessing import Lock, Pool
 from os import devnull, rename
 from shutil import rmtree
@@ -16,12 +17,14 @@ from urllib.error import HTTPError
 from .ao3_utils import (
     get_ao3_bookmark_urls,
     get_ao3_marked_for_later_urls,
+    get_ao3_series_subscription_urls,
+    get_ao3_user_subscription_urls,
     get_ao3_work_subscription_urls,
-    get_ao3_series_subscription_urls, get_ao3_user_subscription_urls,
 )
 from .calibre_utils import get_series_options, get_tags_options, get_word_count
 from .exceptions import (
     BadDataException,
+    InvalidConfig,
     MoreChaptersLocallyException,
     StoryUpToDateException,
     TempFileUpdatedMoreRecentlyException,
@@ -36,6 +39,11 @@ SOURCE_WORK_SUBSCRIPTIONS = "work_subscriptions"
 SOURCE_SERIES_SUBSCRIPTIONS = "series_subscriptions"
 SOURCE_USER_SUBSCRIPTIONS = "user_subscriptions"
 SOURCE_ALL_SUBSCRIPTIONS = "all_subscriptions"
+SUBSCRIPTION_SOURCES = [
+    SOURCE_SERIES_SUBSCRIPTIONS,
+    SOURCE_USER_SUBSCRIPTIONS,
+    SOURCE_WORK_SUBSCRIPTIONS,
+]
 SOURCES = [
     SOURCE_BOOKMARKS,
     SOURCE_LATER,
@@ -45,6 +53,8 @@ SOURCES = [
     SOURCE_USER_SUBSCRIPTIONS,
     SOURCE_ALL_SUBSCRIPTIONS,
 ]
+
+DATE_FORMAT = "%d.%m.%Y"
 
 story_name = re.compile("(.*)-.*")
 story_url = re.compile("(https://archiveofourown.org/works/\d*).*")
@@ -395,7 +405,7 @@ def init(l):
     lock = l
 
 
-def get_urls(inout_file, source, options, oldest_date):
+def get_urls(inout_file, source, options, oldest_dates):
     with open(inout_file, "r") as fp:
         urls = set([x.replace("\n", "") for x in fp.readlines()])
 
@@ -408,7 +418,7 @@ def get_urls(inout_file, source, options, oldest_date):
     if SOURCE_LATER in source:
         log("Getting URLs from Marked for Later", "HEADER")
         urls |= get_ao3_marked_for_later_urls(
-            options.cookie, options.max_count, options.user, oldest_date
+            options.cookie, options.max_count, options.user, oldest_dates[SOURCE_LATER]
         )
         log("{} URLs from Marked for Later".format(len(urls) - url_count), "GREEN")
         url_count = len(urls)
@@ -420,49 +430,53 @@ def get_urls(inout_file, source, options, oldest_date):
             options.expand_series,
             options.max_count,
             options.user,
-            oldest_date,
+            oldest_dates[SOURCE_BOOKMARKS],
             sort_by_updated=False,
         )
         # If we're getting bookmarks back to oldest_date, this should
         # include works that have been updated since that date, as well as
         # works bookmarked since that date.
-        if oldest_date:
+        if oldest_dates[SOURCE_BOOKMARKS]:
             log("Getting URLs from Bookmarks (sorted by updated date)", "HEADER")
             urls |= get_ao3_bookmark_urls(
                 options.cookie,
                 options.expand_series,
                 options.max_count,
                 options.user,
-                oldest_date,
+                oldest_dates[SOURCE_BOOKMARKS],
                 sort_by_updated=True,
             )
         log("{} URLs from bookmarks".format(len(urls) - url_count), "GREEN")
         url_count = len(urls)
 
-    if SOURCE_WORK_SUBSCRIPTIONS in source or SOURCE_ALL_SUBSCRIPTIONS in source:
+    if SOURCE_WORK_SUBSCRIPTIONS in source:
         log("Getting URLS from Subscribed Works", "HEADER")
         urls |= get_ao3_work_subscription_urls(
             options.cookie,
             options.max_count,
             options.user,
+            oldest_dates[SOURCE_WORK_SUBSCRIPTIONS],
         )
         log("{} URLs from work subscriptions".format(len(urls) - url_count), "GREEN")
 
-    if SOURCE_SERIES_SUBSCRIPTIONS in source or SOURCE_ALL_SUBSCRIPTIONS in source:
+    if SOURCE_SERIES_SUBSCRIPTIONS in source:
         log("Getting URLS from Subscribed Series", "HEADER")
         urls |= get_ao3_series_subscription_urls(
             options.cookie,
             options.max_count,
             options.user,
+            oldest_dates[SOURCE_SERIES_SUBSCRIPTIONS],
         )
         log("{} URLs from series subscriptions".format(len(urls) - url_count), "GREEN")
 
-    if SOURCE_USER_SUBSCRIPTIONS in source or SOURCE_ALL_SUBSCRIPTIONS in source:
+    if SOURCE_USER_SUBSCRIPTIONS in source:
         log("Getting URLS from Subscribed Users", "HEADER")
+        log(oldest_dates[SOURCE_USER_SUBSCRIPTIONS])
         urls |= get_ao3_user_subscription_urls(
             options.cookie,
             options.max_count,
             options.user,
+            oldest_dates[SOURCE_USER_SUBSCRIPTIONS],
         )
         log("{} URLs from user subscriptions".format(len(urls) - url_count), "GREEN")
 
@@ -476,9 +490,83 @@ def get_urls(inout_file, source, options, oldest_date):
     return urls
 
 
+def update_last_updated_file(options, sources):
+    today = datetime.now().strftime(DATE_FORMAT)
+
+    with open(options.last_update_file, "r") as f:
+        last_updates_text = f.read()
+    last_updates = json.loads(last_updates_text) if last_updates_text else {}
+
+    for s in sources:
+        last_updates[s] = today
+    data = json.dumps(last_updates)
+
+    log("Updating file {} with dates {}".format(options.last_update_file, data), "BLUE")
+
+    with open(options.last_update_file, "w") as f:
+        f.write(data)
+
+
+def get_oldest_date(options, sources):
+    if not (options.since or options.since_last_update):
+        return {s: None for s in sources}
+
+    oldest_date_per_source = {}
+
+    if options.since_last_update:
+        last_updates = {}
+        try:
+            with open(options.last_update_file, "r") as f:
+                last_updates_text = f.read()
+            if last_updates_text:
+                last_updates = json.loads(last_updates_text)
+        except JSONDecodeError:
+            raise InvalidConfig(
+                "{} should be valid json".format(options.last_update_file)
+            )
+
+        oldest_date_per_source = {
+            s: datetime.strptime(last_updates.get(s), DATE_FORMAT)
+            for s in sources
+            if last_updates.get(s)
+        }
+
+    since = None
+    if options.since:
+        try:
+            since = datetime.strptime(options.since, DATE_FORMAT)
+        except ValueError:
+            raise InvalidConfig("'since' option should have format 'DD.MM.YYYY'")
+
+    for s in sources:
+        if not oldest_date_per_source.get(s):
+            oldest_date_per_source[s] = since
+
+    log("Dates of last update per source:", "BLUE")
+    log(oldest_date_per_source, "BLUE")
+
+    return oldest_date_per_source
+
+
+def get_sources(source_input):
+    sources = []
+    for s in source_input:
+        if s not in SOURCES:
+            raise InvalidConfig(
+                "Valid 'source' options are {}, not {}".format(", ".join(SOURCES), s)
+            )
+        if s == SOURCE_ALL_SUBSCRIPTIONS:
+            sources.extend(SUBSCRIPTION_SOURCES)
+        else:
+            sources.append(s)
+
+    return sources
+
+
 def download(options):
     if not (options.user and options.cookie):
-        raise ValueError("User and Cookie are required for downloading from AO3")
+        log("User and Cookie are required for downloading from AO3", "FAIL")
+        return
 
     path = options.library
     if path:
@@ -503,33 +591,22 @@ def download(options):
             log(e.output)
             return
 
-    # Default sources
-    source = [SOURCE_BOOKMARKS, SOURCE_LATER]
-    if len(options.source) > 0:
-        for s in options.source:
-            if s not in SOURCES:
-                log(
-                    "Valid 'source' options are {}, not {}".format(
-                        ", ".join(SOURCES), s
-                    )
-                )
-                return
-        source = options.source
+    last_update_file = options.last_update_file
+    touch(last_update_file)
 
-    oldest_date = None
-    if options.since:
-        try:
-            oldest_date = datetime.strptime(options.since, "%d.%m.%Y")
-        except ValueError:
-            log("'since' option should have format 'DD.MM.YYYY'")
-            return
+    try:
+        sources = get_sources(options.source)
+        oldest_dates_per_source = get_oldest_date(options, sources)
+    except InvalidConfig as e:
+        log(e.message, "FAIL")
+        return
 
     inout_file = options.input
     touch(inout_file)
 
     urls = []
     try:
-        urls = get_urls(inout_file, source, options, oldest_date)
+        urls = get_urls(inout_file, sources, options, oldest_dates_per_source)
     except Exception as e:
         with open(inout_file, "w") as fp:
             for cur in urls:
@@ -565,3 +642,5 @@ def download(options):
                 for url in urls
             ],
         )
+
+    update_last_updated_file(options, sources)

@@ -1,4 +1,4 @@
--e git+git@github.com:bellisk/ao3.git@96de6e9d642faf99dd59b9367a0adce679449614#egg=ao3&subdirectory=../../ao3
+-e ao3/
 beautifulsoup4==4.9.3
 certifi==2020.12.5
 chardet==4.0.0
