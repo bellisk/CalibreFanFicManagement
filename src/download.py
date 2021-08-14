@@ -39,7 +39,6 @@ SOURCE_WORK_SUBSCRIPTIONS = "work_subscriptions"
 SOURCE_SERIES_SUBSCRIPTIONS = "series_subscriptions"
 SOURCE_USER_SUBSCRIPTIONS = "user_subscriptions"
 SOURCE_ALL_SUBSCRIPTIONS = "all_subscriptions"
-DEFAULT_SOURCES = [SOURCE_BOOKMARKS, SOURCE_LATER]
 SUBSCRIPTION_SOURCES = [
     SOURCE_SERIES_SUBSCRIPTIONS,
     SOURCE_USER_SUBSCRIPTIONS,
@@ -550,9 +549,6 @@ def get_oldest_date(options, sources):
 
 
 def get_sources(source_input):
-    if len(source_input) == 0:
-        return DEFAULT_SOURCES
-
     sources = []
     for s in source_input:
         if s not in SOURCES:
