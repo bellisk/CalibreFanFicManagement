@@ -46,7 +46,7 @@ def get_ao3_work_subscription_urls(cookie, max_count, user):
     return set(urls)
 
 
-def get_ao3_series_subscription_urls(cookie, max_count, user):
+def get_ao3_series_subscription_urls(cookie, max_count, user, oldest_date=None):
     if max_count == 0:
         return set([])
 
@@ -58,13 +58,13 @@ def get_ao3_series_subscription_urls(cookie, max_count, user):
     for s in series_ids:
         urls += [
             "https://archiveofourown.org/works/%s" % work_id
-            for work_id in api.series_work_ids(s)
+            for work_id in api.series_work_ids(s, oldest_date)
         ]
 
     return set(urls)
 
 
-def get_ao3_user_subscription_urls(cookie, max_count, user):
+def get_ao3_user_subscription_urls(cookie, max_count, user, oldest_date=None):
     if max_count == 0:
         return set([])
 
@@ -77,7 +77,7 @@ def get_ao3_user_subscription_urls(cookie, max_count, user):
         print(u)
         urls += [
             "https://archiveofourown.org/works/%s" % work_id
-            for work_id in api.users_work_ids(u)
+            for work_id in api.users_work_ids(u, oldest_date)
         ]
 
     return set(urls)

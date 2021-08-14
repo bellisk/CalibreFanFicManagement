@@ -20,6 +20,7 @@ If you want to save bookmarks in a calibre library, you will need to install the
 [calibre CLI](https://manual.calibre-ebook.com/generated/en/cli-index.html).
 
 - Clone this repository and `cd` into the `CalibreFanFicManagement` directory
+- `git submodule update --init`
 - `pip install -r requirements.txt`
 - If needed, copy `config_template.ini` to `config.ini` and fill in
 - Copy [FanFicFare example config](https://github.com/JimmXinu/FanFicFare/blob/master/fanficfare/example.ini)

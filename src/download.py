@@ -456,21 +456,22 @@ def get_urls(inout_file, source, options, oldest_dates):
 
     if SOURCE_SERIES_SUBSCRIPTIONS in source or SOURCE_ALL_SUBSCRIPTIONS in source:
         log("Getting URLS from Subscribed Series", "HEADER")
-        # TODO: include oldest_date
         urls |= get_ao3_series_subscription_urls(
             options.cookie,
             options.max_count,
             options.user,
+            oldest_dates[SOURCE_SERIES_SUBSCRIPTIONS],
         )
         log("{} URLs from series subscriptions".format(len(urls) - url_count), "GREEN")
 
     if SOURCE_USER_SUBSCRIPTIONS in source or SOURCE_ALL_SUBSCRIPTIONS in source:
         log("Getting URLS from Subscribed Users", "HEADER")
-        # TODO: include oldest_date
+        log(oldest_dates[SOURCE_USER_SUBSCRIPTIONS])
         urls |= get_ao3_user_subscription_urls(
             options.cookie,
             options.max_count,
             options.user,
+            oldest_dates[SOURCE_USER_SUBSCRIPTIONS],
         )
         log("{} URLs from user subscriptions".format(len(urls) - url_count), "GREEN")
 
