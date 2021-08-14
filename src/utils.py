@@ -222,7 +222,8 @@ Useful when multithreading.""",
         action="store",
         dest="last_update_file",
         help="""Json file storing dates of last successful update from various sources.
-Example: {"later": "01.01.2021", "bookmarks": "02.01.2021"}""",
+Example: {"later": "01.01.2021", "bookmarks": "02.01.2021"}.
+Default is 'last_update.json', will be created if it doesn't exist.""",
     )
 
     (options, args) = option_parser.parse_args()

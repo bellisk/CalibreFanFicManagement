@@ -51,6 +51,8 @@ SOURCES = [
     SOURCE_ALL_SUBSCRIPTIONS,
 ]
 
+DATE_FORMAT = "%d.%m.%Y"
+
 story_name = re.compile("(.*)-.*")
 story_url = re.compile("(https://archiveofourown.org/works/\d*).*")
 
@@ -464,7 +466,7 @@ def get_urls(inout_file, source, options, oldest_dates):
         )
         log("{} URLs from series subscriptions".format(len(urls) - url_count), "GREEN")
 
-    if SOURCE_USER_SUBSCRIPTIONS in source or SOURCE_ALL_SUBSCRIPTIONS in source:
+    if SOURCE_USER_SUBSCRIPTIONS in source:
         log("Getting URLS from Subscribed Users", "HEADER")
         log(oldest_dates[SOURCE_USER_SUBSCRIPTIONS])
         urls |= get_ao3_user_subscription_urls(
@@ -485,23 +487,41 @@ def get_urls(inout_file, source, options, oldest_dates):
     return urls
 
 
+def update_last_updated_file(options, sources):
+    today = datetime.now().strftime(DATE_FORMAT)
+
+    with open(options.last_update_file, "r") as f:
+        last_updates_text = f.read()
+    last_updates = json.loads(last_updates_text) if last_updates_text else {}
+
+    for s in sources:
+        last_updates[s] = today
+    data = json.dumps(last_updates)
+
+    log("Updating file {} with dates {}".format(options.last_update_file, data), "BLUE")
+
+    with open(options.last_update_file, "w") as f:
+        f.write(data)
+
+
 def get_oldest_date(options, sources):
-    last_update_file = options.last_update_file
-    touch(last_update_file)
+    if not (options.since or options.since_last_update):
+        return {s: None for s in sources}
+
     oldest_date_per_source = {}
 
     if options.since_last_update:
         last_updates = {}
         try:
-            with open(last_update_file, "r") as f:
+            with open(options.last_update_file, "r") as f:
                 last_updates_text = f.read()
             if last_updates_text:
                 last_updates = json.loads(last_updates_text)
         except JSONDecodeError:
-            raise InvalidConfig("{} should be valid json".format(last_update_file))
+            raise InvalidConfig("{} should be valid json".format(options.last_update_file))
 
         oldest_date_per_source = {
-            s: datetime.strptime(last_updates.get(s), "%d.%m.%Y")
+            s: datetime.strptime(last_updates.get(s), DATE_FORMAT)
             for s in sources
             if last_updates.get(s)
         }
@@ -509,7 +529,7 @@ def get_oldest_date(options, sources):
     since = None
     if options.since:
         try:
-            since = datetime.strptime(options.since, "%d.%m.%Y")
+            since = datetime.strptime(options.since, DATE_FORMAT)
         except ValueError:
             raise InvalidConfig("'since' option should have format 'DD.MM.YYYY'")
 
@@ -517,17 +537,30 @@ def get_oldest_date(options, sources):
         if not oldest_date_per_source.get(s):
             oldest_date_per_source[s] = since
 
-    # If we have a date for all_subscriptions but not for the individual subscriptions,
-    # use that date.
-    if oldest_date_per_source.get(SOURCE_ALL_SUBSCRIPTIONS):
-        for s in SUBSCRIPTION_SOURCES:
-            if s in sources and not oldest_date_per_source.get(s):
-                oldest_date_per_source[s] = oldest_date_per_source.get(SOURCE_ALL_SUBSCRIPTIONS)
-
     log("Dates of last update per source:", "BLUE")
     log(oldest_date_per_source, "BLUE")
 
     return oldest_date_per_source
+
+
+def get_sources(source_input):
+    if len(source_input) == 0:
+        return DEFAULT_SOURCES
+
+    sources = []
+    for s in source_input:
+        if s not in SOURCES:
+            raise InvalidConfig(
+                "Valid 'source' options are {}, not {}".format(
+                    ", ".join(SOURCES), s
+                )
+            )
+        if s == SOURCE_ALL_SUBSCRIPTIONS:
+            sources.extend(SUBSCRIPTION_SOURCES)
+        else:
+            sources.append(s)
+
+    return sources
 
 
 def download(options):
@@ -558,20 +591,11 @@ def download(options):
             log(e.output)
             return
 
-    # Default sources
-    sources = DEFAULT_SOURCES
-    if len(options.source) > 0:
-        for s in options.source:
-            if s not in SOURCES:
-                log(
-                    "Valid 'source' options are {}, not {}".format(
-                        ", ".join(SOURCES), s
-                    )
-                )
-                return
-        sources = options.source
+    last_update_file = options.last_update_file
+    touch(last_update_file)
 
     try:
+        sources = get_sources(options.source)
         oldest_dates_per_source = get_oldest_date(options, sources)
     except InvalidConfig as e:
         log(e.message, "FAIL")
@@ -618,3 +642,5 @@ def download(options):
                 for url in urls
             ],
         )
+
+    update_last_updated_file(options, sources)
