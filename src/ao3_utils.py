@@ -33,16 +33,33 @@ def get_ao3_marked_for_later_urls(cookie, max_count, user, oldest_date):
     return set(urls)
 
 
-def get_ao3_work_subscription_urls(cookie, max_count, user):
+def get_ao3_work_subscription_urls(cookie, max_count, user, oldest_date=None):
+    """Get urls of works that the user is subscribed to.
+
+    Using oldest_date is slow, because we have to load every work page and
+    check its date to decide if we keep it.
+    """
+
     if max_count == 0:
         return set([])
 
     api = AO3()
     api.login(user, cookie)
+
+    if oldest_date:
+        urls = []
+        for work_id in api.user.work_subscription_ids(max_count):
+            work = api.work(work_id)
+            if work.completed > oldest_date.date():
+                urls.append(work.url)
+
+        return set(urls)
+
     urls = [
         "https://archiveofourown.org/works/%s" % work_id
         for work_id in api.user.work_subscription_ids(max_count)
     ]
+
     return set(urls)
 
 

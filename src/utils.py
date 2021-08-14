@@ -103,7 +103,8 @@ download    Download fics from AO3 and save to Calibre library
         dest="source",
         help="""Comma-separated.
 'bookmarks': user's bookmarks. 'later': works marked for later.
-'work_subscriptions': all works subscribed to.
+'work_subscriptions': all works subscribed to. Using this with --since or
+--since-last-update is slow!
 'series_subscriptions': all works from all series subscribed to.
 'user_subscriptions': all works from all users subscribed to.
 'all_subscriptions': all works from all works, series and users subscribed to.
@@ -126,7 +127,8 @@ get all bookmarks.""",
         action="store",
         dest="since",
         help="""DD.MM.YYYY. The date since which fics should be downloaded (date 
-bookmarked for bookmarks, date last visited for marked-for-later).""",
+bookmarked or updated for bookmarks, date last visited for marked-for-later).
+Using this with source=work_subscriptions is slow!""",
     )
 
     option_parser.add_option(

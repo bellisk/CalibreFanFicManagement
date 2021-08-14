@@ -444,17 +444,17 @@ def get_urls(inout_file, source, options, oldest_dates):
         log("{} URLs from bookmarks".format(len(urls) - url_count), "GREEN")
         url_count = len(urls)
 
-    if SOURCE_WORK_SUBSCRIPTIONS in source or SOURCE_ALL_SUBSCRIPTIONS in source:
+    if SOURCE_WORK_SUBSCRIPTIONS in source:
         log("Getting URLS from Subscribed Works", "HEADER")
-        # TODO: include oldest_date
         urls |= get_ao3_work_subscription_urls(
             options.cookie,
             options.max_count,
             options.user,
+            oldest_dates[SOURCE_WORK_SUBSCRIPTIONS],
         )
         log("{} URLs from work subscriptions".format(len(urls) - url_count), "GREEN")
 
-    if SOURCE_SERIES_SUBSCRIPTIONS in source or SOURCE_ALL_SUBSCRIPTIONS in source:
+    if SOURCE_SERIES_SUBSCRIPTIONS in source:
         log("Getting URLS from Subscribed Series", "HEADER")
         urls |= get_ao3_series_subscription_urls(
             options.cookie,
