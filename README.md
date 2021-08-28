@@ -13,7 +13,6 @@ Planned:
 - statistics about bookmarked/downloaded fics
 - import from page with list of urls, e.g. collection or author page
 - import all works from author
-- import all works from your subscriptions
 
 ## Usage
 If you want to save bookmarks in a calibre library, you will need to install the
