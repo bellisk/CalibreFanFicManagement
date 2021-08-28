@@ -165,7 +165,7 @@ def downloader(args):
             try:
                 lock.acquire()
                 story_id = check_output(
-                    'calibredb search "Identifiers:url:{}" {}'.format(url, path),
+                    'calibredb search "Identifiers:url:={}" {}'.format(url, path),
                     shell=True,
                     stderr=STDOUT,
                     stdin=PIPE,
@@ -296,7 +296,7 @@ def downloader(args):
             try:
                 lock.acquire()
                 res = check_output(
-                    'calibredb search "Identifiers:url:{}" {}'.format(url, path),
+                    'calibredb search "Identifiers:url:={}" {}'.format(url, path),
                     shell=True,
                     stderr=STDOUT,
                     stdin=PIPE,
