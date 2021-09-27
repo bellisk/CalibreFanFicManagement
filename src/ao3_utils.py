@@ -1,4 +1,5 @@
 # encoding: utf-8
+import time
 
 from ao3 import AO3
 
@@ -49,9 +50,14 @@ def get_ao3_work_subscription_urls(cookie, max_count, user, oldest_date=None):
     if oldest_date:
         urls = []
         for work_id in api.user.work_subscription_ids(max_count):
-            work = api.work(work_id)
-            if work.completed > oldest_date.date():
-                urls.append(work.url)
+            try:
+                append_work_id_if_newer_than_given_date(api, oldest_date, urls, work_id)
+            except RuntimeError as e:
+                # if timeout, wait and try again
+                if "Retry later" in e:
+                    print("timeout... waiting 3 mins and trying again")
+                    time.sleep(180)
+                    append_work_id_if_newer_than_given_date(api, oldest_date, urls, work_id)
 
         return set(urls)
 
@@ -61,6 +67,12 @@ def get_ao3_work_subscription_urls(cookie, max_count, user, oldest_date=None):
     ]
 
     return set(urls)
+
+
+def append_work_id_if_newer_than_given_date(api, oldest_date, urls, work_id):
+    work = api.work(work_id)
+    if work.completed > oldest_date.date():
+        urls.append(work.url)
 
 
 def get_ao3_series_subscription_urls(cookie, max_count, user, oldest_date=None):
