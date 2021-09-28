@@ -102,6 +102,7 @@ download    Download fics from AO3 and save to Calibre library
         action="store",
         dest="source",
         help="""Comma-separated.
+'file': the file specified in --input.
 'bookmarks': user's bookmarks. 'later': works marked for later.
 'work_subscriptions': all works subscribed to. Using this with --since or
 --since-last-update is slow!
@@ -109,7 +110,7 @@ download    Download fics from AO3 and save to Calibre library
 'user_subscriptions': all works from all users subscribed to.
 'all_subscriptions': all works from all works, series and users subscribed to.
 'stdin': read AO3 urls from stdin.
-Default: 'bookmarks,later'.""",
+Default: 'file,bookmarks,later'.""",
     )
 
     option_parser.add_option(

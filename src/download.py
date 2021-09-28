@@ -32,6 +32,7 @@ from .exceptions import (
 )
 from .utils import get_files, log, touch
 
+SOURCE_FILE = "file"
 SOURCE_BOOKMARKS = "bookmarks"
 SOURCE_LATER = "later"
 SOURCE_STDIN = "stdin"
@@ -39,13 +40,14 @@ SOURCE_WORK_SUBSCRIPTIONS = "work_subscriptions"
 SOURCE_SERIES_SUBSCRIPTIONS = "series_subscriptions"
 SOURCE_USER_SUBSCRIPTIONS = "user_subscriptions"
 SOURCE_ALL_SUBSCRIPTIONS = "all_subscriptions"
-DEFAULT_SOURCES = [SOURCE_BOOKMARKS, SOURCE_LATER]
+DEFAULT_SOURCES = [SOURCE_FILE, SOURCE_BOOKMARKS, SOURCE_LATER]
 SUBSCRIPTION_SOURCES = [
     SOURCE_SERIES_SUBSCRIPTIONS,
     SOURCE_USER_SUBSCRIPTIONS,
     SOURCE_WORK_SUBSCRIPTIONS,
 ]
 SOURCES = [
+    SOURCE_FILE,
     SOURCE_BOOKMARKS,
     SOURCE_LATER,
     SOURCE_STDIN,
@@ -407,14 +409,15 @@ def init(l):
 
 
 def get_urls(inout_file, source, options, oldest_dates):
-    with open(inout_file, "r") as fp:
-        urls = set([x.replace("\n", "") for x in fp.readlines()])
+    if SOURCE_FILE in source:
+        with open(inout_file, "r") as fp:
+            urls = set([x.replace("\n", "") for x in fp.readlines()])
 
-    url_count = len(urls)
-    log("{} URLs from file".format(url_count), "GREEN")
+        url_count = len(urls)
+        log("{} URLs from file".format(url_count), "GREEN")
 
-    with open(inout_file, "w") as fp:
-        fp.write("")
+        with open(inout_file, "w") as fp:
+            fp.write("")
 
     if SOURCE_LATER in source:
         log("Getting URLs from Marked for Later", "HEADER")
