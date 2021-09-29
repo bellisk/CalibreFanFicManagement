@@ -54,7 +54,7 @@ def get_ao3_work_subscription_urls(cookie, max_count, user, oldest_date=None):
                 append_work_id_if_newer_than_given_date(api, oldest_date, urls, work_id)
             except RuntimeError as e:
                 # if timeout, wait and try again
-                if "Retry later" in e:
+                if "Retry later" in str(e):
                     print("timeout... waiting 3 mins and trying again")
                     time.sleep(180)
                     append_work_id_if_newer_than_given_date(api, oldest_date, urls, work_id)
