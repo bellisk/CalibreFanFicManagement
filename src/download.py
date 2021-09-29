@@ -409,6 +409,9 @@ def init(l):
 
 
 def get_urls(inout_file, source, options, oldest_dates):
+    urls = set([])
+    url_count = 0
+
     if SOURCE_FILE in source:
         with open(inout_file, "r") as fp:
             urls = set([x.replace("\n", "") for x in fp.readlines()])
@@ -462,6 +465,7 @@ def get_urls(inout_file, source, options, oldest_dates):
             oldest_dates[SOURCE_WORK_SUBSCRIPTIONS],
         )
         log("{} URLs from work subscriptions".format(len(urls) - url_count), "GREEN")
+        url_count = len(urls)
 
     if SOURCE_SERIES_SUBSCRIPTIONS in source:
         log("Getting URLS from Subscribed Series", "HEADER")
@@ -472,6 +476,7 @@ def get_urls(inout_file, source, options, oldest_dates):
             oldest_dates[SOURCE_SERIES_SUBSCRIPTIONS],
         )
         log("{} URLs from series subscriptions".format(len(urls) - url_count), "GREEN")
+        url_count = len(urls)
 
     if SOURCE_USER_SUBSCRIPTIONS in source:
         log("Getting URLS from Subscribed Users", "HEADER")
