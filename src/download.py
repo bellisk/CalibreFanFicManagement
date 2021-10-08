@@ -29,6 +29,7 @@ from .exceptions import (
     StoryUpToDateException,
     TempFileUpdatedMoreRecentlyException,
     TooManyRequestsException,
+    UrlsCollectionException
 )
 from .utils import get_files, log, touch
 
@@ -412,89 +413,95 @@ def get_urls(inout_file, source, options, oldest_dates):
     urls = set([])
     url_count = 0
 
-    if SOURCE_FILE in source:
-        with open(inout_file, "r") as fp:
-            urls = set([x.replace("\n", "") for x in fp.readlines()])
+    try:
+        if SOURCE_FILE in source:
+            with open(inout_file, "r") as fp:
+                urls = set([x.replace("\n", "") for x in fp.readlines()])
 
-        url_count = len(urls)
-        log("{} URLs from file".format(url_count), "GREEN")
+            url_count = len(urls)
+            log("{} URLs from file".format(url_count), "GREEN")
 
-        with open(inout_file, "w") as fp:
-            fp.write("")
+            with open(inout_file, "w") as fp:
+                fp.write("")
 
-    if SOURCE_LATER in source:
-        log("Getting URLs from Marked for Later", "HEADER")
-        urls |= get_ao3_marked_for_later_urls(
-            options.cookie, options.max_count, options.user, oldest_dates[SOURCE_LATER]
-        )
-        log("{} URLs from Marked for Later".format(len(urls) - url_count), "GREEN")
-        url_count = len(urls)
+        if SOURCE_LATER in source:
+            log("Getting URLs from Marked for Later", "HEADER")
+            urls |= get_ao3_marked_for_later_urls(
+                options.cookie, options.max_count, options.user, oldest_dates[SOURCE_LATER]
+            )
+            log("{} URLs from Marked for Later".format(len(urls) - url_count), "GREEN")
+            url_count = len(urls)
 
-    if SOURCE_BOOKMARKS in source:
-        log("Getting URLs from Bookmarks (sorted by bookmarking date)", "HEADER")
-        urls |= get_ao3_bookmark_urls(
-            options.cookie,
-            options.expand_series,
-            options.max_count,
-            options.user,
-            oldest_dates[SOURCE_BOOKMARKS],
-            sort_by_updated=False,
-        )
-        # If we're getting bookmarks back to oldest_date, this should
-        # include works that have been updated since that date, as well as
-        # works bookmarked since that date.
-        if oldest_dates[SOURCE_BOOKMARKS]:
-            log("Getting URLs from Bookmarks (sorted by updated date)", "HEADER")
+        if SOURCE_BOOKMARKS in source:
+            log("Getting URLs from Bookmarks (sorted by bookmarking date)", "HEADER")
             urls |= get_ao3_bookmark_urls(
                 options.cookie,
                 options.expand_series,
                 options.max_count,
                 options.user,
                 oldest_dates[SOURCE_BOOKMARKS],
-                sort_by_updated=True,
+                sort_by_updated=False,
             )
-        log("{} URLs from bookmarks".format(len(urls) - url_count), "GREEN")
-        url_count = len(urls)
+            # If we're getting bookmarks back to oldest_date, this should
+            # include works that have been updated since that date, as well as
+            # works bookmarked since that date.
+            if oldest_dates[SOURCE_BOOKMARKS]:
+                log("Getting URLs from Bookmarks (sorted by updated date)", "HEADER")
+                urls |= get_ao3_bookmark_urls(
+                    options.cookie,
+                    options.expand_series,
+                    options.max_count,
+                    options.user,
+                    oldest_dates[SOURCE_BOOKMARKS],
+                    sort_by_updated=True,
+                )
+            log("{} URLs from bookmarks".format(len(urls) - url_count), "GREEN")
+            url_count = len(urls)
 
-    if SOURCE_WORK_SUBSCRIPTIONS in source:
-        log("Getting URLS from Subscribed Works", "HEADER")
-        urls |= get_ao3_work_subscription_urls(
-            options.cookie,
-            options.max_count,
-            options.user,
-            oldest_dates[SOURCE_WORK_SUBSCRIPTIONS],
-        )
-        log("{} URLs from work subscriptions".format(len(urls) - url_count), "GREEN")
-        url_count = len(urls)
+        if SOURCE_WORK_SUBSCRIPTIONS in source:
+            log("Getting URLS from Subscribed Works", "HEADER")
+            urls |= get_ao3_work_subscription_urls(
+                options.cookie,
+                options.max_count,
+                options.user,
+                oldest_dates[SOURCE_WORK_SUBSCRIPTIONS],
+            )
+            log("{} URLs from work subscriptions".format(len(urls) - url_count), "GREEN")
+            url_count = len(urls)
 
-    if SOURCE_SERIES_SUBSCRIPTIONS in source:
-        log("Getting URLS from Subscribed Series", "HEADER")
-        urls |= get_ao3_series_subscription_urls(
-            options.cookie,
-            options.max_count,
-            options.user,
-            oldest_dates[SOURCE_SERIES_SUBSCRIPTIONS],
-        )
-        log("{} URLs from series subscriptions".format(len(urls) - url_count), "GREEN")
-        url_count = len(urls)
+        if SOURCE_SERIES_SUBSCRIPTIONS in source:
+            log("Getting URLS from Subscribed Series", "HEADER")
+            urls |= get_ao3_series_subscription_urls(
+                options.cookie,
+                options.max_count,
+                options.user,
+                oldest_dates[SOURCE_SERIES_SUBSCRIPTIONS],
+            )
+            log("{} URLs from series subscriptions".format(len(urls) - url_count), "GREEN")
+            url_count = len(urls)
 
-    if SOURCE_USER_SUBSCRIPTIONS in source:
-        log("Getting URLS from Subscribed Users", "HEADER")
-        log(oldest_dates[SOURCE_USER_SUBSCRIPTIONS])
-        urls |= get_ao3_user_subscription_urls(
-            options.cookie,
-            options.max_count,
-            options.user,
-            oldest_dates[SOURCE_USER_SUBSCRIPTIONS],
-        )
-        log("{} URLs from user subscriptions".format(len(urls) - url_count), "GREEN")
+        if SOURCE_USER_SUBSCRIPTIONS in source:
+            log("Getting URLS from Subscribed Users", "HEADER")
+            log(oldest_dates[SOURCE_USER_SUBSCRIPTIONS])
+            urls |= get_ao3_user_subscription_urls(
+                options.cookie,
+                options.max_count,
+                options.user,
+                oldest_dates[SOURCE_USER_SUBSCRIPTIONS],
+            )
+            log("{} URLs from user subscriptions".format(len(urls) - url_count), "GREEN")
 
-    if SOURCE_STDIN in source:
-        stdin_urls = set()
-        for line in sys.stdin:
-            stdin_urls.add(line.rstrip())
-        urls |= stdin_urls
-        log("{} URLs from STDIN".format(len(stdin_urls)), "GREEN")
+        if SOURCE_STDIN in source:
+            stdin_urls = set()
+            for line in sys.stdin:
+                stdin_urls.add(line.rstrip())
+            urls |= stdin_urls
+            log("{} URLs from STDIN".format(len(stdin_urls)), "GREEN")
+    except Exception as e:
+        with open(inout_file, "w") as fp:
+            for cur in urls:
+                fp.write("{}\n".format(cur))
+        raise UrlsCollectionException(e)
 
     return urls
 
@@ -616,14 +623,12 @@ def download(options):
     inout_file = options.input
     touch(inout_file)
 
-    urls = []
     try:
         urls = get_urls(inout_file, sources, options, oldest_dates_per_source)
-    except Exception as e:
-        with open(inout_file, "w") as fp:
-            for cur in urls:
-                fp.write("{}\n".format(cur))
+    except UrlsCollectionException as e:
         log("Error getting urls: {}".format(e))
+
+        return
 
     if not urls:
         return
