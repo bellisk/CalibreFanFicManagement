@@ -20,6 +20,8 @@ from .ao3_utils import (
     get_ao3_series_subscription_urls,
     get_ao3_user_subscription_urls,
     get_ao3_work_subscription_urls,
+    get_ao3_work_urls,
+    get_ao3_gift_urls,
 )
 from .calibre_utils import get_series_options, get_tags_options, get_word_count
 from .exceptions import (
@@ -35,6 +37,8 @@ from .utils import get_files, log, touch
 
 SOURCE_FILE = "file"
 SOURCE_BOOKMARKS = "bookmarks"
+SOURCE_WORKS = "works"
+SOURCE_GIFTS = "gifts"
 SOURCE_LATER = "later"
 SOURCE_STDIN = "stdin"
 SOURCE_WORK_SUBSCRIPTIONS = "work_subscriptions"
@@ -50,6 +54,8 @@ SUBSCRIPTION_SOURCES = [
 SOURCES = [
     SOURCE_FILE,
     SOURCE_BOOKMARKS,
+    SOURCE_WORKS,
+    SOURCE_GIFTS,
     SOURCE_LATER,
     SOURCE_STDIN,
     SOURCE_WORK_SUBSCRIPTIONS,
@@ -456,6 +462,22 @@ def get_urls(inout_file, source, options, oldest_dates):
                     sort_by_updated=True,
                 )
             log("{} URLs from bookmarks".format(len(urls) - url_count), "GREEN")
+            url_count = len(urls)
+
+        if SOURCE_WORKS in source:
+            log("Getting URLs from User's Works", "HEADER")
+            urls |= get_ao3_work_urls(
+                options.cookie, options.max_count, options.user, oldest_dates[SOURCE_WORKS]
+            )
+            log("{} URLs from User's Works".format(len(urls) - url_count), "GREEN")
+            url_count = len(urls)
+
+        if SOURCE_WORKS in source:
+            log("Getting URLs from User's Gifts", "HEADER")
+            urls |= get_ao3_gift_urls(
+                options.cookie, options.max_count, options.user, oldest_dates[SOURCE_WORKS]
+            )
+            log("{} URLs from User's Works".format(len(urls) - url_count), "GREEN")
             url_count = len(urls)
 
         if SOURCE_WORK_SUBSCRIPTIONS in source:
