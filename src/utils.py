@@ -104,6 +104,7 @@ download    Download fics from AO3 and save to Calibre library
         help="""Comma-separated.
 'file': the file specified in --input.
 'bookmarks': user's bookmarks. 'later': works marked for later.
+'works': user's works. 'gifts': user's gifted works.
 'work_subscriptions': all works subscribed to. Using this with --since or
 --since-last-update is slow!
 'series_subscriptions': all works from all series subscribed to.
