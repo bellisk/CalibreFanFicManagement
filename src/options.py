@@ -159,6 +159,15 @@ Example: {"later": "01.01.2021", "bookmarks": "02.01.2021"}.
 Will be created if it doesn't exist. Default: 'last_update.json'.""",
     )
 
+    option_parser.add_option(
+        "-a",
+        "--analysis-file",
+        action="store",
+        dest="analysis_file",
+        help="""File to save output of analysis to. Will be created if it doesn't exist.
+Default: analysis.csv""",
+    )
+
     (options, args) = option_parser.parse_args()
 
     if len(args) != 1:
@@ -210,6 +219,10 @@ Will be created if it doesn't exist. Default: 'last_update.json'.""",
         options.last_update_file = updater(
             config.get("locations", "last_update_file").strip(),
             options.last_update_file,
+        )
+        options.analysis_file = updater(
+            config.get("locations", "analysis_file").strip(),
+            options.analysis_file,
         )
 
         options.live = updater(config.getboolean("output", "live"), options.live)
