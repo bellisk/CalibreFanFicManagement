@@ -1,12 +1,13 @@
 # encoding: utf-8
 
 import re
-from subprocess import PIPE, STDOUT, check_output
-from tempfile import mkdtemp
-from shutil import rmtree
-from ebooklib import epub
 from os import listdir
 from os.path import isfile, join
+from shutil import rmtree
+from subprocess import PIPE, STDOUT, check_output
+from tempfile import mkdtemp
+
+from ebooklib import epub
 
 # Get ids of all ao3 works from Calibre, save as ao3books.csv
 # For each id, export the book as epub

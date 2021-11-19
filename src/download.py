@@ -16,12 +16,12 @@ from urllib.error import HTTPError
 
 from .ao3_utils import (
     get_ao3_bookmark_urls,
+    get_ao3_gift_urls,
     get_ao3_marked_for_later_urls,
     get_ao3_series_subscription_urls,
     get_ao3_user_subscription_urls,
     get_ao3_work_subscription_urls,
     get_ao3_work_urls,
-    get_ao3_gift_urls,
 )
 from .calibre_utils import get_series_options, get_tags_options, get_word_count
 from .exceptions import (
@@ -31,7 +31,7 @@ from .exceptions import (
     StoryUpToDateException,
     TempFileUpdatedMoreRecentlyException,
     TooManyRequestsException,
-    UrlsCollectionException
+    UrlsCollectionException,
 )
 from .utils import get_files, log, touch
 
@@ -433,7 +433,10 @@ def get_urls(inout_file, source, options, oldest_dates):
         if SOURCE_LATER in source:
             log("Getting URLs from Marked for Later", "HEADER")
             urls |= get_ao3_marked_for_later_urls(
-                options.cookie, options.max_count, options.user, oldest_dates[SOURCE_LATER]
+                options.cookie,
+                options.max_count,
+                options.user,
+                oldest_dates[SOURCE_LATER],
             )
             log("{} URLs from Marked for Later".format(len(urls) - url_count), "GREEN")
             url_count = len(urls)
@@ -467,7 +470,10 @@ def get_urls(inout_file, source, options, oldest_dates):
         if SOURCE_WORKS in source:
             log("Getting URLs from User's Works", "HEADER")
             urls |= get_ao3_work_urls(
-                options.cookie, options.max_count, options.user, oldest_dates[SOURCE_WORKS]
+                options.cookie,
+                options.max_count,
+                options.user,
+                oldest_dates[SOURCE_WORKS],
             )
             log("{} URLs from User's Works".format(len(urls) - url_count), "GREEN")
             url_count = len(urls)
@@ -475,7 +481,10 @@ def get_urls(inout_file, source, options, oldest_dates):
         if SOURCE_WORKS in source:
             log("Getting URLs from User's Gifts", "HEADER")
             urls |= get_ao3_gift_urls(
-                options.cookie, options.max_count, options.user, oldest_dates[SOURCE_WORKS]
+                options.cookie,
+                options.max_count,
+                options.user,
+                oldest_dates[SOURCE_WORKS],
             )
             log("{} URLs from User's Works".format(len(urls) - url_count), "GREEN")
             url_count = len(urls)
@@ -488,7 +497,9 @@ def get_urls(inout_file, source, options, oldest_dates):
                 options.user,
                 oldest_dates[SOURCE_WORK_SUBSCRIPTIONS],
             )
-            log("{} URLs from work subscriptions".format(len(urls) - url_count), "GREEN")
+            log(
+                "{} URLs from work subscriptions".format(len(urls) - url_count), "GREEN"
+            )
             url_count = len(urls)
 
         if SOURCE_SERIES_SUBSCRIPTIONS in source:
@@ -499,7 +510,10 @@ def get_urls(inout_file, source, options, oldest_dates):
                 options.user,
                 oldest_dates[SOURCE_SERIES_SUBSCRIPTIONS],
             )
-            log("{} URLs from series subscriptions".format(len(urls) - url_count), "GREEN")
+            log(
+                "{} URLs from series subscriptions".format(len(urls) - url_count),
+                "GREEN",
+            )
             url_count = len(urls)
 
         if SOURCE_USER_SUBSCRIPTIONS in source:
@@ -511,7 +525,9 @@ def get_urls(inout_file, source, options, oldest_dates):
                 options.user,
                 oldest_dates[SOURCE_USER_SUBSCRIPTIONS],
             )
-            log("{} URLs from user subscriptions".format(len(urls) - url_count), "GREEN")
+            log(
+                "{} URLs from user subscriptions".format(len(urls) - url_count), "GREEN"
+            )
 
         if SOURCE_STDIN in source:
             stdin_urls = set()
@@ -632,7 +648,7 @@ def download(options):
             log(e.output)
             return
 
-    last_update_file = options.last_update_file or 'last_update.json'
+    last_update_file = options.last_update_file or "last_update.json"
     touch(last_update_file)
 
     try:
