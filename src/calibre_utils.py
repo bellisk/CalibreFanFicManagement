@@ -1,6 +1,7 @@
 # encoding: utf-8
 import locale
 import re
+from subprocess import PIPE, STDOUT, CalledProcessError, call, check_output
 
 series_pattern = re.compile("(.*) \[(.*)\]")
 
@@ -41,3 +42,15 @@ def get_tags_options(metadata):
 
 def get_word_count(metadata):
     return locale.atoi(metadata.get("numWords", 0))
+
+
+def get_author_works_count(author, path):
+    print(author)
+    result = check_output(
+        "calibredb search author:{} {}".format(author, path),
+        shell=True,
+        stderr=STDOUT,
+        stdin=PIPE,
+    )
+    print(len(str(result).split(",")))
+    return len(str(result).split(","))
