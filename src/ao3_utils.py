@@ -140,3 +140,15 @@ def get_ao3_user_subscription_urls(cookie, max_count, user, oldest_date=None):
         ]
 
     return set(urls)
+
+
+def get_ao3_subscribed_users_work_counts(user, cookie):
+    api = AO3()
+    api.login(user, cookie)
+    user_ids = api.user.user_subscription_ids()
+
+    counts = {}
+    for u in user_ids:
+        counts[u] = api.users_works_count(u)
+
+    return counts
