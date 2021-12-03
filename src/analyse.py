@@ -245,16 +245,25 @@ def _compare_user_subscriptions(username, cookie, path, output_file):
     # }
     calibre_user_work_counts = CALIBRE_AUTHOR_WORKS_NUMBERS
 
+    users_missing_works = []
+
     with open(output_file, "a") as f:
         writer = DictWriter(f, ["author", "works on AO3", "works on Calibre"])
         writer.writeheader()
         for u in ao3_user_work_counts:
+            if ao3_user_work_counts[u] > calibre_user_work_counts[u]:
+                users_missing_works.append(u)
+
             line = {
                 "author": u,
                 "works on AO3": ao3_user_work_counts[u],
                 "works on Calibre": calibre_user_work_counts[u],
             }
             writer.writerow(line)
+
+    if len(users_missing_works) > 0:
+        print("Subscribed users who have fewer works on Calibre than on AO3:")
+        print(",".join(users_missing_works))
 
 
 def _compare_series_subscriptions(username, cookie, path, output_file):
@@ -267,16 +276,25 @@ def _compare_series_subscriptions(username, cookie, path, output_file):
         u: get_series_works_count(u, path) for u in ao3_series_work_counts.keys()
     }
 
+    series_missing_works = []
+
     with open(output_file, "a") as f:
         writer = DictWriter(f, ["series", "works on AO3", "works on Calibre"])
         writer.writeheader()
-        for u in ao3_series_work_counts:
+        for s in ao3_series_work_counts:
+            if ao3_series_work_counts[s] > calibre_series_work_counts[s]:
+                series_missing_works.append(s)
+
             line = {
-                "series": u,
-                "works on AO3": ao3_series_work_counts[u],
-                "works on Calibre": calibre_series_work_counts[u],
+                "series": s,
+                "works on AO3": ao3_series_work_counts[s],
+                "works on Calibre": calibre_series_work_counts[s],
             }
             writer.writerow(line)
+
+    if len(series_missing_works) > 0:
+        print("Subscribed series that have fewer works on Calibre than on AO3:")
+        print(",".join(series_missing_works))
 
 
 def analyse(options):
