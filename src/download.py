@@ -477,7 +477,7 @@ def get_urls(inout_file, source, options, oldest_dates):
             urls |= get_ao3_gift_urls(
                 options.cookie, options.max_count, options.user, oldest_dates[SOURCE_WORKS]
             )
-            log("{} URLs from User's Works".format(len(urls) - url_count), "GREEN")
+            log("{} URLs from User's Gifts".format(len(urls) - url_count), "GREEN")
             url_count = len(urls)
 
         if SOURCE_WORK_SUBSCRIPTIONS in source:
