@@ -1,4 +1,5 @@
 # encoding: utf-8
+import locale
 import time
 
 from ao3 import AO3
@@ -160,8 +161,8 @@ def get_ao3_subscribed_series_work_counts(user, cookie):
     series_ids = api.user.series_subscription_ids()
 
     counts = {}
-    for u in series_ids:
-        stats = api.series_info(u)
-        counts[stats["Title"]] = stats["Works"]
+    for s in series_ids:
+        stats = api.series_info(s)
+        counts[stats["Title"]] = locale.atoi(stats["Works"])
 
     return counts
