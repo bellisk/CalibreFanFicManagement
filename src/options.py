@@ -161,11 +161,11 @@ Will be created if it doesn't exist. Default: 'last_update.json'.""",
 
     option_parser.add_option(
         "-a",
-        "--analysis-file",
+        "--analysis-dir",
         action="store",
-        dest="analysis_file",
-        help="""File to save output of analysis to. Will be created if it doesn't exist.
-Default: analysis.csv""",
+        dest="analysis_dir",
+        help="""Directory to save output of analysis in. Will be created if it doesn't
+exist. Default: analysis/""",
     )
 
     (options, args) = option_parser.parse_args()
@@ -220,9 +220,9 @@ Default: analysis.csv""",
             config.get("locations", "last_update_file").strip(),
             options.last_update_file,
         )
-        options.analysis_file = updater(
-            config.get("locations", "analysis_file").strip(),
-            options.analysis_file,
+        options.analysis_dir = updater(
+            config.get("locations", "analysis_dir").strip(),
+            options.analysis_dir,
         )
 
         options.live = updater(config.getboolean("output", "live"), options.live)
