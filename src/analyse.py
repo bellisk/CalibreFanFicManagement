@@ -1,7 +1,10 @@
 # encoding: utf-8
 
-from .ao3_utils import get_ao3_subscribed_users_work_counts
-from .calibre_utils import get_author_works_count
+from .ao3_utils import (
+    get_ao3_subscribed_users_work_counts,
+    get_ao3_subscribed_series_work_counts,
+)
+from .calibre_utils import get_author_works_count, get_series_works_count
 from .utils import log
 from csv import DictWriter
 
@@ -133,13 +136,35 @@ def compare_user_subscriptions(username, cookie, path, analysis_file):
     calibre_user_work_counts = CALIBRE_AUTHOR_WORKS_NUMBERS
 
     with open(analysis_file, "a") as f:
-        writer = DictWriter(f, ['author', 'works on AO3', 'works on Calibre'])
+        writer = DictWriter(f, ["author", "works on AO3", "works on Calibre"])
         writer.writeheader()
         for u in ao3_user_work_counts:
             line = {
-                'author': u,
-                'works on AO3': ao3_user_work_counts[u],
-                'works on Calibre': calibre_user_work_counts[u],
+                "author": u,
+                "works on AO3": ao3_user_work_counts[u],
+                "works on Calibre": calibre_user_work_counts[u],
+            }
+            writer.writerow(line)
+
+
+def compare_series_subscriptions(username, cookie, path, analysis_file):
+    """Compares the number of fics downloaded for each series subscribed to with the
+    number posted to AO3.
+    :return:
+    """
+    ao3_series_work_counts = get_ao3_subscribed_series_work_counts(username, cookie)
+    calibre_series_work_counts = {
+        u: get_series_works_count(u, path) for u in ao3_series_work_counts.keys()
+    }
+
+    with open(analysis_file, "a") as f:
+        writer = DictWriter(f, ["series", "works on AO3", "works on Calibre"])
+        writer.writeheader()
+        for u in ao3_series_work_counts:
+            line = {
+                "series": u,
+                "works on AO3": ao3_series_work_counts[u],
+                "works on Calibre": calibre_series_work_counts[u],
             }
             writer.writerow(line)
 
@@ -158,4 +183,9 @@ def analyse(options):
     with open(analysis_file, "w") as fp:
         fp.write("")
 
-    print(compare_user_subscriptions(options.user, options.cookie, path, options.analysis_file))
+    # print(compare_user_subscriptions(options.user, options.cookie, path, options.analysis_file))
+    print(
+        compare_series_subscriptions(
+            options.user, options.cookie, path, options.analysis_file
+        )
+    )

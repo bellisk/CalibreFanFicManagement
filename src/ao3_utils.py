@@ -152,3 +152,16 @@ def get_ao3_subscribed_users_work_counts(user, cookie):
         counts[u] = api.users_works_count(u)
 
     return counts
+
+
+def get_ao3_subscribed_series_work_counts(user, cookie):
+    api = AO3()
+    api.login(user, cookie)
+    series_ids = api.user.series_subscription_ids()
+
+    counts = {}
+    for u in series_ids:
+        stats = api.series_info(u)
+        counts[stats["Title"]] = stats["Works"]
+
+    return counts
