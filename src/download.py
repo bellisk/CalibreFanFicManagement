@@ -45,6 +45,7 @@ SOURCE_WORK_SUBSCRIPTIONS = "work_subscriptions"
 SOURCE_SERIES_SUBSCRIPTIONS = "series_subscriptions"
 SOURCE_USER_SUBSCRIPTIONS = "user_subscriptions"
 SOURCE_ALL_SUBSCRIPTIONS = "all_subscriptions"
+SOURCE_USERNAMES = "usernames"
 DEFAULT_SOURCES = [SOURCE_FILE, SOURCE_BOOKMARKS, SOURCE_LATER]
 SUBSCRIPTION_SOURCES = [
     SOURCE_SERIES_SUBSCRIPTIONS,
@@ -62,6 +63,7 @@ SOURCES = [
     SOURCE_SERIES_SUBSCRIPTIONS,
     SOURCE_USER_SUBSCRIPTIONS,
     SOURCE_ALL_SUBSCRIPTIONS,
+    SOURCE_USERNAMES,
 ]
 
 DATE_FORMAT = "%d.%m.%Y"
@@ -602,7 +604,8 @@ def get_oldest_date(options, sources):
     return oldest_date_per_source
 
 
-def get_sources(source_input):
+def get_sources(options):
+    source_input = options.source
     if len(source_input) == 0:
         return DEFAULT_SOURCES
 
@@ -612,12 +615,17 @@ def get_sources(source_input):
             raise InvalidConfig(
                 "Valid 'source' options are {}, not {}".format(", ".join(SOURCES), s)
             )
+        if s == SOURCE_USERNAMES and options.usernames is None:
+            raise InvalidConfig(
+                "A list of usernames is required when source 'usernames' is given."
+            )
+
         if s == SOURCE_ALL_SUBSCRIPTIONS:
             sources.extend(SUBSCRIPTION_SOURCES)
         else:
             sources.append(s)
 
-    return sources
+    return set(sources)
 
 
 def download(options):
@@ -652,7 +660,7 @@ def download(options):
     touch(last_update_file)
 
     try:
-        sources = get_sources(options.source)
+        sources = get_sources(options)
         oldest_dates_per_source = get_oldest_date(options, sources)
     except InvalidConfig as e:
         log(e.message, "FAIL")

@@ -42,6 +42,7 @@ analyse     Analyse contents of Calibre library and AO3 data
 'user_subscriptions': all works from all users subscribed to.
 'all_subscriptions': all works from all works, series and users subscribed to.
 'stdin': read AO3 urls from stdin.
+'usernames': get all works from one or more users. Specify users with --usernames.
 Default: 'file,bookmarks,later'.""",
     )
 
@@ -52,6 +53,13 @@ Default: 'file,bookmarks,later'.""",
         dest="max_count",
         help="""Maximum number of fics to get from AO3. Enter 'none' (or any string) to
 get all bookmarks.""",
+    )
+
+    option_parser.add_option(
+        "--usernames",
+        action="store",
+        dest="usernames",
+        help="""One or more usernames to download all works from.""",
     )
 
     option_parser.add_option(
@@ -188,10 +196,6 @@ exist. Default: analysis/""",
         options.max_count = updater(
             config.get("import", "max_count"), options.max_count
         )
-        try:
-            options.max_count = int(options.max_count)
-        except ValueError:
-            options.max_count = None
 
         options.expand_series = updater(
             config.getboolean("import", "expand_series"), options.expand_series
@@ -201,11 +205,14 @@ exist. Default: analysis/""",
             config.getboolean("import", "dry_run"), options.dry_run
         )
         options.source = updater(config.get("import", "source").strip(), options.source)
-        options.source = options.source.split(",")
         options.since = updater(config.get("import", "since").strip(), options.since)
         options.since_last_update = updater(
             config.getboolean("import", "since_last_update"),
             options.since_last_update,
+        )
+        options.usernames = updater(
+            config.get("import", "usernames").strip(),
+            options.usernames
         )
 
         options.library = updater(
@@ -226,5 +233,13 @@ exist. Default: analysis/""",
         )
 
         options.live = updater(config.getboolean("output", "live"), options.live)
+
+    try:
+        options.max_count = int(options.max_count)
+    except ValueError:
+        options.max_count = None
+
+    options.source = options.source.split(",")
+    options.usernames = options.usernames.split(",") if len(options.usernames) > 0 else None
 
     return command, options
