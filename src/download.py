@@ -21,7 +21,8 @@ from .ao3_utils import (
     get_ao3_series_subscription_urls,
     get_ao3_user_subscription_urls,
     get_ao3_work_subscription_urls,
-    get_ao3_work_urls,
+    get_ao3_series_work_urls,
+    get_ao3_users_work_urls,
 )
 from .calibre_utils import get_series_options, get_tags_options, get_word_count
 from .exceptions import (
@@ -473,9 +474,10 @@ def get_urls(inout_file, source, options, oldest_dates):
 
         if SOURCE_WORKS in source:
             log("Getting URLs from User's Works", "HEADER")
-            urls |= get_ao3_work_urls(
+            urls |= get_ao3_users_work_urls(
                 options.cookie,
                 options.max_count,
+                options.user,
                 options.user,
                 oldest_dates[SOURCE_WORKS],
             )
@@ -540,9 +542,10 @@ def get_urls(inout_file, source, options, oldest_dates):
                 )
             )
             for u in options.usernames:
-                urls |= get_ao3_work_urls(
+                urls |= get_ao3_users_work_urls(
                     options.cookie,
                     options.max_count,
+                    options.user,
                     u,
                     oldest_dates[u],
                 )
@@ -556,9 +559,10 @@ def get_urls(inout_file, source, options, oldest_dates):
                 )
             )
             for s in options.series:
-                urls |= get_ao3_work_urls(
+                urls |= get_ao3_series_work_urls(
                     options.cookie,
                     options.max_count,
+                    options.user,
                     s,
                     oldest_dates[s],
                 )
