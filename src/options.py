@@ -184,6 +184,21 @@ Will be created if it doesn't exist. Default: 'last_update.json'.""",
 exist. Default: analysis/""",
     )
 
+    option_parser.add_option(
+        "--analysis-type",
+        action="store",
+        dest="analysis_type",
+        help="""Which source(s) should be analysed to see if all works are in Calibre?
+Options: 'user_subscriptions', 'series_subscriptions'. Default is both.""",
+    )
+
+    option_parser.add_option(
+        "--fix",
+        action="store_true",
+        dest="fix",
+        help="""If missing works are discovered during analysis, download them.""",
+    )
+
     (options, args) = option_parser.parse_args()
 
     if len(args) != 1:
@@ -240,6 +255,11 @@ exist. Default: analysis/""",
             options.analysis_dir,
         )
 
+        options.analysis_type = updater(
+            config.get("analysis", "analysis_type"), options.analysis_type
+        )
+        options.fix = updater(config.getboolean("analysis", "fix"), options.fix)
+
         options.live = updater(config.getboolean("output", "live"), options.live)
 
     try:
@@ -252,5 +272,8 @@ exist. Default: analysis/""",
         options.usernames.split(",") if len(options.usernames) > 0 else []
     )
     options.series = options.series.split(",") if len(options.series) > 0 else []
+    options.analysis_type = (
+        options.analysis_type.split(",") if len(options.analysis_type) > 0 else []
+    )
 
     return command, options

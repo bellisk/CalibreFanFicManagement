@@ -19,10 +19,10 @@ from .ao3_utils import (
     get_ao3_gift_urls,
     get_ao3_marked_for_later_urls,
     get_ao3_series_subscription_urls,
-    get_ao3_user_subscription_urls,
-    get_ao3_work_subscription_urls,
     get_ao3_series_work_urls,
+    get_ao3_user_subscription_urls,
     get_ao3_users_work_urls,
+    get_ao3_work_subscription_urls,
 )
 from .calibre_utils import get_series_options, get_tags_options, get_word_count
 from .exceptions import (
@@ -484,13 +484,13 @@ def get_urls(inout_file, source, options, oldest_dates):
             log("{} URLs from User's Works".format(len(urls) - url_count), "GREEN")
             url_count = len(urls)
 
-        if SOURCE_WORKS in source:
+        if SOURCE_GIFTS in source:
             log("Getting URLs from User's Gifts", "HEADER")
             urls |= get_ao3_gift_urls(
                 options.cookie,
                 options.max_count,
                 options.user,
-                oldest_dates[SOURCE_WORKS],
+                oldest_dates[SOURCE_GIFTS],
             )
             log("{} URLs from User's Gifts".format(len(urls) - url_count), "GREEN")
             url_count = len(urls)
@@ -601,11 +601,11 @@ def update_last_updated_file(options, sources):
 
 
 def get_oldest_date(options, sources):
+    all_sources = sources + options.usernames + options.series
     if not (options.since or options.since_last_update):
-        return {s: None for s in sources}
+        return {s: None for s in all_sources}
 
     oldest_date_per_source = {}
-    all_sources = sources + options.usernames + options.series
 
     if options.since_last_update:
         last_updates = {}
