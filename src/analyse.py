@@ -103,15 +103,15 @@ def analyse(options):
     if not isdir(analysis_dir):
         mkdir(analysis_dir)
 
-    for type in ANALYSIS_TYPES:
+    for analysis_type in ANALYSIS_TYPES:
         filename = "{}_{}.csv".format(
-            type, datetime.strftime(datetime.now(), "%Y%m%d_%H%M%S")
+            analysis_type, datetime.strftime(datetime.now(), "%Y%m%d_%H%M%S")
         )
         output_file = join(analysis_dir, filename)
 
-        if type == "user_subscriptions":
+        if analysis_type == "user_subscriptions":
             _compare_user_subscriptions(options.user, options.cookie, path, output_file)
-        elif type == "series_subscriptions":
+        elif analysis_type == "series_subscriptions":
             _compare_series_subscriptions(
                 options.user, options.cookie, path, output_file
             )
