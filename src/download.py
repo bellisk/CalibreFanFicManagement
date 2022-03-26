@@ -601,11 +601,11 @@ def update_last_updated_file(options, sources):
 
 
 def get_oldest_date(options, sources):
+    all_sources = sources + options.usernames + options.series
     if not (options.since or options.since_last_update):
-        return {s: None for s in sources}
+        return {s: None for s in all_sources}
 
     oldest_date_per_source = {}
-    all_sources = sources + options.usernames + options.series
 
     if options.since_last_update:
         last_updates = {}
