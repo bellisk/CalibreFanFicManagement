@@ -484,13 +484,13 @@ def get_urls(inout_file, source, options, oldest_dates):
             log("{} URLs from User's Works".format(len(urls) - url_count), "GREEN")
             url_count = len(urls)
 
-        if SOURCE_WORKS in source:
+        if SOURCE_GIFTS in source:
             log("Getting URLs from User's Gifts", "HEADER")
             urls |= get_ao3_gift_urls(
                 options.cookie,
                 options.max_count,
                 options.user,
-                oldest_dates[SOURCE_WORKS],
+                oldest_dates[SOURCE_GIFTS],
             )
             log("{} URLs from User's Gifts".format(len(urls) - url_count), "GREEN")
             url_count = len(urls)
