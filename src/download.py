@@ -581,7 +581,7 @@ def get_oldest_date(options, sources):
         return {s: None for s in sources}
 
     oldest_date_per_source = {}
-    sources_and_usernames = list(sources) + options.usernames
+    sources_and_usernames = sources + options.usernames
 
     if options.since_last_update:
         last_updates = {}
@@ -639,7 +639,7 @@ def get_sources(options):
         else:
             sources.append(s)
 
-    return set(sources)
+    return sources
 
 
 def download(options):
