@@ -1,5 +1,4 @@
 # encoding: utf-8
-import locale
 import time
 
 from ao3 import AO3
