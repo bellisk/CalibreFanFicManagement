@@ -174,14 +174,13 @@ def get_ao3_subscribed_users_work_counts(user, cookie):
     return counts
 
 
-def get_ao3_subscribed_series_work_counts(user, cookie):
+def get_ao3_subscribed_series_work_stats(user, cookie):
     api = AO3()
     api.login(user, cookie)
     series_ids = api.user.series_subscription_ids()
 
-    counts = {}
+    stats = {}
     for s in series_ids:
-        stats = api.series_info(s)
-        counts[stats["Title"]] = locale.atoi(stats["Works"])
+        stats[s] = api.series_info(s)
 
-    return counts
+    return stats
