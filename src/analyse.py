@@ -45,6 +45,8 @@ def _compare_user_subscriptions(username, cookie, path, output_file):
     if len(users_missing_works) > 0:
         print("Subscribed users who have fewer works on Calibre than on AO3:")
         print(",".join(users_missing_works))
+    else:
+        print("All subscribed users have as many or more works on Calibre than on AO3.")
 
 
 def _compare_series_subscriptions(username, cookie, path, output_file):
@@ -52,6 +54,8 @@ def _compare_series_subscriptions(username, cookie, path, output_file):
     number posted to AO3.
     :return:
     """
+    print("Comparing series subscriptions on AO3 to Calibre library")
+
     ao3_series_work_counts = get_ao3_subscribed_series_work_counts(username, cookie)
     calibre_series_work_counts = {
         u: get_series_works_count(u, path) for u in ao3_series_work_counts.keys()
@@ -76,6 +80,10 @@ def _compare_series_subscriptions(username, cookie, path, output_file):
     if len(series_missing_works) > 0:
         print("Subscribed series that have fewer works on Calibre than on AO3:")
         print(",".join(series_missing_works))
+    else:
+        print(
+            "All subscribed series have as many or more works on Calibre than on AO3."
+        )
 
 
 def analyse(options):
