@@ -1,4 +1,5 @@
 # encoding: utf-8
+import locale
 import time
 
 from ao3 import AO3
@@ -21,9 +22,7 @@ def get_ao3_bookmark_urls(
     return set(urls)
 
 
-def get_ao3_work_urls(
-    cookie, max_count, user, oldest_date
-):
+def get_ao3_work_urls(cookie, max_count, user, oldest_date):
     if max_count == 0:
         return set([])
 
@@ -31,16 +30,12 @@ def get_ao3_work_urls(
     api.login(user, cookie)
     urls = [
         "https://archiveofourown.org/works/%s" % work_id
-        for work_id in api.user.work_ids(
-            max_count, oldest_date
-        )
+        for work_id in api.user.work_ids(max_count, oldest_date)
     ]
     return set(urls)
 
 
-def get_ao3_gift_urls(
-    cookie, max_count, user, oldest_date
-):
+def get_ao3_gift_urls(cookie, max_count, user, oldest_date):
     if max_count == 0:
         return set([])
 
@@ -48,9 +43,7 @@ def get_ao3_gift_urls(
     api.login(user, cookie)
     urls = [
         "https://archiveofourown.org/works/%s" % work_id
-        for work_id in api.user.gift_ids(
-            max_count, oldest_date
-        )
+        for work_id in api.user.gift_ids(max_count, oldest_date)
     ]
     return set(urls)
 
@@ -85,13 +78,17 @@ def get_ao3_work_subscription_urls(cookie, max_count, user, oldest_date=None):
         urls = []
         for work_id in api.user.work_subscription_ids(max_count):
             try:
-                _append_work_id_if_newer_than_given_date(api, oldest_date, urls, work_id)
+                _append_work_id_if_newer_than_given_date(
+                    api, oldest_date, urls, work_id
+                )
             except RuntimeError as e:
                 # if timeout, wait and try again
                 if "Retry later" in str(e):
                     print("timeout... waiting 3 mins and trying again")
                     time.sleep(180)
-                    _append_work_id_if_newer_than_given_date(api, oldest_date, urls, work_id)
+                    _append_work_id_if_newer_than_given_date(
+                        api, oldest_date, urls, work_id
+                    )
 
         return set(urls)
 
@@ -144,3 +141,28 @@ def get_ao3_user_subscription_urls(cookie, max_count, user, oldest_date=None):
         ]
 
     return set(urls)
+
+
+def get_ao3_subscribed_users_work_counts(user, cookie):
+    api = AO3()
+    api.login(user, cookie)
+    user_ids = api.user.user_subscription_ids()
+
+    counts = {}
+    for u in user_ids:
+        counts[u] = api.users_works_count(u)
+
+    return counts
+
+
+def get_ao3_subscribed_series_work_counts(user, cookie):
+    api = AO3()
+    api.login(user, cookie)
+    series_ids = api.user.series_subscription_ids()
+
+    counts = {}
+    for s in series_ids:
+        stats = api.series_info(s)
+        counts[stats["Title"]] = locale.atoi(stats["Works"])
+
+    return counts
