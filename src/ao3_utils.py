@@ -22,7 +22,8 @@ def get_ao3_bookmark_urls(
     return set(urls)
 
 
-def get_ao3_work_urls(cookie, max_count, user, oldest_date):
+def get_ao3_users_work_urls(cookie, max_count, user, username, oldest_date):
+    # user is the user to sign in as; username is the author to get work urls for.
     if max_count == 0:
         return set([])
 
@@ -30,7 +31,7 @@ def get_ao3_work_urls(cookie, max_count, user, oldest_date):
     api.login(user, cookie)
     urls = [
         _work_url_from_id(work_id)
-        for work_id in api.user.work_ids(max_count, oldest_date)
+        for work_id in api.users_work_ids(username, max_count, oldest_date)
     ]
     return set(urls)
 
@@ -140,8 +141,7 @@ def get_ao3_user_subscription_urls(cookie, max_count, user, oldest_date=None):
     for u in user_ids:
         print(u)
         urls += [
-            "https://archiveofourown.org/works/%s" % work_id
-            for work_id in api.users_work_ids(u, oldest_date)
+            _work_url_from_id(work_id) for work_id in api.users_work_ids(u, oldest_date)
         ]
 
     return set(urls)
