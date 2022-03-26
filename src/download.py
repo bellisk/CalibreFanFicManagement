@@ -21,7 +21,8 @@ from .ao3_utils import (
     get_ao3_series_subscription_urls,
     get_ao3_user_subscription_urls,
     get_ao3_work_subscription_urls,
-    get_ao3_work_urls,
+    get_ao3_series_work_urls,
+    get_ao3_users_work_urls,
 )
 from .calibre_utils import get_series_options, get_tags_options, get_word_count
 from .exceptions import (
@@ -46,6 +47,7 @@ SOURCE_SERIES_SUBSCRIPTIONS = "series_subscriptions"
 SOURCE_USER_SUBSCRIPTIONS = "user_subscriptions"
 SOURCE_ALL_SUBSCRIPTIONS = "all_subscriptions"
 SOURCE_USERNAMES = "usernames"
+SOURCE_SERIES = "series"
 DEFAULT_SOURCES = [SOURCE_FILE, SOURCE_BOOKMARKS, SOURCE_LATER]
 SUBSCRIPTION_SOURCES = [
     SOURCE_SERIES_SUBSCRIPTIONS,
@@ -64,6 +66,7 @@ SOURCES = [
     SOURCE_USER_SUBSCRIPTIONS,
     SOURCE_ALL_SUBSCRIPTIONS,
     SOURCE_USERNAMES,
+    SOURCE_SERIES,
 ]
 
 DATE_FORMAT = "%d.%m.%Y"
@@ -471,9 +474,10 @@ def get_urls(inout_file, source, options, oldest_dates):
 
         if SOURCE_WORKS in source:
             log("Getting URLs from User's Works", "HEADER")
-            urls |= get_ao3_work_urls(
+            urls |= get_ao3_users_work_urls(
                 options.cookie,
                 options.max_count,
+                options.user,
                 options.user,
                 oldest_dates[SOURCE_WORKS],
             )
@@ -538,13 +542,31 @@ def get_urls(inout_file, source, options, oldest_dates):
                 )
             )
             for u in options.usernames:
-                urls |= get_ao3_work_urls(
+                urls |= get_ao3_users_work_urls(
                     options.cookie,
                     options.max_count,
+                    options.user,
                     u,
-                    oldest_dates[SOURCE_USERNAMES],
+                    oldest_dates[u],
                 )
             log("{} URLs from usernames".format(len(urls) - url_count), "GREEN")
+            url_count = len(urls)
+
+        if SOURCE_SERIES in source:
+            log(
+                "Getting URLs from following series: {}".format(
+                    ",".join(options.series)
+                )
+            )
+            for s in options.series:
+                urls |= get_ao3_series_work_urls(
+                    options.cookie,
+                    options.max_count,
+                    options.user,
+                    s,
+                    oldest_dates[s],
+                )
+            log("{} URLs from series".format(len(urls) - url_count), "GREEN")
 
         if SOURCE_STDIN in source:
             stdin_urls = set()
@@ -583,7 +605,7 @@ def get_oldest_date(options, sources):
         return {s: None for s in sources}
 
     oldest_date_per_source = {}
-    sources_and_usernames = sources + options.usernames
+    all_sources = sources + options.usernames + options.series
 
     if options.since_last_update:
         last_updates = {}
@@ -599,7 +621,7 @@ def get_oldest_date(options, sources):
 
         oldest_date_per_source = {
             s: datetime.strptime(last_updates.get(s), DATE_FORMAT)
-            for s in sources_and_usernames
+            for s in all_sources
             if last_updates.get(s)
         }
 
@@ -610,7 +632,7 @@ def get_oldest_date(options, sources):
         except ValueError:
             raise InvalidConfig("'since' option should have format 'DD.MM.YYYY'")
 
-    for s in sources_and_usernames:
+    for s in all_sources:
         if not oldest_date_per_source.get(s):
             oldest_date_per_source[s] = since
 
@@ -634,6 +656,10 @@ def get_sources(options):
         if s == SOURCE_USERNAMES and len(options.usernames) == 0:
             raise InvalidConfig(
                 "A list of usernames is required when source 'usernames' is given."
+            )
+        if s == SOURCE_SERIES and len(options.series) == 0:
+            raise InvalidConfig(
+                "A list of series is required when source 'series' is given."
             )
 
         if s == SOURCE_ALL_SUBSCRIPTIONS:

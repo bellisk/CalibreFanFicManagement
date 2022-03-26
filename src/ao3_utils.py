@@ -14,7 +14,7 @@ def get_ao3_bookmark_urls(
     api = AO3()
     api.login(user, cookie)
     urls = [
-        "https://archiveofourown.org/works/%s" % work_id
+        _work_url_from_id(work_id)
         for work_id in api.user.bookmarks_ids(
             max_count, expand_series, oldest_date, sort_by_updated
         )
@@ -22,15 +22,16 @@ def get_ao3_bookmark_urls(
     return set(urls)
 
 
-def get_ao3_work_urls(cookie, max_count, user, oldest_date):
+def get_ao3_users_work_urls(cookie, max_count, user, username, oldest_date):
+    # user is the user to sign in as; username is the author to get work urls for.
     if max_count == 0:
         return set([])
 
     api = AO3()
     api.login(user, cookie)
     urls = [
-        "https://archiveofourown.org/works/%s" % work_id
-        for work_id in api.user.work_ids(max_count, oldest_date)
+        _work_url_from_id(work_id)
+        for work_id in api.users_work_ids(username, max_count, oldest_date)
     ]
     return set(urls)
 
@@ -42,7 +43,7 @@ def get_ao3_gift_urls(cookie, max_count, user, oldest_date):
     api = AO3()
     api.login(user, cookie)
     urls = [
-        "https://archiveofourown.org/works/%s" % work_id
+        _work_url_from_id(work_id)
         for work_id in api.user.gift_ids(max_count, oldest_date)
     ]
     return set(urls)
@@ -55,7 +56,7 @@ def get_ao3_marked_for_later_urls(cookie, max_count, user, oldest_date):
     api = AO3()
     api.login(user, cookie)
     urls = [
-        "https://archiveofourown.org/works/%s" % work_id
+        _work_url_from_id(work_id)
         for work_id in api.user.marked_for_later_ids(max_count, oldest_date)
     ]
     return set(urls)
@@ -93,7 +94,7 @@ def get_ao3_work_subscription_urls(cookie, max_count, user, oldest_date=None):
         return set(urls)
 
     urls = [
-        "https://archiveofourown.org/works/%s" % work_id
+        _work_url_from_id(work_id)
         for work_id in api.user.work_subscription_ids(max_count)
     ]
 
@@ -104,6 +105,10 @@ def _append_work_id_if_newer_than_given_date(api, oldest_date, urls, work_id):
     work = api.work(work_id)
     if work.completed > oldest_date.date():
         urls.append(work.url)
+
+
+def _work_url_from_id(work_id):
+    return "https://archiveofourown.org/works/%s" % work_id
 
 
 def get_ao3_series_subscription_urls(cookie, max_count, user, oldest_date=None):
@@ -117,8 +122,8 @@ def get_ao3_series_subscription_urls(cookie, max_count, user, oldest_date=None):
     urls = []
     for s in series_ids:
         urls += [
-            "https://archiveofourown.org/works/%s" % work_id
-            for work_id in api.series_work_ids(s, oldest_date)
+            _work_url_from_id(work_id)
+            for work_id in api.series_work_ids(s, max_count, oldest_date)
         ]
 
     return set(urls)
@@ -136,9 +141,23 @@ def get_ao3_user_subscription_urls(cookie, max_count, user, oldest_date=None):
     for u in user_ids:
         print(u)
         urls += [
-            "https://archiveofourown.org/works/%s" % work_id
-            for work_id in api.users_work_ids(u, oldest_date)
+            _work_url_from_id(work_id) for work_id in api.users_work_ids(u, oldest_date)
         ]
+
+    return set(urls)
+
+
+def get_ao3_series_work_urls(cookie, max_count, user, series_id, oldest_date=None):
+    if max_count == 0:
+        return set([])
+
+    api = AO3()
+    api.login(user, cookie)
+
+    urls = [
+        _work_url_from_id(work_id)
+        for work_id in api.series_work_ids(series_id, max_count, oldest_date)
+    ]
 
     return set(urls)
 
