@@ -11,6 +11,7 @@ from .ao3_utils import (
     get_ao3_subscribed_users_work_counts,
 )
 from .calibre_utils import get_author_works_count, get_series_works_count
+from .download import download
 from .exceptions import InvalidConfig
 from .utils import log
 
@@ -148,4 +149,15 @@ def analyse(options):
             )
 
     if options.fix:
-        log(missing_works)
+        log("Sending missing works to be downloaded", "HEADER")
+        options.source = []
+        for key, value in missing_works.items():
+            options.source.append(key)
+
+        options.usernames = missing_works.get("usernames", [])
+        options.series = missing_works.get("series", [])
+
+        options.since_last_update = False
+        options.since = None
+
+        download(options)
