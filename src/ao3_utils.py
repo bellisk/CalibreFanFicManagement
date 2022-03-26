@@ -147,6 +147,21 @@ def get_ao3_user_subscription_urls(cookie, max_count, user, oldest_date=None):
     return set(urls)
 
 
+def get_ao3_series_work_urls(cookie, max_count, user, series_id, oldest_date=None):
+    if max_count == 0:
+        return set([])
+
+    api = AO3()
+    api.login(user, cookie)
+
+    urls = [
+        _work_url_from_id(work_id)
+        for work_id in api.series_work_ids(series_id, max_count, oldest_date)
+    ]
+
+    return set(urls)
+
+
 def get_ao3_subscribed_users_work_counts(user, cookie):
     api = AO3()
     api.login(user, cookie)
