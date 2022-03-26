@@ -1,6 +1,5 @@
 # encoding: utf-8
 import locale
-
 from csv import DictWriter
 from datetime import datetime
 from os import getcwd, mkdir
@@ -23,7 +22,7 @@ def _compare_user_subscriptions(username, cookie, path, output_file):
     number posted to AO3.
     :return:
     """
-    print("Comparing user subscriptions on AO3 to Calibre library")
+    log("Comparing user subscriptions on AO3 to Calibre library", "HEADER")
 
     ao3_user_work_counts = get_ao3_subscribed_users_work_counts(username, cookie)
     calibre_user_work_counts = {
@@ -47,10 +46,14 @@ def _compare_user_subscriptions(username, cookie, path, output_file):
             writer.writerow(line)
 
     if len(users_missing_works) > 0:
-        print("Subscribed users who have fewer works on Calibre than on AO3:")
-        print(",".join(users_missing_works))
+        log("Subscribed users who have fewer works on Calibre than on AO3:", "HEADER")
+        for user in users_missing_works:
+            log("\t{}".format(user), "BLUE")
     else:
-        print("All subscribed users have as many or more works on Calibre than on AO3.")
+        log(
+            "All subscribed users have as many or more works on Calibre than on AO3.",
+            "GREEN",
+        )
 
     return users_missing_works
 
@@ -60,7 +63,7 @@ def _compare_series_subscriptions(username, cookie, path, output_file):
     number posted to AO3.
     :return:
     """
-    print("Comparing series subscriptions on AO3 to Calibre library")
+    log("Comparing series subscriptions on AO3 to Calibre library", "HEADER")
 
     ao3_series_work_stats = get_ao3_subscribed_series_work_stats(username, cookie)
     calibre_series_work_counts = {
@@ -87,11 +90,13 @@ def _compare_series_subscriptions(username, cookie, path, output_file):
             writer.writerow(line)
 
     if len(series_missing_works) > 0:
-        print("Subscribed series that have fewer works on Calibre than on AO3:")
-        print(",".join(series_missing_works.values()))
+        log("Subscribed series that have fewer works on Calibre than on AO3:", "HEADER")
+        for series in series_missing_works.values():
+            log("\t{}".format(series), "BLUE")
     else:
-        print(
-            "All subscribed series have as many or more works on Calibre than on AO3."
+        log(
+            "All subscribed series have as many or more works on Calibre than on AO3.",
+            "GREEN",
         )
 
     return list(series_missing_works.keys())
