@@ -145,7 +145,7 @@ def analyse(options):
         output_file = join(analysis_dir, filename)
 
         if analysis_type == "user_subscriptions":
-            missing_works["users"] = _compare_user_subscriptions(
+            missing_works["usernames"] = _compare_user_subscriptions(
                 options.user, options.cookie, path, output_file
             )
         elif analysis_type == "series_subscriptions":
