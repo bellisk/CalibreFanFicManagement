@@ -45,6 +45,7 @@ SOURCE_WORK_SUBSCRIPTIONS = "work_subscriptions"
 SOURCE_SERIES_SUBSCRIPTIONS = "series_subscriptions"
 SOURCE_USER_SUBSCRIPTIONS = "user_subscriptions"
 SOURCE_ALL_SUBSCRIPTIONS = "all_subscriptions"
+SOURCE_USERNAMES = "usernames"
 DEFAULT_SOURCES = [SOURCE_FILE, SOURCE_BOOKMARKS, SOURCE_LATER]
 SUBSCRIPTION_SOURCES = [
     SOURCE_SERIES_SUBSCRIPTIONS,
@@ -62,6 +63,7 @@ SOURCES = [
     SOURCE_SERIES_SUBSCRIPTIONS,
     SOURCE_USER_SUBSCRIPTIONS,
     SOURCE_ALL_SUBSCRIPTIONS,
+    SOURCE_USERNAMES,
 ]
 
 DATE_FORMAT = "%d.%m.%Y"
@@ -490,7 +492,7 @@ def get_urls(inout_file, source, options, oldest_dates):
             url_count = len(urls)
 
         if SOURCE_WORK_SUBSCRIPTIONS in source:
-            log("Getting URLS from Subscribed Works", "HEADER")
+            log("Getting URLs from Subscribed Works", "HEADER")
             urls |= get_ao3_work_subscription_urls(
                 options.cookie,
                 options.max_count,
@@ -503,7 +505,7 @@ def get_urls(inout_file, source, options, oldest_dates):
             url_count = len(urls)
 
         if SOURCE_SERIES_SUBSCRIPTIONS in source:
-            log("Getting URLS from Subscribed Series", "HEADER")
+            log("Getting URLs from Subscribed Series", "HEADER")
             urls |= get_ao3_series_subscription_urls(
                 options.cookie,
                 options.max_count,
@@ -517,8 +519,7 @@ def get_urls(inout_file, source, options, oldest_dates):
             url_count = len(urls)
 
         if SOURCE_USER_SUBSCRIPTIONS in source:
-            log("Getting URLS from Subscribed Users", "HEADER")
-            log(oldest_dates[SOURCE_USER_SUBSCRIPTIONS])
+            log("Getting URLs from Subscribed Users", "HEADER")
             urls |= get_ao3_user_subscription_urls(
                 options.cookie,
                 options.max_count,
@@ -528,6 +529,22 @@ def get_urls(inout_file, source, options, oldest_dates):
             log(
                 "{} URLs from user subscriptions".format(len(urls) - url_count), "GREEN"
             )
+            url_count = len(urls)
+
+        if SOURCE_USERNAMES in source:
+            log(
+                "Getting URLs from following users' works: {}".format(
+                    ",".join(options.usernames)
+                )
+            )
+            for u in options.usernames:
+                urls |= get_ao3_work_urls(
+                    options.cookie,
+                    options.max_count,
+                    u,
+                    oldest_dates[SOURCE_USERNAMES],
+                )
+            log("{} URLs from usernames".format(len(urls) - url_count), "GREEN")
 
         if SOURCE_STDIN in source:
             stdin_urls = set()
@@ -566,6 +583,7 @@ def get_oldest_date(options, sources):
         return {s: None for s in sources}
 
     oldest_date_per_source = {}
+    sources_and_usernames = sources + options.usernames
 
     if options.since_last_update:
         last_updates = {}
@@ -581,7 +599,7 @@ def get_oldest_date(options, sources):
 
         oldest_date_per_source = {
             s: datetime.strptime(last_updates.get(s), DATE_FORMAT)
-            for s in sources
+            for s in sources_and_usernames
             if last_updates.get(s)
         }
 
@@ -592,7 +610,7 @@ def get_oldest_date(options, sources):
         except ValueError:
             raise InvalidConfig("'since' option should have format 'DD.MM.YYYY'")
 
-    for s in sources:
+    for s in sources_and_usernames:
         if not oldest_date_per_source.get(s):
             oldest_date_per_source[s] = since
 
@@ -602,7 +620,8 @@ def get_oldest_date(options, sources):
     return oldest_date_per_source
 
 
-def get_sources(source_input):
+def get_sources(options):
+    source_input = options.source
     if len(source_input) == 0:
         return DEFAULT_SOURCES
 
@@ -612,6 +631,11 @@ def get_sources(source_input):
             raise InvalidConfig(
                 "Valid 'source' options are {}, not {}".format(", ".join(SOURCES), s)
             )
+        if s == SOURCE_USERNAMES and len(options.usernames) == 0:
+            raise InvalidConfig(
+                "A list of usernames is required when source 'usernames' is given."
+            )
+
         if s == SOURCE_ALL_SUBSCRIPTIONS:
             sources.extend(SUBSCRIPTION_SOURCES)
         else:
@@ -652,7 +676,7 @@ def download(options):
     touch(last_update_file)
 
     try:
-        sources = get_sources(options.source)
+        sources = get_sources(options)
         oldest_dates_per_source = get_oldest_date(options, sources)
     except InvalidConfig as e:
         log(e.message, "FAIL")
