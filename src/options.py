@@ -43,6 +43,7 @@ analyse     Analyse contents of Calibre library and AO3 data
 'all_subscriptions': all works from all works, series and users subscribed to.
 'stdin': read AO3 urls from stdin.
 'usernames': get all works from one or more users. Specify users with --usernames.
+'series': get all works from one or more series. Specify series ids with --series.
 Default: 'file,bookmarks,later'.""",
     )
 
@@ -60,6 +61,13 @@ get all bookmarks.""",
         action="store",
         dest="usernames",
         help="""One or more usernames to download all works from.""",
+    )
+
+    option_parser.add_option(
+        "--series",
+        action="store",
+        dest="series",
+        help="""One or more series to download all works from.""",
     )
 
     option_parser.add_option(
@@ -213,6 +221,7 @@ exist. Default: analysis/""",
         options.usernames = updater(
             config.get("import", "usernames").strip(), options.usernames
         )
+        options.series = updater(config.get("import", "series").strip(), options.series)
 
         options.library = updater(
             config.get("locations", "library").strip(), options.library
@@ -242,5 +251,6 @@ exist. Default: analysis/""",
     options.usernames = (
         options.usernames.split(",") if len(options.usernames) > 0 else []
     )
+    options.series = options.series.split(",") if len(options.series) > 0 else []
 
     return command, options
