@@ -240,6 +240,6 @@ exist. Default: analysis/""",
         options.max_count = None
 
     options.source = options.source.split(",")
-    options.usernames = options.usernames.split(",") if len(options.usernames) > 0 else None
+    options.usernames = options.usernames.split(",") if len(options.usernames) > 0 else []
 
     return command, options

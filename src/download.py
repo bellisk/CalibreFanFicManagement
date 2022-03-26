@@ -529,6 +529,20 @@ def get_urls(inout_file, source, options, oldest_dates):
             log(
                 "{} URLs from user subscriptions".format(len(urls) - url_count), "GREEN"
             )
+            url_count = len(urls)
+
+        if SOURCE_USERNAMES in source:
+            log("Getting URLs from following users' works: {}".format(",".join(options.usernames)))
+            for u in options.usernames:
+                urls |= get_ao3_work_urls(
+                    options.cookie,
+                    options.max_count,
+                    u,
+                    oldest_dates[SOURCE_USERNAMES],
+                )
+            log(
+                "{} URLs from usernames".format(len(urls) - url_count), "GREEN"
+            )
 
         if SOURCE_STDIN in source:
             stdin_urls = set()
@@ -567,6 +581,7 @@ def get_oldest_date(options, sources):
         return {s: None for s in sources}
 
     oldest_date_per_source = {}
+    sources_and_usernames = list(sources) + options.usernames
 
     if options.since_last_update:
         last_updates = {}
@@ -582,7 +597,7 @@ def get_oldest_date(options, sources):
 
         oldest_date_per_source = {
             s: datetime.strptime(last_updates.get(s), DATE_FORMAT)
-            for s in sources
+            for s in sources_and_usernames
             if last_updates.get(s)
         }
 
@@ -593,7 +608,7 @@ def get_oldest_date(options, sources):
         except ValueError:
             raise InvalidConfig("'since' option should have format 'DD.MM.YYYY'")
 
-    for s in sources:
+    for s in sources_and_usernames:
         if not oldest_date_per_source.get(s):
             oldest_date_per_source[s] = since
 
@@ -614,7 +629,7 @@ def get_sources(options):
             raise InvalidConfig(
                 "Valid 'source' options are {}, not {}".format(", ".join(SOURCES), s)
             )
-        if s == SOURCE_USERNAMES and options.usernames is None:
+        if s == SOURCE_USERNAMES and len(options.usernames) == 0:
             raise InvalidConfig(
                 "A list of usernames is required when source 'usernames' is given."
             )
