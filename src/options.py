@@ -211,8 +211,7 @@ exist. Default: analysis/""",
             options.since_last_update,
         )
         options.usernames = updater(
-            config.get("import", "usernames").strip(),
-            options.usernames
+            config.get("import", "usernames").strip(), options.usernames
         )
 
         options.library = updater(
@@ -240,6 +239,8 @@ exist. Default: analysis/""",
         options.max_count = None
 
     options.source = options.source.split(",")
-    options.usernames = options.usernames.split(",") if len(options.usernames) > 0 else []
+    options.usernames = (
+        options.usernames.split(",") if len(options.usernames) > 0 else []
+    )
 
     return command, options

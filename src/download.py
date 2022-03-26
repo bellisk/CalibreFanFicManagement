@@ -532,7 +532,11 @@ def get_urls(inout_file, source, options, oldest_dates):
             url_count = len(urls)
 
         if SOURCE_USERNAMES in source:
-            log("Getting URLs from following users' works: {}".format(",".join(options.usernames)))
+            log(
+                "Getting URLs from following users' works: {}".format(
+                    ",".join(options.usernames)
+                )
+            )
             for u in options.usernames:
                 urls |= get_ao3_work_urls(
                     options.cookie,
@@ -540,9 +544,7 @@ def get_urls(inout_file, source, options, oldest_dates):
                     u,
                     oldest_dates[SOURCE_USERNAMES],
                 )
-            log(
-                "{} URLs from usernames".format(len(urls) - url_count), "GREEN"
-            )
+            log("{} URLs from usernames".format(len(urls) - url_count), "GREEN")
 
         if SOURCE_STDIN in source:
             stdin_urls = set()
