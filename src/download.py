@@ -492,7 +492,7 @@ def get_urls(inout_file, source, options, oldest_dates):
             url_count = len(urls)
 
         if SOURCE_WORK_SUBSCRIPTIONS in source:
-            log("Getting URLS from Subscribed Works", "HEADER")
+            log("Getting URLs from Subscribed Works", "HEADER")
             urls |= get_ao3_work_subscription_urls(
                 options.cookie,
                 options.max_count,
@@ -505,7 +505,7 @@ def get_urls(inout_file, source, options, oldest_dates):
             url_count = len(urls)
 
         if SOURCE_SERIES_SUBSCRIPTIONS in source:
-            log("Getting URLS from Subscribed Series", "HEADER")
+            log("Getting URLs from Subscribed Series", "HEADER")
             urls |= get_ao3_series_subscription_urls(
                 options.cookie,
                 options.max_count,
@@ -519,8 +519,7 @@ def get_urls(inout_file, source, options, oldest_dates):
             url_count = len(urls)
 
         if SOURCE_USER_SUBSCRIPTIONS in source:
-            log("Getting URLS from Subscribed Users", "HEADER")
-            log(oldest_dates[SOURCE_USER_SUBSCRIPTIONS])
+            log("Getting URLs from Subscribed Users", "HEADER")
             urls |= get_ao3_user_subscription_urls(
                 options.cookie,
                 options.max_count,
