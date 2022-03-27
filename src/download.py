@@ -197,7 +197,7 @@ def downloader(args):
                 )
                 output += log("\tExporting file", "BLUE", live)
                 output += log(
-                    'calibredb export {} --dont-save-cover --dont-write-opf --single-dir --to-dir "{}" {}'.format(
+                    '\tcalibredb export {} --dont-save-cover --dont-write-opf --single-dir --to-dir "{}" {}'.format(
                         story_id, loc, path
                     ),
                     "BLUE",
@@ -323,12 +323,12 @@ def downloader(args):
             except CalledProcessError as e:
                 lock.release()
                 output += log(
-                    "It's been added to library, but not sure what the ID is.",
+                    "\tIt's been added to library, but not sure what the ID is.",
                     "WARNING",
                     live,
                 )
-                output += log("Added /Story-file to library with id 0", "GREEN", live)
-                output += log(e.output)
+                output += log("\tAdded /Story-file to library with id 0", "GREEN", live)
+                output += log("\t{}".format(e.output))
                 raise
 
             if new_story_id:
@@ -353,11 +353,11 @@ def downloader(args):
                 except CalledProcessError as e:
                     lock.release()
                     output += log(
-                        "Error setting word count.",
+                        "\tError setting word count.",
                         "WARNING",
                         live,
                     )
-                    output += log(e.output)
+                    output += log("\t{}".format(e.output))
 
             if story_id:
                 output += log(
@@ -390,7 +390,7 @@ def downloader(args):
             name = get_files(loc, ".epub", False)[0]
             rename(cur, name)
             output += log(
-                "Downloaded story {} to {}".format(
+                "\tDownloaded story {} to {}".format(
                     story_name.search(name).group(1), name
                 ),
                 "GREEN",
@@ -401,9 +401,9 @@ def downloader(args):
             print(output.strip())
         rmtree(loc)
     except Exception as e:
-        output += log("Exception: {}".format(e), "FAIL", live)
+        output += log("\tException: {}".format(e), "FAIL", live)
         if type(e) == CalledProcessError:
-            output += log(e.output.decode("utf-8"), "FAIL", live)
+            output += log("\t{}".format(e.output.decode("utf-8")), "FAIL", live)
         if not live:
             print(output.strip())
         try:
