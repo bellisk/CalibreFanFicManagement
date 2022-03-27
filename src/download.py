@@ -583,14 +583,19 @@ def get_urls(inout_file, source, options, oldest_dates):
     return urls
 
 
+def get_all_sources_for_last_updated_file(options, sources):
+    return sources + options.usernames + options.series
+
+
 def update_last_updated_file(options, sources):
+    all_sources = get_all_sources_for_last_updated_file(options, sources)
     today = datetime.now().strftime(DATE_FORMAT)
 
     with open(options.last_update_file, "r") as f:
         last_updates_text = f.read()
     last_updates = json.loads(last_updates_text) if last_updates_text else {}
 
-    for s in sources:
+    for s in all_sources:
         last_updates[s] = today
     data = json.dumps(last_updates)
 
@@ -601,7 +606,7 @@ def update_last_updated_file(options, sources):
 
 
 def get_oldest_date(options, sources):
-    all_sources = sources + options.usernames + options.series
+    all_sources = get_all_sources_for_last_updated_file(options, sources)
     if not (options.since or options.since_last_update):
         return {s: None for s in all_sources}
 
