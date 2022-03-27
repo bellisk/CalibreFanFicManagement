@@ -34,7 +34,7 @@ from .exceptions import (
     TooManyRequestsException,
     UrlsCollectionException,
 )
-from .utils import get_files, log, touch
+from .utils import Bcolors, get_files, log, touch
 
 SOURCE_FILE = "file"
 SOURCE_BOOKMARKS = "bookmarks"
@@ -171,7 +171,7 @@ def downloader(args):
 
     loc = mkdtemp()
     output = ""
-    output += log("Working with url {}".format(url), "HEADER", live)
+    output += log("Working with url {}".format(url), Bcolors.HEADER, live)
     story_id = None
     new_story_id = None
     try:
@@ -193,14 +193,16 @@ def downloader(args):
             if story_id is not None:
                 story_id = story_id.decode("utf-8")
                 output += log(
-                    "\tStory is in Calibre with id {}".format(story_id), "BLUE", live
+                    "\tStory is in Calibre with id {}".format(story_id),
+                    Bcolors.OKBLUE,
+                    live,
                 )
-                output += log("\tExporting file", "BLUE", live)
+                output += log("\tExporting file", Bcolors.OKBLUE, live)
                 output += log(
-                    'calibredb export {} --dont-save-cover --dont-write-opf --single-dir --to-dir "{}" {}'.format(
+                    '\tcalibredb export {} --dont-save-cover --dont-write-opf --single-dir --to-dir "{}" {}'.format(
                         story_id, loc, path
                     ),
-                    "BLUE",
+                    Bcolors.OKBLUE,
                     live,
                 )
                 lock.acquire()
@@ -218,7 +220,7 @@ def downloader(args):
                     cur = get_files(loc, ".epub", True)[0]
                     output += log(
                         '\tDownloading with fanficfare, updating file "{}"'.format(cur),
-                        "GREEN",
+                        Bcolors.OKGREEN,
                         live,
                     )
                 except IndexError:
@@ -229,7 +231,7 @@ def downloader(args):
                     cur = url
                     output += log(
                         '\tNo epub for story id "{}" in Calibre'.format(story_id),
-                        "BLUE",
+                        Bcolors.OKBLUE,
                         live,
                     )
 
@@ -244,7 +246,7 @@ def downloader(args):
                 '\tRunning: cd "{}" && fanficfare -j -u "{}" --update-cover'.format(
                     loc, cur
                 ),
-                "BLUE",
+                Bcolors.OKBLUE,
                 live,
             )
             res = check_output(
@@ -262,13 +264,13 @@ def downloader(args):
                 ):
                     output += log(
                         "\tForcing download update. FanFicFare error message:",
-                        "WARNING",
+                        Bcolors.WARNING,
                         live,
                     )
                     for line in res.split(b"\n"):
                         if line == b"{":
                             break
-                        output += log("\t\t{}".format(str(line)), "WARNING", live)
+                        output += log("\t\t{}".format(str(line)), Bcolors.WARNING, live)
                     res = check_output(
                         'cd "{}" && fanficfare -u -j "{}" --force --update-cover'.format(
                             loc, cur
@@ -289,7 +291,7 @@ def downloader(args):
             word_count = get_word_count(metadata)
             cur = get_files(loc, ".epub", True)[0]
 
-            output += log("\tAdding {} to library".format(cur), "BLUE", live)
+            output += log("\tAdding {} to library".format(cur), Bcolors.OKBLUE, live)
             try:
                 lock.acquire()
                 res = check_output(
@@ -317,18 +319,22 @@ def downloader(args):
                 )
                 lock.release()
                 output += log(
-                    "\tAdded {} to library with id {}".format(cur, res), "GREEN", live
+                    "\tAdded {} to library with id {}".format(cur, res),
+                    Bcolors.OKGREEN,
+                    live,
                 )
                 new_story_id = get_new_story_id(res)
             except CalledProcessError as e:
                 lock.release()
                 output += log(
-                    "It's been added to library, but not sure what the ID is.",
-                    "WARNING",
+                    "\tIt's been added to library, but not sure what the ID is.",
+                    Bcolors.WARNING,
                     live,
                 )
-                output += log("Added /Story-file to library with id 0", "GREEN", live)
-                output += log(e.output)
+                output += log(
+                    "\tAdded /Story-file to library with id 0", Bcolors.OKGREEN, live
+                )
+                output += log("\t{}".format(e.output))
                 raise
 
             if new_story_id:
@@ -336,7 +342,7 @@ def downloader(args):
                     "\tSetting word count of {} on story {}".format(
                         word_count, new_story_id
                     ),
-                    "BLUE",
+                    Bcolors.OKBLUE,
                     live,
                 )
                 try:
@@ -353,15 +359,15 @@ def downloader(args):
                 except CalledProcessError as e:
                     lock.release()
                     output += log(
-                        "Error setting word count.",
-                        "WARNING",
+                        "\tError setting word count.",
+                        Bcolors.WARNING,
                         live,
                     )
-                    output += log(e.output)
+                    output += log("\t{}".format(e.output))
 
             if story_id:
                 output += log(
-                    "\tRemoving {} from library".format(story_id), "BLUE", live
+                    "\tRemoving {} from library".format(story_id), Bcolors.OKBLUE, live
                 )
                 try:
                     lock.acquire()
@@ -390,10 +396,10 @@ def downloader(args):
             name = get_files(loc, ".epub", False)[0]
             rename(cur, name)
             output += log(
-                "Downloaded story {} to {}".format(
+                "\tDownloaded story {} to {}".format(
                     story_name.search(name).group(1), name
                 ),
-                "GREEN",
+                Bcolors.OKGREEN,
                 live,
             )
 
@@ -401,9 +407,9 @@ def downloader(args):
             print(output.strip())
         rmtree(loc)
     except Exception as e:
-        output += log("Exception: {}".format(e), "FAIL", live)
+        output += log("\tException: {}".format(e), Bcolors.FAIL, live)
         if type(e) == CalledProcessError:
-            output += log(e.output.decode("utf-8"), "FAIL", live)
+            output += log("\t{}".format(e.output.decode("utf-8")), Bcolors.FAIL, live)
         if not live:
             print(output.strip())
         try:
@@ -430,24 +436,30 @@ def get_urls(inout_file, source, options, oldest_dates):
                 urls = set([x.replace("\n", "") for x in fp.readlines()])
 
             url_count = len(urls)
-            log("{} URLs from file".format(url_count), "GREEN")
+            log("{} URLs from file".format(url_count), Bcolors.OKGREEN)
 
             with open(inout_file, "w") as fp:
                 fp.write("")
 
         if SOURCE_LATER in source:
-            log("Getting URLs from Marked for Later", "HEADER")
+            log("Getting URLs from Marked for Later", Bcolors.HEADER)
             urls |= get_ao3_marked_for_later_urls(
                 options.cookie,
                 options.max_count,
                 options.user,
                 oldest_dates[SOURCE_LATER],
             )
-            log("{} URLs from Marked for Later".format(len(urls) - url_count), "GREEN")
+            log(
+                "{} URLs from Marked for Later".format(len(urls) - url_count),
+                Bcolors.OKGREEN,
+            )
             url_count = len(urls)
 
         if SOURCE_BOOKMARKS in source:
-            log("Getting URLs from Bookmarks (sorted by bookmarking date)", "HEADER")
+            log(
+                "Getting URLs from Bookmarks (sorted by bookmarking date)",
+                Bcolors.HEADER,
+            )
             urls |= get_ao3_bookmark_urls(
                 options.cookie,
                 options.expand_series,
@@ -460,7 +472,10 @@ def get_urls(inout_file, source, options, oldest_dates):
             # include works that have been updated since that date, as well as
             # works bookmarked since that date.
             if oldest_dates[SOURCE_BOOKMARKS]:
-                log("Getting URLs from Bookmarks (sorted by updated date)", "HEADER")
+                log(
+                    "Getting URLs from Bookmarks (sorted by updated date)",
+                    Bcolors.HEADER,
+                )
                 urls |= get_ao3_bookmark_urls(
                     options.cookie,
                     options.expand_series,
@@ -469,11 +484,11 @@ def get_urls(inout_file, source, options, oldest_dates):
                     oldest_dates[SOURCE_BOOKMARKS],
                     sort_by_updated=True,
                 )
-            log("{} URLs from bookmarks".format(len(urls) - url_count), "GREEN")
+            log("{} URLs from bookmarks".format(len(urls) - url_count), Bcolors.OKGREEN)
             url_count = len(urls)
 
         if SOURCE_WORKS in source:
-            log("Getting URLs from User's Works", "HEADER")
+            log("Getting URLs from User's Works", Bcolors.HEADER)
             urls |= get_ao3_users_work_urls(
                 options.cookie,
                 options.max_count,
@@ -481,22 +496,28 @@ def get_urls(inout_file, source, options, oldest_dates):
                 options.user,
                 oldest_dates[SOURCE_WORKS],
             )
-            log("{} URLs from User's Works".format(len(urls) - url_count), "GREEN")
+            log(
+                "{} URLs from User's Works".format(len(urls) - url_count),
+                Bcolors.OKGREEN,
+            )
             url_count = len(urls)
 
         if SOURCE_GIFTS in source:
-            log("Getting URLs from User's Gifts", "HEADER")
+            log("Getting URLs from User's Gifts", Bcolors.HEADER)
             urls |= get_ao3_gift_urls(
                 options.cookie,
                 options.max_count,
                 options.user,
                 oldest_dates[SOURCE_GIFTS],
             )
-            log("{} URLs from User's Gifts".format(len(urls) - url_count), "GREEN")
+            log(
+                "{} URLs from User's Gifts".format(len(urls) - url_count),
+                Bcolors.OKGREEN,
+            )
             url_count = len(urls)
 
         if SOURCE_WORK_SUBSCRIPTIONS in source:
-            log("Getting URLs from Subscribed Works", "HEADER")
+            log("Getting URLs from Subscribed Works", Bcolors.HEADER)
             urls |= get_ao3_work_subscription_urls(
                 options.cookie,
                 options.max_count,
@@ -504,12 +525,13 @@ def get_urls(inout_file, source, options, oldest_dates):
                 oldest_dates[SOURCE_WORK_SUBSCRIPTIONS],
             )
             log(
-                "{} URLs from work subscriptions".format(len(urls) - url_count), "GREEN"
+                "{} URLs from work subscriptions".format(len(urls) - url_count),
+                Bcolors.OKGREEN,
             )
             url_count = len(urls)
 
         if SOURCE_SERIES_SUBSCRIPTIONS in source:
-            log("Getting URLs from Subscribed Series", "HEADER")
+            log("Getting URLs from Subscribed Series", Bcolors.HEADER)
             urls |= get_ao3_series_subscription_urls(
                 options.cookie,
                 options.max_count,
@@ -518,12 +540,12 @@ def get_urls(inout_file, source, options, oldest_dates):
             )
             log(
                 "{} URLs from series subscriptions".format(len(urls) - url_count),
-                "GREEN",
+                Bcolors.OKGREEN,
             )
             url_count = len(urls)
 
         if SOURCE_USER_SUBSCRIPTIONS in source:
-            log("Getting URLs from Subscribed Users", "HEADER")
+            log("Getting URLs from Subscribed Users", Bcolors.HEADER)
             urls |= get_ao3_user_subscription_urls(
                 options.cookie,
                 options.max_count,
@@ -531,7 +553,8 @@ def get_urls(inout_file, source, options, oldest_dates):
                 oldest_dates[SOURCE_USER_SUBSCRIPTIONS],
             )
             log(
-                "{} URLs from user subscriptions".format(len(urls) - url_count), "GREEN"
+                "{} URLs from user subscriptions".format(len(urls) - url_count),
+                Bcolors.OKGREEN,
             )
             url_count = len(urls)
 
@@ -549,7 +572,7 @@ def get_urls(inout_file, source, options, oldest_dates):
                     u,
                     oldest_dates[u],
                 )
-            log("{} URLs from usernames".format(len(urls) - url_count), "GREEN")
+            log("{} URLs from usernames".format(len(urls) - url_count), Bcolors.OKGREEN)
             url_count = len(urls)
 
         if SOURCE_SERIES in source:
@@ -566,14 +589,14 @@ def get_urls(inout_file, source, options, oldest_dates):
                     s,
                     oldest_dates[s],
                 )
-            log("{} URLs from series".format(len(urls) - url_count), "GREEN")
+            log("{} URLs from series".format(len(urls) - url_count), Bcolors.OKGREEN)
 
         if SOURCE_STDIN in source:
             stdin_urls = set()
             for line in sys.stdin:
                 stdin_urls.add(line.rstrip())
             urls |= stdin_urls
-            log("{} URLs from STDIN".format(len(stdin_urls)), "GREEN")
+            log("{} URLs from STDIN".format(len(stdin_urls)), Bcolors.OKGREEN)
     except Exception as e:
         with open(inout_file, "w") as fp:
             for cur in urls:
@@ -583,25 +606,33 @@ def get_urls(inout_file, source, options, oldest_dates):
     return urls
 
 
+def get_all_sources_for_last_updated_file(options, sources):
+    return sources + options.usernames + options.series
+
+
 def update_last_updated_file(options, sources):
+    all_sources = get_all_sources_for_last_updated_file(options, sources)
     today = datetime.now().strftime(DATE_FORMAT)
 
     with open(options.last_update_file, "r") as f:
         last_updates_text = f.read()
     last_updates = json.loads(last_updates_text) if last_updates_text else {}
 
-    for s in sources:
+    for s in all_sources:
         last_updates[s] = today
     data = json.dumps(last_updates)
 
-    log("Updating file {} with dates {}".format(options.last_update_file, data), "BLUE")
+    log(
+        "Updating file {} with dates {}".format(options.last_update_file, data),
+        Bcolors.OKBLUE,
+    )
 
     with open(options.last_update_file, "w") as f:
         f.write(data)
 
 
 def get_oldest_date(options, sources):
-    all_sources = sources + options.usernames + options.series
+    all_sources = get_all_sources_for_last_updated_file(options, sources)
     if not (options.since or options.since_last_update):
         return {s: None for s in all_sources}
 
@@ -636,8 +667,8 @@ def get_oldest_date(options, sources):
         if not oldest_date_per_source.get(s):
             oldest_date_per_source[s] = since
 
-    log("Dates of last update per source:", "BLUE")
-    log(oldest_date_per_source, "BLUE")
+    log("Dates of last update per source:", Bcolors.OKBLUE)
+    log(oldest_date_per_source, Bcolors.OKBLUE)
 
     return oldest_date_per_source
 
@@ -672,7 +703,7 @@ def get_sources(options):
 
 def download(options):
     if not (options.user and options.cookie):
-        log("User and Cookie are required for downloading from AO3", "FAIL")
+        log("User and Cookie are required for downloading from AO3", Bcolors.FAIL)
         return
 
     path = options.library
@@ -685,7 +716,7 @@ def download(options):
             if e.errno == ENOENT:
                 log(
                     "Calibredb is not installed on this system. Cannot search the Calibre library or update it.",
-                    "FAIL",
+                    Bcolors.FAIL,
                 )
                 return
         try:
@@ -693,7 +724,7 @@ def download(options):
         except CalledProcessError as e:
             log(
                 "Error while making sure 'words' column exists in Calibre library",
-                "FAIL",
+                Bcolors.FAIL,
             )
             log(e.output)
             return
@@ -705,7 +736,7 @@ def download(options):
         sources = get_sources(options)
         oldest_dates_per_source = get_oldest_date(options, sources)
     except InvalidConfig as e:
-        log(e.message, "FAIL")
+        log(e.message, Bcolors.FAIL)
         return
 
     inout_file = options.input
@@ -721,13 +752,14 @@ def download(options):
     if not urls:
         return
 
-    log("Unique URLs to fetch ({}):".format(len(urls)), "HEADER")
+    log("Unique URLs to fetch ({}):".format(len(urls)), Bcolors.HEADER)
     for url in urls:
-        log("\t{}".format(url), "BLUE")
+        log("\t{}".format(url), Bcolors.OKBLUE)
 
     if options.dry_run:
         log(
-            "Not adding any stories to Calibre because dry-run is set to True", "HEADER"
+            "Not adding any stories to Calibre because dry-run is set to True",
+            Bcolors.HEADER,
         )
         return
     else:

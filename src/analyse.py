@@ -13,6 +13,7 @@ from .calibre_utils import get_author_works_count, get_series_works_count
 from .download import download
 from .exceptions import InvalidConfig
 from .utils import log
+from .utils import Bcolors
 
 ANALYSIS_TYPES = ["user_subscriptions", "series_subscriptions"]
 
@@ -22,7 +23,7 @@ def _compare_user_subscriptions(username, cookie, path, output_file):
     number posted to AO3.
     :return:
     """
-    log("Comparing user subscriptions on AO3 to Calibre library", "HEADER")
+    log("Comparing user subscriptions on AO3 to Calibre library", Bcolors.HEADER)
 
     ao3_user_work_counts = get_ao3_subscribed_users_work_counts(username, cookie)
     calibre_user_work_counts = {
@@ -46,13 +47,16 @@ def _compare_user_subscriptions(username, cookie, path, output_file):
             writer.writerow(line)
 
     if len(users_missing_works) > 0:
-        log("Subscribed users who have fewer works on Calibre than on AO3:", "HEADER")
+        log(
+            "Subscribed users who have fewer works on Calibre than on AO3:",
+            Bcolors.HEADER,
+        )
         for user in users_missing_works:
-            log("\t{}".format(user), "BLUE")
+            log("\t{}".format(user), Bcolors.OKBLUE)
     else:
         log(
             "All subscribed users have as many or more works on Calibre than on AO3.",
-            "GREEN",
+            Bcolors.OKGREEN,
         )
 
     return users_missing_works
@@ -63,7 +67,7 @@ def _compare_series_subscriptions(username, cookie, path, output_file):
     number posted to AO3.
     :return:
     """
-    log("Comparing series subscriptions on AO3 to Calibre library", "HEADER")
+    log("Comparing series subscriptions on AO3 to Calibre library", Bcolors.HEADER)
 
     ao3_series_work_stats = get_ao3_subscribed_series_work_stats(username, cookie)
     calibre_series_work_counts = {
@@ -90,13 +94,16 @@ def _compare_series_subscriptions(username, cookie, path, output_file):
             writer.writerow(line)
 
     if len(series_missing_works) > 0:
-        log("Subscribed series that have fewer works on Calibre than on AO3:", "HEADER")
+        log(
+            "Subscribed series that have fewer works on Calibre than on AO3:",
+            Bcolors.HEADER,
+        )
         for series in series_missing_works.values():
-            log("\t{}".format(series), "BLUE")
+            log("\t{}".format(series), Bcolors.OKBLUE)
     else:
         log(
             "All subscribed series have as many or more works on Calibre than on AO3.",
-            "GREEN",
+            Bcolors.OKGREEN,
         )
 
     return list(series_missing_works.keys())
@@ -119,7 +126,7 @@ def get_analysis_type(analysis_types):
 
 def analyse(options):
     if not (options.user and options.cookie):
-        log("User and Cookie are required for downloading from AO3", "FAIL")
+        log("User and Cookie are required for downloading from AO3", Bcolors.FAIL)
         return
 
     path = options.library
@@ -154,7 +161,7 @@ def analyse(options):
             )
 
     if options.fix:
-        log("Sending missing works to be downloaded", "HEADER")
+        log("Sending missing works to be downloaded", Bcolors.HEADER)
         options.source = []
         for key, value in missing_works.items():
             options.source.append(key)
