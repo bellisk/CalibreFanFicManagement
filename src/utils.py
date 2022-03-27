@@ -20,24 +20,11 @@ class Bcolors:
 
 def log(msg, color=None, output=True):
     if color:
-        col = Bcolors.HEADER
-        if color == "BLUE":
-            col = Bcolors.OKBLUE
-        elif color == "GREEN":
-            col = Bcolors.OKGREEN
-        elif color == "WARNING":
-            col = Bcolors.WARNING
-        elif color == "FAIL":
-            col = Bcolors.FAIL
-        elif color == "BOLD":
-            col = Bcolors.BOLD
-        elif color == "UNDERLINE":
-            col = Bcolors.UNDERLINE
         line = "{}{}{}: \t {}{}{}".format(
             Bcolors.BOLD,
             strftime("%m/%d/%Y %H:%M:%S", localtime()),
             Bcolors.ENDC,
-            col,
+            color,
             msg,
             Bcolors.ENDC,
         )
