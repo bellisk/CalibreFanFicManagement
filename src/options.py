@@ -44,6 +44,8 @@ analyse     Analyse contents of Calibre library and AO3 data
 'stdin': read AO3 urls from stdin.
 'usernames': get all works from one or more users. Specify users with --usernames.
 'series': get all works from one or more series. Specify series ids with --series.
+'collections': get all works from one or more collections. Specify collection ids with
+--collections.
 Default: 'file,bookmarks,later'.""",
     )
 
@@ -68,6 +70,13 @@ get all bookmarks.""",
         action="store",
         dest="series",
         help="""One or more series to download all works from.""",
+    )
+
+    option_parser.add_option(
+        "--collections",
+        action="store",
+        dest="collections",
+        help="""One or more collections to download all works from.""",
     )
 
     option_parser.add_option(
@@ -237,6 +246,9 @@ Options: 'user_subscriptions', 'series_subscriptions'. Default is both.""",
             config.get("import", "usernames").strip(), options.usernames
         )
         options.series = updater(config.get("import", "series").strip(), options.series)
+        options.collections = updater(
+            config.get("import", "collections").strip(), options.collections
+        )
 
         options.library = updater(
             config.get("locations", "library").strip(), options.library
@@ -272,6 +284,9 @@ Options: 'user_subscriptions', 'series_subscriptions'. Default is both.""",
         options.usernames.split(",") if len(options.usernames) > 0 else []
     )
     options.series = options.series.split(",") if len(options.series) > 0 else []
+    options.collections = (
+        options.collections.split(",") if len(options.collections) > 0 else []
+    )
     options.analysis_type = (
         options.analysis_type.split(",") if len(options.analysis_type) > 0 else []
     )

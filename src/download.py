@@ -16,6 +16,7 @@ from urllib.error import HTTPError
 
 from .ao3_utils import (
     get_ao3_bookmark_urls,
+    get_ao3_collection_work_urls,
     get_ao3_gift_urls,
     get_ao3_marked_for_later_urls,
     get_ao3_series_subscription_urls,
@@ -48,6 +49,8 @@ SOURCE_USER_SUBSCRIPTIONS = "user_subscriptions"
 SOURCE_ALL_SUBSCRIPTIONS = "all_subscriptions"
 SOURCE_USERNAMES = "usernames"
 SOURCE_SERIES = "series"
+SOURCE_COLLECTIONS = "collections"
+
 DEFAULT_SOURCES = [SOURCE_FILE, SOURCE_BOOKMARKS, SOURCE_LATER]
 SUBSCRIPTION_SOURCES = [
     SOURCE_SERIES_SUBSCRIPTIONS,
@@ -67,6 +70,7 @@ SOURCES = [
     SOURCE_ALL_SUBSCRIPTIONS,
     SOURCE_USERNAMES,
     SOURCE_SERIES,
+    SOURCE_COLLECTIONS,
 ]
 
 DATE_FORMAT = "%d.%m.%Y"
@@ -590,13 +594,34 @@ def get_urls(inout_file, source, options, oldest_dates):
                     oldest_dates[s],
                 )
             log("{} URLs from series".format(len(urls) - url_count), Bcolors.OKGREEN)
+            url_count = len(urls)
+
+        if SOURCE_COLLECTIONS in source:
+            log(
+                "Getting URLs from following collections: {}".format(
+                    ",".join(options.collections)
+                )
+            )
+            for c in options.collections:
+                urls |= get_ao3_collection_work_urls(
+                    options.cookie,
+                    options.max_count,
+                    options.user,
+                    c,
+                    oldest_dates[c],
+                )
+            log(
+                "{} URLs from collections".format(len(urls) - url_count),
+                Bcolors.OKGREEN,
+            )
+            url_count = len(urls)
 
         if SOURCE_STDIN in source:
             stdin_urls = set()
             for line in sys.stdin:
                 stdin_urls.add(line.rstrip())
             urls |= stdin_urls
-            log("{} URLs from STDIN".format(len(stdin_urls)), Bcolors.OKGREEN)
+            log("{} URLs from STDIN".format(len(urls) - url_count), Bcolors.OKGREEN)
     except Exception as e:
         with open(inout_file, "w") as fp:
             for cur in urls:
@@ -607,7 +632,7 @@ def get_urls(inout_file, source, options, oldest_dates):
 
 
 def get_all_sources_for_last_updated_file(options, sources):
-    return sources + options.usernames + options.series
+    return sources + options.usernames + options.series + options.collections
 
 
 def update_last_updated_file(options, sources):
@@ -690,7 +715,11 @@ def get_sources(options):
             )
         if s == SOURCE_SERIES and len(options.series) == 0:
             raise InvalidConfig(
-                "A list of series is required when source 'series' is given."
+                "A list of series ids is required when source 'series' is given."
+            )
+        if s == SOURCE_COLLECTIONS and len(options.collections) == 0:
+            raise InvalidConfig(
+                "A list of collection ids is required when source 'collections' is given."
             )
 
         if s == SOURCE_ALL_SUBSCRIPTIONS:
