@@ -140,7 +140,8 @@ def get_ao3_user_subscription_urls(cookie, max_count, user, oldest_date=None):
     for u in user_ids:
         print(u)
         urls += [
-            _work_url_from_id(work_id) for work_id in api.users_work_ids(u, oldest_date)
+            _work_url_from_id(work_id)
+            for work_id in api.users_work_ids(u, max_count, oldest_date)
         ]
 
     return set(urls)
