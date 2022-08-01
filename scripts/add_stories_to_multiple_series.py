@@ -1,4 +1,5 @@
 from subprocess import PIPE, STDOUT, check_output
+from sys import argv
 
 
 # The AO3 metadata that we get from FanficFare includes these series keys as well as
@@ -57,4 +58,8 @@ if __name__ == "__main__":
     # page by fanficfare.
     # So, look for all fics that have more than one series according to that measure?
     # Then get the metadata from AO3, and add multiple series to the ebook metadata, and save.
-    check_or_create_extra_series_columns(PATH)
+    path = PATH
+    if len(argv) > 1:
+        path = argv[1]
+
+    check_or_create_extra_series_columns(path)
