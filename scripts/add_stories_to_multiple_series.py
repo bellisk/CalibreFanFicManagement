@@ -22,9 +22,6 @@ def check_or_create_extra_series_columns(path):
     )
     # Get rid of the number after each column name, e.g. "columnname (1)"
     columns = [c.split(" ")[0] for c in res.decode("utf-8").split("\n")]
-    print(columns)
-    print(set(columns).intersection(AO3_SERIES_KEYS))
-    print(set(AO3_SERIES_KEYS))
     if set(columns).intersection(AO3_SERIES_KEYS) == set(AO3_SERIES_KEYS):
         print("Custom AO3 series columns are in Calibre Library")
     else:
