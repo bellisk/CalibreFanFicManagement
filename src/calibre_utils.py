@@ -45,14 +45,11 @@ def check_or_create_extra_series_columns(path):
     )
     # Get rid of the number after each column name, e.g. "columnname (1)"
     columns = [c.split(" ")[0] for c in res.decode("utf-8").split("\n")]
-    print(set(columns).intersection(AO3_SERIES_KEYS))
-    print(set(AO3_SERIES_KEYS))
     if set(columns).intersection(AO3_SERIES_KEYS) == set(AO3_SERIES_KEYS):
         log("Custom AO3 series columns are in Calibre Library")
     else:
         log("Adding custom AO3 series columns to Calibre library")
         for c in AO3_SERIES_KEYS:
-            print("calibredb add_custom_column {} {} {} series".format(path, c, c))
             check_output(
                 "calibredb add_custom_column {} {} {} series".format(path, c, c),
                 shell=True,
