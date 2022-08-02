@@ -148,5 +148,8 @@ if __name__ == "__main__":
     books_in_series = find_books_in_series(path)
     series_to_reimport = filter_books_in_multiple_series(path, books_in_series)
 
-    # Then get the metadata from AO3, and add multiple series to the ebook metadata,
-    # and save.
+    # Then output series ids so they can be manually reimported.
+    print(
+        "Series that should be reimported, because they contain books that have not had the series saved on them:"
+    )
+    print(",".join(series_to_reimport))
