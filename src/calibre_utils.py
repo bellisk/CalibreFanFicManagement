@@ -7,7 +7,7 @@ series_pattern = re.compile("(.*) \[(.*)\]")
 
 
 def get_series_options(metadata):
-    series_keys = ["series", "series00", "series01", "series02", "series03"]
+    series_keys = ["series", "#series00", "#series01", "#series02", "#series03"]
     opts = ""
     for key in series_keys:
         if len(metadata[key]) > 0:
