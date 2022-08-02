@@ -9,7 +9,7 @@ from .utils import log
 ADD_GROUPED_SEARCH_SCRIPT = """from calibre.library import db
 
 db = db("%s").new_api
-db.set_pref("grouped_search_terms", {"allseries": ["series", "series00", "series01", "series02", "series03"]})
+db.set_pref("grouped_search_terms", {"allseries": ["series", "#series00", "#series01", "#series02", "#series03"]})
 print(db.pref("grouped_search_terms"))
 """
 series_pattern = re.compile("(.*) \[(.*)\]")
