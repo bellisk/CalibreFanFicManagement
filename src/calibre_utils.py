@@ -128,8 +128,11 @@ def get_word_count(metadata):
 
 
 def get_author_works_count(author, path):
+    # author:"=author or \(author\)"
+    # This catches both exact use of the author name, or use of a pseud,
+    # e.g. "MyPseud (MyUsername)"
     result = check_output(
-        "calibredb search author:{} {}".format(author, path),
+        'calibredb search author:"={} or \({}\)" {}'.format(author, author, path),
         shell=True,
         stderr=STDOUT,
         stdin=PIPE,
