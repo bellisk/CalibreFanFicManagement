@@ -1,4 +1,5 @@
 # encoding: utf-8
+import json
 import locale
 import re
 from subprocess import PIPE, STDOUT, check_output
@@ -150,3 +151,16 @@ def get_series_works_count(series_title, path):
         stdin=PIPE,
     )
     return len(str(result).split(","))
+
+
+def get_incomplete_work_ids(path):
+    result = check_output(
+        'calibredb list --search tags:""fanfic.status.In Progress"" {} --fields *identifier --for-machine'.format(
+            path
+        ),
+        shell=True,
+        stderr=STDOUT,
+        stdin=PIPE,
+    )
+    result_json = json.loads(result.decode("utf-8"))
+    return [r["*identifier"].replace("url:", "") for r in result_json]
