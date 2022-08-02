@@ -12,8 +12,7 @@ from .ao3_utils import (
 from .calibre_utils import get_author_works_count, get_series_works_count
 from .download import download
 from .exceptions import InvalidConfig
-from .utils import log
-from .utils import Bcolors
+from .utils import Bcolors, log
 
 ANALYSIS_TYPES = ["user_subscriptions", "series_subscriptions"]
 

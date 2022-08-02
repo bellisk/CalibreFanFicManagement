@@ -17,4 +17,3 @@ for title, indices in series.items():
     if 1.0 not in indices:
         print(title)
         print(indices)
-
