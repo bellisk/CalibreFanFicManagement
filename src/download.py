@@ -44,6 +44,7 @@ from .exceptions import (
 )
 from .utils import Bcolors, get_files, log, touch
 
+SOURCES = "sources"
 SOURCE_FILE = "file"
 SOURCE_BOOKMARKS = "bookmarks"
 SOURCE_WORKS = "works"
@@ -64,7 +65,7 @@ SUBSCRIPTION_SOURCES = [
     SOURCE_USER_SUBSCRIPTIONS,
     SOURCE_WORK_SUBSCRIPTIONS,
 ]
-SOURCES = [
+VALID_INPUT_SOURCES = [
     SOURCE_FILE,
     SOURCE_BOOKMARKS,
     SOURCE_WORKS,
@@ -79,6 +80,7 @@ SOURCES = [
     SOURCE_SERIES,
     SOURCE_COLLECTIONS,
 ]
+LAST_UPDATE_KEYS = [SOURCES, SOURCE_USERNAMES, SOURCE_COLLECTIONS, SOURCE_SERIES]
 
 DATE_FORMAT = "%d.%m.%Y"
 
@@ -445,12 +447,12 @@ def init(l):
     lock = l
 
 
-def get_urls(inout_file, source, options, oldest_dates):
+def get_urls(inout_file, sources, options, oldest_dates):
     urls = set([])
     url_count = 0
 
     try:
-        if SOURCE_FILE in source:
+        if SOURCE_FILE in sources:
             with open(inout_file, "r") as fp:
                 urls = set([x.replace("\n", "") for x in fp.readlines()])
 
@@ -460,13 +462,13 @@ def get_urls(inout_file, source, options, oldest_dates):
             with open(inout_file, "w") as fp:
                 fp.write("")
 
-        if SOURCE_LATER in source:
+        if SOURCE_LATER in sources:
             log("Getting URLs from Marked for Later", Bcolors.HEADER)
             urls |= get_ao3_marked_for_later_urls(
                 options.cookie,
                 options.max_count,
                 options.user,
-                oldest_dates[SOURCE_LATER],
+                oldest_dates[SOURCES][SOURCE_LATER],
             )
             log(
                 "{} URLs from Marked for Later".format(len(urls) - url_count),
@@ -474,7 +476,7 @@ def get_urls(inout_file, source, options, oldest_dates):
             )
             url_count = len(urls)
 
-        if SOURCE_BOOKMARKS in source:
+        if SOURCE_BOOKMARKS in sources:
             log(
                 "Getting URLs from Bookmarks (sorted by bookmarking date)",
                 Bcolors.HEADER,
@@ -484,13 +486,13 @@ def get_urls(inout_file, source, options, oldest_dates):
                 options.expand_series,
                 options.max_count,
                 options.user,
-                oldest_dates[SOURCE_BOOKMARKS],
+                oldest_dates[SOURCES][SOURCE_BOOKMARKS],
                 sort_by_updated=False,
             )
             # If we're getting bookmarks back to oldest_date, this should
             # include works that have been updated since that date, as well as
             # works bookmarked since that date.
-            if oldest_dates[SOURCE_BOOKMARKS]:
+            if oldest_dates[SOURCES][SOURCE_BOOKMARKS]:
                 log(
                     "Getting URLs from Bookmarks (sorted by updated date)",
                     Bcolors.HEADER,
@@ -500,20 +502,20 @@ def get_urls(inout_file, source, options, oldest_dates):
                     options.expand_series,
                     options.max_count,
                     options.user,
-                    oldest_dates[SOURCE_BOOKMARKS],
+                    oldest_dates[SOURCES][SOURCE_BOOKMARKS],
                     sort_by_updated=True,
                 )
             log("{} URLs from bookmarks".format(len(urls) - url_count), Bcolors.OKGREEN)
             url_count = len(urls)
 
-        if SOURCE_WORKS in source:
+        if SOURCE_WORKS in sources:
             log("Getting URLs from User's Works", Bcolors.HEADER)
             urls |= get_ao3_users_work_urls(
                 options.cookie,
                 options.max_count,
                 options.user,
                 options.user,
-                oldest_dates[SOURCE_WORKS],
+                oldest_dates[SOURCES][SOURCE_WORKS],
             )
             log(
                 "{} URLs from User's Works".format(len(urls) - url_count),
@@ -521,13 +523,13 @@ def get_urls(inout_file, source, options, oldest_dates):
             )
             url_count = len(urls)
 
-        if SOURCE_GIFTS in source:
+        if SOURCE_GIFTS in sources:
             log("Getting URLs from User's Gifts", Bcolors.HEADER)
             urls |= get_ao3_gift_urls(
                 options.cookie,
                 options.max_count,
                 options.user,
-                oldest_dates[SOURCE_GIFTS],
+                oldest_dates[SOURCES][SOURCE_GIFTS],
             )
             log(
                 "{} URLs from User's Gifts".format(len(urls) - url_count),
@@ -535,13 +537,13 @@ def get_urls(inout_file, source, options, oldest_dates):
             )
             url_count = len(urls)
 
-        if SOURCE_WORK_SUBSCRIPTIONS in source:
+        if SOURCE_WORK_SUBSCRIPTIONS in sources:
             log("Getting URLs from Subscribed Works", Bcolors.HEADER)
             urls |= get_ao3_work_subscription_urls(
                 options.cookie,
                 options.max_count,
                 options.user,
-                oldest_dates[SOURCE_WORK_SUBSCRIPTIONS],
+                oldest_dates[SOURCES][SOURCE_WORK_SUBSCRIPTIONS],
             )
             log(
                 "{} URLs from work subscriptions".format(len(urls) - url_count),
@@ -549,13 +551,13 @@ def get_urls(inout_file, source, options, oldest_dates):
             )
             url_count = len(urls)
 
-        if SOURCE_SERIES_SUBSCRIPTIONS in source:
+        if SOURCE_SERIES_SUBSCRIPTIONS in sources:
             log("Getting URLs from Subscribed Series", Bcolors.HEADER)
             urls |= get_ao3_series_subscription_urls(
                 options.cookie,
                 options.max_count,
                 options.user,
-                oldest_dates[SOURCE_SERIES_SUBSCRIPTIONS],
+                oldest_dates[SOURCES][SOURCE_SERIES_SUBSCRIPTIONS],
             )
             log(
                 "{} URLs from series subscriptions".format(len(urls) - url_count),
@@ -563,13 +565,13 @@ def get_urls(inout_file, source, options, oldest_dates):
             )
             url_count = len(urls)
 
-        if SOURCE_USER_SUBSCRIPTIONS in source:
+        if SOURCE_USER_SUBSCRIPTIONS in sources:
             log("Getting URLs from Subscribed Users", Bcolors.HEADER)
             urls |= get_ao3_user_subscription_urls(
                 options.cookie,
                 options.max_count,
                 options.user,
-                oldest_dates[SOURCE_USER_SUBSCRIPTIONS],
+                oldest_dates[SOURCES][SOURCE_USER_SUBSCRIPTIONS],
             )
             log(
                 "{} URLs from user subscriptions".format(len(urls) - url_count),
@@ -577,7 +579,7 @@ def get_urls(inout_file, source, options, oldest_dates):
             )
             url_count = len(urls)
 
-        if SOURCE_USERNAMES in source:
+        if SOURCE_USERNAMES in sources:
             log(
                 "Getting URLs from following users' works: {}".format(
                     ",".join(options.usernames)
@@ -589,12 +591,12 @@ def get_urls(inout_file, source, options, oldest_dates):
                     options.max_count,
                     options.user,
                     u,
-                    oldest_dates[u],
+                    oldest_dates[SOURCE_USERNAMES][u],
                 )
             log("{} URLs from usernames".format(len(urls) - url_count), Bcolors.OKGREEN)
             url_count = len(urls)
 
-        if SOURCE_SERIES in source:
+        if SOURCE_SERIES in sources:
             log(
                 "Getting URLs from following series: {}".format(
                     ",".join(options.series)
@@ -606,12 +608,12 @@ def get_urls(inout_file, source, options, oldest_dates):
                     options.max_count,
                     options.user,
                     s,
-                    oldest_dates[s],
+                    oldest_dates[SOURCE_SERIES][s],
                 )
             log("{} URLs from series".format(len(urls) - url_count), Bcolors.OKGREEN)
             url_count = len(urls)
 
-        if SOURCE_COLLECTIONS in source:
+        if SOURCE_COLLECTIONS in sources:
             log(
                 "Getting URLs from following collections: {}".format(
                     ",".join(options.collections)
@@ -623,7 +625,7 @@ def get_urls(inout_file, source, options, oldest_dates):
                     options.max_count,
                     options.user,
                     c,
-                    oldest_dates[c],
+                    oldest_dates[SOURCE_COLLECTIONS][c],
                 )
             log(
                 "{} URLs from collections".format(len(urls) - url_count),
@@ -631,7 +633,7 @@ def get_urls(inout_file, source, options, oldest_dates):
             )
             url_count = len(urls)
 
-        if SOURCE_STDIN in source:
+        if SOURCE_STDIN in sources:
             stdin_urls = set()
             for line in sys.stdin:
                 stdin_urls.add(line.rstrip())
@@ -647,7 +649,12 @@ def get_urls(inout_file, source, options, oldest_dates):
 
 
 def get_all_sources_for_last_updated_file(options, sources):
-    return sources + options.usernames + options.series + options.collections
+    return {
+        SOURCES: sources,
+        SOURCE_USERNAMES: options.usernames,
+        SOURCE_SERIES: options.series,
+        SOURCE_COLLECTIONS: options.collections,
+    }
 
 
 def update_last_updated_file(options, sources):
@@ -658,8 +665,12 @@ def update_last_updated_file(options, sources):
         last_updates_text = f.read()
     last_updates = json.loads(last_updates_text) if last_updates_text else {}
 
-    for s in all_sources:
-        last_updates[s] = today
+    for key, value in all_sources.items():
+        if not last_updates.get(key):
+            last_updates[key] = {}
+        for s in value:
+            last_updates[key][s] = today
+
     data = json.dumps(last_updates)
 
     log(
@@ -674,9 +685,19 @@ def update_last_updated_file(options, sources):
 def get_oldest_date(options, sources):
     all_sources = get_all_sources_for_last_updated_file(options, sources)
     if not (options.since or options.since_last_update):
-        return {s: None for s in all_sources}
+        dates = {}
+        for key in LAST_UPDATE_KEYS:
+            dates[key] = {}
+            for s in all_sources[key]:
+                dates[key][s] = None
+        return dates
 
-    oldest_date_per_source = {}
+    oldest_date_per_source = {
+        SOURCES: {},
+        SOURCE_USERNAMES: {},
+        SOURCE_SERIES: {},
+        SOURCE_COLLECTIONS: {},
+    }
 
     if options.since_last_update:
         last_updates = {}
@@ -690,11 +711,12 @@ def get_oldest_date(options, sources):
                 "{} should be valid json".format(options.last_update_file)
             )
 
-        oldest_date_per_source = {
-            s: datetime.strptime(last_updates.get(s), DATE_FORMAT)
-            for s in all_sources
-            if last_updates.get(s)
-        }
+        for key in LAST_UPDATE_KEYS:
+            oldest_date_per_source[key] = {
+                s: datetime.strptime(last_updates[key].get(s), DATE_FORMAT)
+                for s in all_sources[key]
+                if last_updates.get(key, {}).get(s)
+            }
 
     since = None
     if options.since:
@@ -703,9 +725,10 @@ def get_oldest_date(options, sources):
         except ValueError:
             raise InvalidConfig("'since' option should have format 'DD.MM.YYYY'")
 
-    for s in all_sources:
-        if not oldest_date_per_source.get(s):
-            oldest_date_per_source[s] = since
+    for key in LAST_UPDATE_KEYS:
+        for s in all_sources[key]:
+            if not oldest_date_per_source[key].get(s):
+                oldest_date_per_source[key][s] = since
 
     log("Dates of last update per source:", Bcolors.OKBLUE)
     log(oldest_date_per_source, Bcolors.OKBLUE)
@@ -720,9 +743,11 @@ def get_sources(options):
 
     sources = []
     for s in source_input:
-        if s not in SOURCES:
+        if s not in VALID_INPUT_SOURCES:
             raise InvalidConfig(
-                "Valid 'source' options are {}, not {}".format(", ".join(SOURCES), s)
+                "Valid 'source' options are {}, not {}".format(
+                    ", ".join(VALID_INPUT_SOURCES), s
+                )
             )
         if s == SOURCE_USERNAMES and len(options.usernames) == 0:
             raise InvalidConfig(
