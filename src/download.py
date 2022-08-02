@@ -768,7 +768,7 @@ def download(options):
             check_or_create_extra_series_columns(path)
         except CalledProcessError as e:
             log(
-                "Error while making sure 'words' column exists in Calibre library",
+                "Error while making sure custom columns exist in Calibre library",
                 Bcolors.FAIL,
             )
             log(e.output)
