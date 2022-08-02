@@ -59,9 +59,8 @@ def check_or_create_extra_series_columns(path):
                 stderr=STDOUT,
                 stdin=PIPE,
             )
-
-    log("Adding grouped search term 'allseries' to Calibre Library")
-    _add_grouped_search_terms(path)
+        log("Adding grouped search term 'allseries' to Calibre Library")
+        _add_grouped_search_terms(path)
 
 
 def _add_grouped_search_terms(path):
