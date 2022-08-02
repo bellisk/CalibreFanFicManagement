@@ -7,14 +7,28 @@ series_pattern = re.compile("(.*) \[(.*)\]")
 
 
 def get_series_options(metadata):
-    series_keys = ["series", "series00", "series01", "series02", "series03"]
-    opts = ""
-    for key in series_keys:
-        if len(metadata[key]) > 0:
-            m = series_pattern.match(metadata[key])
-            opts += '--series="{}" --series-index={} '.format(m.group(1), m.group(2))
+    if len(metadata["series"]) > 0:
+        m = series_pattern.match(metadata["series"])
+        return '--series="{}" --series-index={} '.format(m.group(1), m.group(2))
+    return ""
 
-    return opts
+
+def get_extra_series_data(story_id, metadata):
+    # The command to set custom column data is:
+    # 'calibredb set_custom [options] column id value'
+    # Here we return a list of (column, value) tuples for each additional series
+    # field that contains data, plus its index.
+    existing_series = metadata["series"]
+    series_keys = ["series00", "series01", "series02", "series03"]
+    result = []
+    for key in series_keys:
+        print(key, metadata[key])
+        if len(metadata[key]) > 0 and metadata[key] != existing_series:
+            m = series_pattern.match(metadata[key])
+            result.append((key, m.group(0)))
+            # result.append(("{}-index".format(key), m.group(2)))
+
+    return result
 
 
 def get_tags_options(metadata):

@@ -25,7 +25,12 @@ from .ao3_utils import (
     get_ao3_users_work_urls,
     get_ao3_work_subscription_urls,
 )
-from .calibre_utils import get_series_options, get_tags_options, get_word_count
+from .calibre_utils import (
+    get_extra_series_data,
+    get_series_options,
+    get_tags_options,
+    get_word_count,
+)
 from .exceptions import (
     BadDataException,
     InvalidConfig,
@@ -364,6 +369,35 @@ def downloader(args):
                     lock.release()
                     output += log(
                         "\tError setting word count.",
+                        Bcolors.WARNING,
+                        live,
+                    )
+                    output += log("\t{}".format(e.output))
+
+                extra_series = get_extra_series_data(new_story_id, metadata)
+                try:
+                    lock.acquire()
+                    for column_data in extra_series:
+                        output += log(
+                            "\tSetting custom field {}, value {} on story {}".format(
+                                column_data[0], column_data[1], new_story_id
+                            ),
+                            Bcolors.OKBLUE,
+                            live,
+                        )
+                        check_output(
+                            'calibredb set_custom {} {} {} "{}"'.format(
+                                path, column_data[0], new_story_id, column_data[1]
+                            ),
+                            shell=True,
+                            stderr=STDOUT,
+                            stdin=PIPE,
+                        )
+                    lock.release()
+                except CalledProcessError as e:
+                    lock.release()
+                    output += log(
+                        "\tError setting series data.",
                         Bcolors.WARNING,
                         live,
                     )
