@@ -9,12 +9,16 @@ from .ao3_utils import (
     get_ao3_subscribed_series_work_stats,
     get_ao3_subscribed_users_work_counts,
 )
-from .calibre_utils import get_author_works_count, get_series_works_count
+from .calibre_utils import (
+    get_author_works_count,
+    get_incomplete_work_ids,
+    get_series_works_count,
+)
 from .download import download
 from .exceptions import InvalidConfig
-from .utils import Bcolors, log
+from .utils import Bcolors, log, touch
 
-ANALYSIS_TYPES = ["user_subscriptions", "series_subscriptions"]
+ANALYSIS_TYPES = ["user_subscriptions", "series_subscriptions", "incomplete_works"]
 
 
 def _compare_user_subscriptions(username, cookie, path, output_file):
@@ -108,6 +112,14 @@ def _compare_series_subscriptions(username, cookie, path, output_file):
     return list(series_missing_works.keys())
 
 
+def _collect_incomplete_works(path):
+    log("Getting urls for all works in Calibre library that are marked In Progress.")
+    ids = get_incomplete_work_ids(path)
+    log("Found {} incomplete works.".format(len(ids)))
+
+    return ids
+
+
 def get_analysis_type(analysis_types):
     if len(analysis_types) == 0:
         return ANALYSIS_TYPES
@@ -158,6 +170,8 @@ def analyse(options):
             missing_works["series"] = _compare_series_subscriptions(
                 options.user, options.cookie, path, output_file
             )
+        elif analysis_type == "incomplete_works":
+            missing_works["file"] = _collect_incomplete_works(path)
 
     if options.fix:
         log("Sending missing works to be downloaded", Bcolors.HEADER)
@@ -167,6 +181,14 @@ def analyse(options):
 
         options.usernames = missing_works.get("usernames", [])
         options.series = missing_works.get("series", [])
+
+        # Save work urls to file, then import from file
+        if missing_works.get("file"):
+            inout_file = options.input
+            touch(inout_file)
+            with open(inout_file, "a") as fp:
+                for url in missing_works["file"]:
+                    fp.write(url + "\n")
 
         options.since_last_update = False
         options.since = None
