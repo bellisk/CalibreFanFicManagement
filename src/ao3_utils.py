@@ -3,6 +3,8 @@ import time
 
 from ao3 import AO3
 
+AO3_SERIES_KEYS = ["series00", "series01", "series02", "series03"]
+
 
 def get_ao3_bookmark_urls(
     cookie, expand_series, max_count, user, oldest_date, sort_by_updated

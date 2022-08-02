@@ -26,6 +26,8 @@ from .ao3_utils import (
     get_ao3_work_subscription_urls,
 )
 from .calibre_utils import (
+    check_or_create_extra_series_columns,
+    check_or_create_words_column,
     get_extra_series_data,
     get_series_options,
     get_tags_options,
@@ -146,27 +148,6 @@ def get_url_without_chapter(url):
     url = url.replace("http://", "https://")
     m = story_url.match(url)
     return m.group(1)
-
-
-def check_or_create_words_column(path):
-    res = check_output(
-        "calibredb custom_columns {}".format(path),
-        shell=True,
-        stderr=STDOUT,
-        stdin=PIPE,
-    )
-    columns = res.decode("utf-8").split("\n")
-    for c in columns:
-        if c.startswith("words ("):
-            return
-
-    log("Adding custom column 'words' to Calibre library")
-    check_output(
-        "calibredb add_custom_column {} words Words int".format(path),
-        shell=True,
-        stderr=STDOUT,
-        stdin=PIPE,
-    )
 
 
 def get_new_story_id(bytestring):
@@ -784,6 +765,7 @@ def download(options):
                 return
         try:
             check_or_create_words_column(path)
+            check_or_create_extra_series_columns(path)
         except CalledProcessError as e:
             log(
                 "Error while making sure 'words' column exists in Calibre library",
