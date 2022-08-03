@@ -96,6 +96,7 @@ too_many_requests = re.compile(
     "Failed to read epub for update: \(HTTP Error 429: Too Many Requests\)"
 )
 chapter_difference = re.compile(".* contains \d* chapters, more than source: \d*.")
+nonexistent_story = re.compile("Story does not exist: ")
 
 # Response from fanficfare that mean we should force-update the story
 # We might have the same number of chapters but know that there have been
@@ -121,6 +122,10 @@ def check_fff_output(output):
         )
     if no_url.search(output):
         raise BadDataException("No URL in epub to update from. Fix the metadata.")
+    if nonexistent_story.search(output):
+        raise BadDataException(
+            "No story found at this url. It might have been deleted."
+        )
     if too_many_requests.search(output):
         raise TooManyRequestsException()
     if chapter_difference.search(output):
