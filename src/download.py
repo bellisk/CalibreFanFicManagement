@@ -12,7 +12,6 @@ from os import devnull, rename
 from shutil import rmtree
 from subprocess import PIPE, STDOUT, CalledProcessError, call, check_output
 from tempfile import mkdtemp
-from urllib.error import HTTPError
 
 from .ao3_utils import (
     get_ao3_bookmark_urls,
@@ -85,28 +84,28 @@ LAST_UPDATE_KEYS = [SOURCES, SOURCE_USERNAMES, SOURCE_COLLECTIONS, SOURCE_SERIES
 DATE_FORMAT = "%d.%m.%Y"
 
 story_name = re.compile("(.*)-.*")
-story_url = re.compile("(https://archiveofourown.org/works/\d*).*")
+story_url = re.compile(r"(https://archiveofourown.org/works/\d*).*")
 
 # Responses from fanficfare that mean we won't update the story
 bad_chapters = re.compile(
-    ".* doesn't contain any recognizable chapters, probably from a different source.  Not updating."
+    ".* doesn't contain any recognizable chapters, probably from a different source. {2}Not updating."
 )
 no_url = re.compile("No story URL found in epub to update.")
 too_many_requests = re.compile("HTTP Error 429: Too Many Requests")
-chapter_difference = re.compile(".* contains \d* chapters, more than source: \d*.")
+chapter_difference = re.compile(r".* contains \d* chapters, more than source: \d*.")
 nonexistent_story = re.compile("Story does not exist: ")
 
 # Response from fanficfare that mean we should force-update the story
 # We might have the same number of chapters but know that there have been
 # updates we want to get
-equal_chapters = re.compile(".* already contains \d* chapters.")
+equal_chapters = re.compile(r".* already contains \d* chapters.")
 
 # Response from fanficfare that means we should update the story, even if
 # force is set to false
 # Our tmp epub was just created, so if this is the only reason not to update,
 # we should ignore it and do the update
 updated_more_recently = re.compile(
-    ".*File\(.*\.epub\) Updated\(.*\) more recently than Story\(.*\) - Skipping"
+    r".*File\(.*\.epub\) Updated\(.*\) more recently than Story\(.*\) - Skipping"
 )
 
 
@@ -176,6 +175,7 @@ def downloader(args):
         return
 
     loc = mkdtemp()
+    cur = url
     story_id = None
 
     try:
@@ -192,7 +192,6 @@ def downloader(args):
             except CalledProcessError:
                 # story is not in Calibre
                 lock.release()
-                cur = url
 
             if story_id is not None:
                 story_id = story_id.decode("utf-8")
@@ -232,14 +231,13 @@ def downloader(args):
                     # the ebook-convert and ebook-meta CLIs can't save an epub
                     # with a source url in the way fanficfare expects, so
                     # we'll download a new copy as if we didn't have it at all
-                    cur = url
                     output += log(
                         '\tNo epub for story id "{}" in Calibre'.format(story_id),
                         Bcolors.OKBLUE,
                         live,
                     )
 
-            res = check_output(
+            check_output(
                 "cp {} {}/personal.ini".format(fanficfare_config, loc),
                 shell=True,
                 stderr=STDOUT,
@@ -261,11 +259,16 @@ def downloader(args):
                     stdin=PIPE,
                 )
             except CalledProcessError as e:
-                if "AttributeError: 'NoneType' object has no attribute 'get_text'" in e.output.decode('utf-8'):
+                if (
+                    "AttributeError: 'NoneType' object has no attribute 'get_text'"
+                    in e.output.decode("utf-8")
+                ):
                     # This is an uncaught error fanficfare returns when it can't make the expected
                     # BeautifulSoup out of the story page, e.g. when a story has been added to a hidden
                     # AO3 collection.
-                    raise BadDataException("No story found at this url. It might have been hidden.")
+                    raise BadDataException(
+                        "No story found at this url. It might have been hidden."
+                    )
 
             try:
                 # Throws an exception if we couldn't/shouldn't update the epub
@@ -292,8 +295,6 @@ def downloader(args):
                         stdin=PIPE,
                     )
                     check_fff_output(res)
-                elif type(e) == HTTPError:
-                    raise TooManyRequestsException()
                 else:
                     raise e
 
@@ -306,7 +307,7 @@ def downloader(args):
             output += log("\tAdding {} to library".format(cur), Bcolors.OKBLUE, live)
             try:
                 lock.acquire()
-                res = check_output(
+                check_output(
                     'calibredb add -d {} "{}" {} {}'.format(
                         path, cur, series_options, tags_options
                     ),
@@ -359,7 +360,7 @@ def downloader(args):
                 )
                 try:
                     lock.acquire()
-                    res = check_output(
+                    check_output(
                         "calibredb set_custom {} words {} '{}'".format(
                             path, new_story_id, word_count
                         ),
@@ -412,7 +413,7 @@ def downloader(args):
                 )
                 try:
                     lock.acquire()
-                    res = check_output(
+                    check_output(
                         "calibredb remove {} {}".format(path, story_id),
                         shell=True,
                         stderr=STDOUT,
@@ -453,18 +454,10 @@ def downloader(args):
             output += log("\t{}".format(e.output.decode("utf-8")), Bcolors.FAIL, live)
         if not live:
             print(output.strip())
-        try:
-            rmtree(loc)
-        except BaseException:
-            pass
+        rmtree(loc, ignore_errors=True)
         if type(e) != StoryUpToDateException:
             with open(inout_file, "a") as fp:
                 fp.write("{}\n".format(url))
-
-
-def init(l):
-    global lock
-    lock = l
 
 
 def get_urls(inout_file, sources, options, oldest_dates):
@@ -790,6 +783,14 @@ def get_sources(options):
     return sources
 
 
+global lock
+
+
+def init(lo):
+    global lock
+    lock = lo
+
+
 def download(options):
     if not (options.user and options.cookie):
         log("User and Cookie are required for downloading from AO3", Bcolors.FAIL)
@@ -853,8 +854,8 @@ def download(options):
         )
         return
     else:
-        l = Lock()
-        p = Pool(1, initializer=init, initargs=(l,))
+        lo = Lock()
+        p = Pool(1, initializer=init, initargs=(lo,))
         p.map(
             downloader,
             [
