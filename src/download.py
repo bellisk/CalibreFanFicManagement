@@ -152,7 +152,9 @@ def get_metadata(output):
 def get_url_without_chapter(url):
     url = url.replace("http://", "https://")
     m = story_url.match(url)
-    return m.group(1)
+    if m:
+        return m.group(1)
+    raise BadDataException("Malformed url: '{}'".format(url))
 
 
 def get_new_story_id(bytestring):
@@ -162,13 +164,20 @@ def get_new_story_id(bytestring):
 
 def downloader(args):
     url, inout_file, fanficfare_config, path, force, live = args
-    url = get_url_without_chapter(url)
-
-    loc = mkdtemp()
     output = ""
     output += log("Working with url {}".format(url), Bcolors.HEADER, live)
+
+    try:
+        url = get_url_without_chapter(url)
+    except BadDataException as e:
+        output += log("\tException: {}".format(e), Bcolors.FAIL, live)
+        if not live:
+            print(output.strip())
+        return
+
+    loc = mkdtemp()
     story_id = None
-    new_story_id = None
+
     try:
         if path:
             try:
@@ -244,12 +253,20 @@ def downloader(args):
                 Bcolors.OKBLUE,
                 live,
             )
-            res = check_output(
-                'cd "{}" && fanficfare -j -u "{}" --update-cover'.format(loc, cur),
-                shell=True,
-                stderr=STDOUT,
-                stdin=PIPE,
-            )
+            try:
+                res = check_output(
+                    'cd "{}" && fanficfare -j -u "{}" --update-cover'.format(loc, cur),
+                    shell=True,
+                    stderr=STDOUT,
+                    stdin=PIPE,
+                )
+            except CalledProcessError as e:
+                if "AttributeError: 'NoneType' object has no attribute 'get_text'" in e.output.decode('utf-8'):
+                    # This is an uncaught error fanficfare returns when it can't make the expected
+                    # BeautifulSoup out of the story page, e.g. when a story has been added to a hidden
+                    # AO3 collection.
+                    raise BadDataException("No story found at this url. It might have been hidden.")
+
             try:
                 # Throws an exception if we couldn't/shouldn't update the epub
                 check_fff_output(res)
