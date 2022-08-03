@@ -132,6 +132,7 @@ def get_author_works_count(author, path):
     # author:"=author or \(author\)"
     # This catches both exact use of the author name, or use of a pseud,
     # e.g. "MyPseud (MyUsername)"
+    print("getting work count for {} in calibre".format(author))
     result = check_output(
         'calibredb search author:"={} or \({}\)" {}'.format(author, author, path),
         shell=True,
@@ -139,6 +140,19 @@ def get_author_works_count(author, path):
         stdin=PIPE,
     )
     return len(str(result).split(","))
+
+
+def get_author_work_urls(author, path):
+    result = check_output(
+        'calibredb list --search author:"={} or \({}\)" {} --fields *identifier --for-machine'.format(
+            author, author, path
+        ),
+        shell=True,
+        stderr=STDOUT,
+        stdin=PIPE,
+    )
+    result_json = json.loads(result.decode("utf-8"))
+    return [r["*identifier"].replace("url:", "") for r in result_json]
 
 
 def get_series_works_count(series_title, path):
@@ -153,10 +167,12 @@ def get_series_works_count(series_title, path):
     return len(str(result).split(","))
 
 
-def get_incomplete_work_ids(path):
+def get_series_work_urls(series_title, path):
+    # Calibre seems to escape only this character in series titles
+    series_title = series_title.replace("&", "&amp;")
     result = check_output(
-        'calibredb list --search tags:""fanfic.status.In Progress"" {} --fields *identifier --for-machine'.format(
-            path
+        'calibredb list --search series:"=\\"{}\\"" {} --fields *identifier --for-machine'.format(
+            series_title, path
         ),
         shell=True,
         stderr=STDOUT,
@@ -164,3 +180,19 @@ def get_incomplete_work_ids(path):
     )
     result_json = json.loads(result.decode("utf-8"))
     return [r["*identifier"].replace("url:", "") for r in result_json]
+
+
+def get_incomplete_work_data(path):
+    result = check_output(
+        'calibredb list --search tags:""fanfic.status.In Progress"" {} --fields title,*identifier --for-machine'.format(
+            path
+        ),
+        shell=True,
+        stderr=STDOUT,
+        stdin=PIPE,
+    )
+    result_json = json.loads(result.decode("utf-8"))
+    return [
+        {"title": r["title"], "url": r["*identifier"].replace("url:", "")}
+        for r in result_json
+    ]

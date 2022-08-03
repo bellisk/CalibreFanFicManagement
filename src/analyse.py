@@ -6,12 +6,16 @@ from os import getcwd, mkdir
 from os.path import isdir, join
 
 from .ao3_utils import (
+    get_ao3_series_work_urls,
     get_ao3_subscribed_series_work_stats,
     get_ao3_subscribed_users_work_counts,
+    get_ao3_users_work_urls,
 )
 from .calibre_utils import (
+    get_author_work_urls,
     get_author_works_count,
-    get_incomplete_work_ids,
+    get_incomplete_work_data,
+    get_series_work_urls,
     get_series_works_count,
 )
 from .download import download
@@ -109,15 +113,52 @@ def _compare_series_subscriptions(username, cookie, path, output_file):
             Bcolors.OKGREEN,
         )
 
-    return list(series_missing_works.keys())
+    return series_missing_works
 
 
-def _collect_incomplete_works(path):
+def _get_missing_work_urls_from_users(users_missing_works, username, cookie, path):
+    log("Getting urls for works missing from subscribed series.")
+    missing_work_urls = []
+    for u in users_missing_works:
+        log(u)
+        ao3_urls = get_ao3_users_work_urls(
+            cookie, max_count=None, user=username, username=u, oldest_date=None
+        )
+        calibre_urls = get_author_work_urls(u, path)
+        missing_work_urls.extend(set(ao3_urls) - set(calibre_urls))
+
+    log("Found {} urls to import".format(len(missing_work_urls)))
+    return missing_work_urls
+
+
+def _get_missing_work_urls_from_series(series_missing_works, username, cookie, path):
+    log("Getting urls for works missing from subscribed series.")
+    missing_work_urls = []
+    for series_id, series_title in series_missing_works.items():
+        log(series_title, series_id)
+        ao3_urls = get_ao3_series_work_urls(
+            cookie, max_count=None, user=username, series_id=series_id
+        )
+        calibre_urls = get_series_work_urls(series_title, path)
+        missing_work_urls.extend(set(ao3_urls) - set(calibre_urls))
+
+    log("Found {} urls to import.".format(len(missing_work_urls)))
+    return missing_work_urls
+
+
+def _collect_incomplete_works(path, output_file):
     log("Getting urls for all works in Calibre library that are marked In Progress.")
-    ids = get_incomplete_work_ids(path)
-    log("Found {} incomplete works.".format(len(ids)))
+    results = get_incomplete_work_data(path)
 
-    return ids
+    with open(output_file, "a") as f:
+        writer = DictWriter(f, ["title", "url"])
+        writer.writeheader()
+        for work_data in results:
+            writer.writerow(work_data)
+
+    log("Found {} incomplete works.".format(len(results)))
+
+    return [work_data["url"] for work_data in results]
 
 
 def get_analysis_type(analysis_types):
@@ -154,7 +195,7 @@ def analyse(options):
     if not isdir(analysis_dir):
         mkdir(analysis_dir)
 
-    missing_works = {}
+    missing_works = []
 
     for analysis_type in analysis_types:
         filename = "{}_{}.csv".format(
@@ -163,33 +204,36 @@ def analyse(options):
         output_file = join(analysis_dir, filename)
 
         if analysis_type == "user_subscriptions":
-            missing_works["usernames"] = _compare_user_subscriptions(
+            users_missing_works = _compare_user_subscriptions(
                 options.user, options.cookie, path, output_file
+            )
+            missing_works.extend(
+                _get_missing_work_urls_from_users(
+                    users_missing_works, options.user, options.cookie, path
+                )
             )
         elif analysis_type == "series_subscriptions":
-            missing_works["series"] = _compare_series_subscriptions(
+            series_missing_works = _compare_series_subscriptions(
                 options.user, options.cookie, path, output_file
             )
+            missing_works.extend(
+                _get_missing_work_urls_from_series(
+                    series_missing_works, options.user, options.cookie, path
+                )
+            )
         elif analysis_type == "incomplete_works":
-            missing_works["file"] = _collect_incomplete_works(path)
+            missing_works.extend(_collect_incomplete_works(path, output_file))
 
     if options.fix:
-        log("Sending missing works to be downloaded", Bcolors.HEADER)
-        options.source = []
-        for key, value in missing_works.items():
-            options.source.append(key)
-
-        options.usernames = missing_works.get("usernames", [])
-        options.series = missing_works.get("series", [])
-
+        log("Sending missing/incomplete works to be downloaded", Bcolors.HEADER)
         # Save work urls to file, then import from file
-        if missing_works.get("file"):
-            inout_file = options.input
-            touch(inout_file)
-            with open(inout_file, "a") as fp:
-                for url in missing_works["file"]:
-                    fp.write(url + "\n")
+        inout_file = options.input
+        touch(inout_file)
+        with open(inout_file, "a") as fp:
+            for url in missing_works:
+                fp.write(url + "\n")
 
+        options.source = ["file"]
         options.since_last_update = False
         options.since = None
 
