@@ -92,9 +92,7 @@ bad_chapters = re.compile(
     ".* doesn't contain any recognizable chapters, probably from a different source.  Not updating."
 )
 no_url = re.compile("No story URL found in epub to update.")
-too_many_requests = re.compile(
-    "Failed to read epub for update: \(HTTP Error 429: Too Many Requests\)"
-)
+too_many_requests = re.compile("HTTP Error 429: Too Many Requests")
 chapter_difference = re.compile(".* contains \d* chapters, more than source: \d*.")
 nonexistent_story = re.compile("Story does not exist: ")
 
