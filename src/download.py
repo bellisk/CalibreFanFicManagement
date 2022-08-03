@@ -152,7 +152,9 @@ def get_metadata(output):
 def get_url_without_chapter(url):
     url = url.replace("http://", "https://")
     m = story_url.match(url)
-    return m.group(1)
+    if m:
+        return m.group(1)
+    raise BadDataException("Malformed url: '{}'".format(url))
 
 
 def get_new_story_id(bytestring):
@@ -162,13 +164,20 @@ def get_new_story_id(bytestring):
 
 def downloader(args):
     url, inout_file, fanficfare_config, path, force, live = args
-    url = get_url_without_chapter(url)
-
-    loc = mkdtemp()
     output = ""
     output += log("Working with url {}".format(url), Bcolors.HEADER, live)
+
+    try:
+        url = get_url_without_chapter(url)
+    except BadDataException as e:
+        output += log("\tException: {}".format(e), Bcolors.FAIL, live)
+        if not live:
+            print(output.strip())
+        return
+
+    loc = mkdtemp()
     story_id = None
-    new_story_id = None
+
     try:
         if path:
             try:
