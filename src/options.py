@@ -198,7 +198,8 @@ exist. Default: analysis/""",
         action="store",
         dest="analysis_type",
         help="""Which source(s) should be analysed to see if all works are in Calibre?
-Options: 'user_subscriptions', 'series_subscriptions'. Default is both.""",
+Options: 'user_subscriptions', 'series_subscriptions', 'incomplete_works'. Default is
+all of these.""",
     )
 
     option_parser.add_option(
