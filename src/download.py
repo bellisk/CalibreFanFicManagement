@@ -340,7 +340,7 @@ def downloader(args):
                 try:
                     lock.acquire()
                     res = check_output(
-                        "calibredb set_custom {} words {} {}".format(
+                        "calibredb set_custom {} words {} '{}'".format(
                             path, new_story_id, word_count
                         ),
                         shell=True,

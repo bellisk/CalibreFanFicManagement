@@ -125,6 +125,13 @@ def get_tags_options(metadata):
 
 
 def get_word_count(metadata):
+    if metadata.get("numWords", 0) == "":
+        # A strange bug that seems to happen occasionally on AO3's side.
+        # The wordcount of the affected work is not actually 0.
+        # Returning an empty string here will set the wordcount in Calibre to None,
+        # so it can be distinguised from works that actually have 0 words (e.g. art).
+        return ""
+
     return locale.atoi(metadata.get("numWords", 0))
 
 
