@@ -175,7 +175,6 @@ def downloader(args):
         return
 
     loc = mkdtemp()
-    cur = url
     story_id = None
 
     try:
