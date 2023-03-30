@@ -191,6 +191,7 @@ def downloader(args):
             except CalledProcessError:
                 # story is not in Calibre
                 lock.release()
+                cur = url
 
             if story_id is not None:
                 story_id = story_id.decode("utf-8")
@@ -230,6 +231,7 @@ def downloader(args):
                     # the ebook-convert and ebook-meta CLIs can't save an epub
                     # with a source url in the way fanficfare expects, so
                     # we'll download a new copy as if we didn't have it at all
+                    cur = url
                     output += log(
                         '\tNo epub for story id "{}" in Calibre'.format(story_id),
                         Bcolors.OKBLUE,
