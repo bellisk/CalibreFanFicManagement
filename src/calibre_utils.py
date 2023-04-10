@@ -119,7 +119,7 @@ def get_tags_options(metadata):
             for tag in tags:
                 # Replace characters that give Calibre trouble in tags.
                 tag = tag.replace('"', "'").replace("...", "…").replace(".", "．")
-                opts += '"{}",'.format("fanfic." + key + "." + tag)
+                opts += '"{}",'.format(key + "." + tag)
 
     return opts
 
