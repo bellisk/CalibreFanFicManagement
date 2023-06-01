@@ -2,7 +2,7 @@
 import json
 import locale
 import re
-from subprocess import PIPE, STDOUT, check_output
+from subprocess import CalledProcessError, PIPE, STDOUT, check_output
 
 from .ao3_utils import AO3_SERIES_KEYS
 from .utils import log
@@ -147,7 +147,7 @@ def get_author_works_count(author, path):
             stderr=STDOUT,
             stdin=PIPE,
         )
-    except Exception:
+    except CalledProcessError:
         return 0
     return len(str(result).split(","))
 
@@ -168,12 +168,15 @@ def get_author_work_urls(author, path):
 def get_series_works_count(series_title, path):
     # Calibre seems to escape only this character in series titles
     series_title = series_title.replace("&", "&amp;")
-    result = check_output(
-        'calibredb search series:"=\\"{}\\"" {}'.format(series_title, path),
-        shell=True,
-        stderr=STDOUT,
-        stdin=PIPE,
-    )
+    try:
+        result = check_output(
+            'calibredb search series:"=\\"{}\\"" {}'.format(series_title, path),
+            shell=True,
+            stderr=STDOUT,
+            stdin=PIPE,
+        )
+    except CalledProcessError:
+        return 0
     return len(str(result).split(","))
 
 
