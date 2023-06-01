@@ -117,7 +117,7 @@ def _compare_series_subscriptions(username, cookie, path, output_file):
 
 
 def _get_missing_work_urls_from_users(users_missing_works, username, cookie, path):
-    log("Getting urls for works missing from subscribed series.")
+    log("Getting urls for works missing from subscribed users.")
     missing_work_urls = []
     for u in users_missing_works:
         log(u)
