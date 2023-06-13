@@ -197,7 +197,7 @@ def get_series_work_urls(series_title, path):
 
 def get_incomplete_work_data(path):
     result = check_output(
-        'calibredb list --search tags:""fanfic.status.In Progress"" {} --fields title,*identifier --for-machine'.format(
+        'calibredb list --search tags:""status.In Progress"" {} --fields title,*identifier --for-machine'.format(
             path
         ),
         shell=True,
