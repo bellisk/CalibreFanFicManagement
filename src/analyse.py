@@ -22,7 +22,12 @@ from .download import download
 from .exceptions import InvalidConfig
 from .utils import Bcolors, log, touch
 
-ANALYSIS_TYPES = ["user_subscriptions", "series_subscriptions", "incomplete_works"]
+ANALYSIS_TYPES = [
+    "user_subscriptions",
+    "series_subscriptions",
+    "incomplete_works",
+    "deleted_works"
+]
 
 
 def _compare_user_subscriptions(username, cookie, path, output_file):
@@ -161,6 +166,11 @@ def _collect_incomplete_works(path, output_file):
     return [work_data["url"] for work_data in results]
 
 
+def _collect_deleted_works(path, output_file):
+    log("Getting urls for all works in AO3 library that have been deleted or anonymised.")
+
+
+
 def get_analysis_type(analysis_types):
     if len(analysis_types) == 0:
         return ANALYSIS_TYPES
@@ -196,6 +206,7 @@ def analyse(options):
         mkdir(analysis_dir)
 
     missing_works = []
+    deleted_works = []
 
     for analysis_type in analysis_types:
         filename = "{}_{}.csv".format(
@@ -223,6 +234,8 @@ def analyse(options):
             )
         elif analysis_type == "incomplete_works":
             missing_works.extend(_collect_incomplete_works(path, output_file))
+        elif analysis_type == "deleted_works":
+            deleted_works.extend(_collect_deleted_works(path, output_file))
 
     if options.fix:
         log("Sending missing/incomplete works to be downloaded", Bcolors.HEADER)

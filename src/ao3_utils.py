@@ -201,3 +201,9 @@ def get_ao3_subscribed_series_work_stats(user, cookie):
         stats[s] = api.series_info(s)
 
     return stats
+
+
+def get_ao3_removed_bookmark_urls(user, cookie):
+    api = AO3()
+    api.login(user, cookie)
+    bookmarked_works = api.user.bookmarks_ids()
