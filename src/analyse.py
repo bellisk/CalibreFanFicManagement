@@ -26,7 +26,7 @@ ANALYSIS_TYPES = [
     "user_subscriptions",
     "series_subscriptions",
     "incomplete_works",
-    "deleted_works"
+    "deleted_works",
 ]
 
 
@@ -167,8 +167,9 @@ def _collect_incomplete_works(path, output_file):
 
 
 def _collect_deleted_works(path, output_file):
-    log("Getting urls for all works in AO3 library that have been deleted or anonymised.")
-
+    log(
+        "Getting urls for all works in AO3 library that have been deleted or anonymised."
+    )
 
 
 def get_analysis_type(analysis_types):
