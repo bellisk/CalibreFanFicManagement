@@ -2,7 +2,7 @@
 import json
 import locale
 import re
-from subprocess import CalledProcessError, PIPE, STDOUT, check_output
+from subprocess import PIPE, STDOUT, CalledProcessError, check_output
 
 from .ao3_utils import AO3_SERIES_KEYS
 from .utils import log
