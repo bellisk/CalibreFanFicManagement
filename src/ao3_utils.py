@@ -79,18 +79,7 @@ def get_ao3_work_subscription_urls(cookie, max_count, user, oldest_date=None):
     if oldest_date:
         urls = []
         for work_id in api.user.work_subscription_ids(max_count):
-            try:
-                _append_work_id_if_newer_than_given_date(
-                    api, oldest_date, urls, work_id
-                )
-            except RuntimeError as e:
-                # if timeout, wait and try again
-                if "Retry later" in str(e):
-                    print("timeout... waiting 3 mins and trying again")
-                    time.sleep(180)
-                    _append_work_id_if_newer_than_given_date(
-                        api, oldest_date, urls, work_id
-                    )
+            _append_work_id_if_newer_than_given_date(api, oldest_date, urls, work_id)
 
         return set(urls)
 
