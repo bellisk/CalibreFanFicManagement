@@ -1,6 +1,7 @@
 [login]
 user=
 cookie=
+use_browser_cookie=
 
 [import]
 max_count=

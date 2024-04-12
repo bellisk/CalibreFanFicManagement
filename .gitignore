@@ -1,6 +1,5 @@
-config.ini
-personal.ini
+*.cfg
+*.ini
 fanfiction.txt
 last_update.json
-.isort.cfg
 analysis/
