@@ -732,7 +732,7 @@ def get_oldest_date(options):
 
 
 def setup_login(options):
-    if options.use_browswer_cookie:
+    if options.use_browser_cookie:
         found_cookie = False
         cookie_jar = browser_cookie3.load(domain_name="archiveofourown.org")
         for cookie in cookie_jar:
