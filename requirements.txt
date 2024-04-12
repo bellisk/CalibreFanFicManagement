@@ -6,7 +6,7 @@ cloudscraper==1.2.50
 FanFicFare==3.27.0
 html2text==2020.1.16
 html5lib==1.1
-idna==2.10
+idna==3.7
 pyparsing==2.4.7
 requests==2.25.1
 requests-toolbelt==0.9.1
