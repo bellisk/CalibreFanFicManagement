@@ -737,7 +737,7 @@ def setup_login(options):
         cookie_jar = browser_cookie3.load(domain_name="archiveofourown.org")
         for cookie in cookie_jar:
             if cookie.name == "_otwarchive_session":
-                options.cookie = cookie
+                options.cookie = cookie.value
                 found_cookie = True
                 break
 
