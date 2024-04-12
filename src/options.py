@@ -1,8 +1,11 @@
 # encoding: utf-8
-from configparser import ConfigParser
 from argparse import ArgumentParser, ArgumentTypeError
+from configparser import ConfigParser
+from sys import argv
 
 from .utils import touch
+
+COMMANDS = ["download", "analyse"]
 
 SOURCES = "sources"
 SOURCE_FILE = "file"
@@ -18,7 +21,9 @@ SOURCE_ALL_SUBSCRIPTIONS = "all_subscriptions"
 SOURCE_USERNAMES = "usernames"
 SOURCE_SERIES = "series"
 SOURCE_COLLECTIONS = "collections"
+INCOMPLETE = "incomplete_works"
 
+ANALYSIS_TYPES = [SOURCE_USER_SUBSCRIPTIONS, SOURCE_SERIES_SUBSCRIPTIONS, INCOMPLETE]
 DEFAULT_SOURCES = [SOURCE_FILE, SOURCE_BOOKMARKS, SOURCE_LATER]
 SUBSCRIPTION_SOURCES = [
     SOURCE_SERIES_SUBSCRIPTIONS,
@@ -42,44 +47,65 @@ VALID_INPUT_SOURCES = [
 ]
 
 
-def set_sources(option, opt_str, value, parser):
-    if len(value) == 0:
+def validate_sources(options):
+    if len(options.sources) == 0:
         return DEFAULT_SOURCES
 
-    sources = []
-    if value == SOURCE_USERNAMES and parser.values.usernames is None:
+    if SOURCE_USERNAMES in options.sources and options.usernames is None:
         raise ArgumentTypeError(
             "A list of usernames is required when source 'usernames' is given."
         )
-    if value == SOURCE_SERIES and parser.values.series is None:
+    if SOURCE_SERIES in options.sources and options.series is None:
         raise ArgumentTypeError(
             "A list of series ids is required when source 'series' is given."
         )
-    if value == SOURCE_COLLECTIONS and parser.values.collections is None:
+    if SOURCE_COLLECTIONS in options.sources and options.collections is None:
         raise ArgumentTypeError(
             "A list of collection ids is required when source 'collections' is given."
         )
 
-    if value == SOURCE_ALL_SUBSCRIPTIONS:
-        sources.extend(SUBSCRIPTION_SOURCES)
-    else:
-        sources.append(value)
+    if SOURCE_ALL_SUBSCRIPTIONS in options.sources:
+        options.sources.extend(SUBSCRIPTION_SOURCES)
 
-    parser.values.source = sources
+
+def validate_cookie(options):
+    if not options.cookie and not options.use_browser_cookie:
+        raise ArgumentTypeError(
+            "It's required either to pass in a cookie with -c/--cookie or to use the "
+            "--use-browser-cookie option."
+        )
+
+
+def validate_user(options):
+    if not options.user:
+        raise ArgumentTypeError(
+            "The argument user is required."
+        )
+
+
+def comma_separated_list(value):
+    return value.split(",")
 
 
 def set_up_options():
-    usage = """usage: python %prog [command] [flags]
+    usage = """usage: python %(prog)s [command] [flags]
     
 Commands available:
     
 download    Download fics from AO3 and save to Calibre library
 analyse     Analyse contents of Calibre library and AO3 data
     """
+
     arg_parser = ArgumentParser(usage=usage)
 
+    arg_parser.add_argument("command", action="store", choices=COMMANDS)
+
     arg_parser.add_argument(
-        "-u", "--user", action="store", dest="user", help="AO3 username. Required."
+        "-u",
+        "--user",
+        action="store",
+        dest="user",
+        help="AO3 username. Required.",
     )
 
     arg_parser.add_argument(
@@ -101,25 +127,19 @@ passing it in with the -c option.""",
 
     arg_parser.add_argument(
         "-s",
-        "--source",
-        action="callback",
-        callback=set_sources,
-        type="choice",
-        choices=VALID_INPUT_SOURCES,
-        nargs=1,
-        help=f"""Valid sources are: {', '.join(VALID_INPUT_SOURCES)}.
+        "--sources",
+        action="store",
+        dest="sources",
+        type=comma_separated_list,
+        help=f"""A comma-separated list of sources to get AO3 urls from.
         
-Specify each source separately, e.g.:
-
--s bookmarks -s later -s usernames --usernames janedoe,johndoe
+Valid sources: {", ".join(VALID_INPUT_SOURCES)}
 
 Using '⁻s work_subscriptions' with --since or --since-last-update is slow!
-'file': read AO3 urls from the file specified in --input.
-'stdin': read AO3 urls from stdin.
-'usernames': get all works from one or more users. Specify users with --usernames.
-'series': get all works from one or more series. Specify series ids with --series.
-'collections': get all works from one or more collections. Specify collection ids with
---collections.
+If using 'file', --input is required.
+If using 'usernames' --usernames is required.
+If using 'series', --series is required.
+If using 'collections', --collections is required.
 
 Default: file,bookmarks,later""",
     )
@@ -129,7 +149,7 @@ Default: file,bookmarks,later""",
         "--max-count",
         action="store",
         dest="max_count",
-        type="int",
+        type=int,
         default=None,
         help="""Maximum number of fics to get from AO3. Default: no limit.""",
     )
@@ -138,6 +158,7 @@ Default: file,bookmarks,later""",
         "--usernames",
         action="store",
         dest="usernames",
+        type=comma_separated_list,
         help="""One or more usernames to download all works from, comma separated.""",
     )
 
@@ -145,6 +166,7 @@ Default: file,bookmarks,later""",
         "--series",
         action="store",
         dest="series",
+        type=comma_separated_list,
         help="""One or more series to download all works from.""",
     )
 
@@ -152,6 +174,7 @@ Default: file,bookmarks,later""",
         "--collections",
         action="store",
         dest="collections",
+        type=comma_separated_list,
         help="""One or more collections to download all works from.""",
     )
 
@@ -204,9 +227,10 @@ number of chapters locally as online.""",
         "--input",
         action="store",
         dest="input",
+        default="fanfiction.txt",
         help="""Error file. Any urls that fail will be output here, and file will be
-read to find any urls that failed previously. If file does not exist will create. File
-is overwitten every time the program is run.""",
+read to find any urls that failed previously. The file is overwitten every time the 
+program is run. Default: fanfiction.txt.""",
     )
 
     arg_parser.add_argument(
@@ -214,7 +238,7 @@ is overwitten every time the program is run.""",
         "--library",
         action="store",
         dest="library",
-        help="""calibre library db location. If none is passed, then this merely 
+        help="""Calibre library db location. If none is passed, then this merely 
 downloads stories into the current directory as epub files.""",
     )
 
@@ -224,7 +248,8 @@ downloads stories into the current directory as epub files.""",
         action="store_true",
         dest="dry_run",
         default=False,
-        help="Dry run: only fetch bookmark links from AO3, don't add them to calibre",
+        help="""Dry run: only fetch bookmark links from AO3, don't download works or
+add them to Calibre""",
     )
 
     arg_parser.add_argument(
@@ -232,8 +257,7 @@ downloads stories into the current directory as epub files.""",
         "--config",
         action="store",
         dest="config",
-        help="""Config file for inputs. Blank config file is provided.
-Commandline options overrule config file.
+        help="""Config file (.ini). Commandline options overrule config file.
 Do not put any quotation marks in the options.""",
     )
 
@@ -246,8 +270,7 @@ Do not put any quotation marks in the options.""",
     )
 
     arg_parser.add_argument(
-        "-o",
-        "--output",
+        "--live",
         action="store_true",
         dest="live",
         default=False,
@@ -280,10 +303,11 @@ exist. Default: analysis/""",
         "--analysis-type",
         action="store",
         dest="analysis_type",
-        default="user_subscriptions,series_subscriptions,incomplete_works",
-        help="""Which source(s) should be analysed to see if all works are in Calibre?
-Options: 'user_subscriptions', 'series_subscriptions', 'incomplete_works'. Default is
-all of these.""",
+        type=comma_separated_list,
+        help=f"""Which source(s) should be analysed to see if all works are in Calibre?
+        
+Valid analysis types: {", ".join(ANALYSIS_TYPES)}
+Default: all.""",
     )
 
     arg_parser.add_argument(
@@ -294,36 +318,55 @@ all of these.""",
         help="""If missing works are discovered during analysis, download them.""",
     )
 
-    (options, args) = arg_parser.parse_args()
+    # First, parse the args from the CLI.
+    cli_args = arg_parser.parse_args()
 
-    if len(args) != 1:
-        raise ValueError("Please input exactly one command, e.g. 'download'")
+    if cli_args.config:
+        # Add the cli arguments to the config-file arguments, at the end so they
+        # override them. We don't want to add the argv[0] (the script filename) or the
+        # command to the list.
+        total_args = get_config_file_arguments(cli_args) + [
+            a for a in argv[1:] if a != cli_args.command
+        ]
+        parsed_args = arg_parser.parse_args(total_args)
+    else:
+        parsed_args = cli_args
 
-    command = args[0]
+    validate_user(parsed_args)
+    validate_cookie(parsed_args)
+    validate_sources(parsed_args)
 
-    if options.config:
-        touch(options.config)
-        config = ConfigParser(allow_no_value=True)
-        config.read(options.config)
+    return parsed_args.command, parsed_args
 
-        def updater(option, newval):
-            return newval if newval is not None else option
 
-        for sect in config.sections():
-            for opt in config.options(sect):
-                config_file_option = config.get(sect, opt).strip()
-                cli_option = getattr(options, opt)
-                setattr(options, opt, updater(config_file_option, cli_option))
+def get_config_file_arguments(cli_args):
+    """If we have a config file, get the options from there, and then parse them
+    using the arg_parser. This ensures values are converted into the right types.
+    """
+    touch(cli_args.config)
+    config_parser = ConfigParser(allow_no_value=True)
+    config_parser.read(cli_args.config)
+    config_file_args = [cli_args.command]
+    for sect in config_parser.sections():
+        for opt in config_parser.options(sect):
+            value = config_parser.get(sect, opt).strip()
+            if value == "":
+                # Ignore config options that don't have values in config.ini.
+                continue
 
-    options.usernames = (
-        options.usernames.split(",") if len(options.usernames) > 0 else []
-    )
-    options.series = options.series.split(",") if len(options.series) > 0 else []
-    options.collections = (
-        options.collections.split(",") if len(options.collections) > 0 else []
-    )
-    options.analysis_type = (
-        options.analysis_type.split(",") if len(options.analysis_type) > 0 else []
-    )
+            try:
+                # Boolean arguments are all defined using "store_true", so when we
+                # pass them into the arg_parser, they don't take a value
+                # afterwards. If a value can be got from config.ini as a
+                # bool and it's True, we only need to add the argument name to
+                # config_file_args. If it's False, we don't want to add it
+                # at all, because that's the default for our boolean arguments.
+                if config_parser.getboolean(sect, opt):
+                    config_file_args.append("--" + opt)
+            except ValueError:
+                # If we got an error trying to get the value as a bool, then we
+                # need to add both the argument and its value to config_file_args.
+                config_file_args.append("--" + opt)
+                config_file_args.append(value)
 
-    return command, options
+    return config_file_args
