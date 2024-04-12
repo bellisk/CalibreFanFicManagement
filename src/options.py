@@ -48,6 +48,14 @@ VALID_INPUT_SOURCES = [
 
 
 def validate_sources(options):
+    for s in options.sources:
+        if s not in VALID_INPUT_SOURCES:
+            raise ArgumentTypeError(
+                "Valid 'sources' options are {}, not {}".format(
+                    ", ".join(VALID_INPUT_SOURCES), s
+                )
+            )
+
     if SOURCE_USERNAMES in options.sources and options.usernames is None:
         raise ArgumentTypeError(
             "A list of usernames is required when source 'usernames' is given."
@@ -75,9 +83,19 @@ def validate_cookie(options):
 
 def validate_user(options):
     if not options.user:
-        raise ArgumentTypeError(
-            "The argument user is required."
-        )
+        raise ArgumentTypeError("The argument user is required.")
+
+
+def validate_analysis_type(analysis_types):
+    for t in analysis_types:
+        if t not in ANALYSIS_TYPES:
+            raise ArgumentTypeError(
+                "Valid 'analysis_type' options are {}, not {}".format(
+                    ", ".join(ANALYSIS_TYPES), t
+                )
+            )
+
+    return analysis_types
 
 
 def comma_separated_list(value):
@@ -338,6 +356,7 @@ Default: all.""",
     validate_user(parsed_args)
     validate_cookie(parsed_args)
     validate_sources(parsed_args)
+    validate_analysis_type(parsed_args)
 
     return parsed_args.command, parsed_args
 

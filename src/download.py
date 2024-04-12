@@ -5,12 +5,11 @@ import json
 import re
 import sys
 from datetime import datetime
-from errno import ENOENT
 from json.decoder import JSONDecodeError
 from multiprocessing import Lock, Pool
-from os import devnull, rename
+from os import rename
 from shutil import rmtree
-from subprocess import PIPE, STDOUT, CalledProcessError, call, check_output
+from subprocess import PIPE, STDOUT, CalledProcessError, check_output
 from tempfile import mkdtemp
 
 import browser_cookie3
@@ -27,8 +26,7 @@ from .ao3_utils import (
     get_ao3_work_subscription_urls,
 )
 from .calibre_utils import (
-    check_or_create_extra_series_columns,
-    check_or_create_words_column,
+    check_library_and_get_path,
     get_extra_series_data,
     get_series_options,
     get_tags_options,
@@ -58,7 +56,7 @@ from .options import (
     SOURCE_WORKS,
     SOURCES,
 )
-from .utils import Bcolors, get_files, log, touch
+from .utils import Bcolors, get_files, log
 
 LAST_UPDATE_KEYS = [SOURCES, SOURCE_USERNAMES, SOURCE_COLLECTIONS, SOURCE_SERIES]
 
@@ -751,35 +749,6 @@ def setup_login(options):
         raise InvalidConfig("User and cookie are required for downloading from AO3")
 
 
-def setup_library(options):
-    if options.library is None:
-        return None
-
-    path = '--with-library "{}"'.format(options.library)
-    try:
-        with open(devnull, "w") as nullout:
-            call(["calibredb"], stdout=nullout, stderr=nullout)
-    except OSError as e:
-        if e.errno == ENOENT:
-            log(
-                "Calibredb is not installed on this system. Cannot search the Calibre library or update it.",
-                Bcolors.FAIL,
-            )
-            return
-    try:
-        check_or_create_words_column(path)
-        check_or_create_extra_series_columns(path)
-    except CalledProcessError as e:
-        log(
-            "Error while making sure custom columns exist in Calibre library",
-            Bcolors.FAIL,
-        )
-        log(e.output)
-        return
-
-    return path
-
-
 global lock
 
 
@@ -790,13 +759,13 @@ def init(lo):
 
 def download(options):
     setup_login(options)
-    path = setup_library(options)
-
-    last_update_file = options.last_update_file
-    touch(last_update_file)
+    try:
+        path = check_library_and_get_path(options.library)
+    except RuntimeError as e:
+        log(str(e), Bcolors.FAIL)
+        return
 
     inout_file = options.input
-    touch(inout_file)
 
     try:
         oldest_dates_per_source = get_oldest_date(options)

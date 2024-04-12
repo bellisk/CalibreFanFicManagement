@@ -2,7 +2,9 @@
 import json
 import locale
 import re
-from subprocess import PIPE, STDOUT, CalledProcessError, check_output
+from errno import ENOENT
+from os import devnull
+from subprocess import PIPE, STDOUT, CalledProcessError, call, check_output
 
 from .ao3_utils import AO3_SERIES_KEYS
 from .utils import log
@@ -59,6 +61,31 @@ def check_or_create_extra_series_columns(path):
             )
         log("Adding grouped search term 'allseries' to Calibre Library")
         _add_grouped_search_terms(path)
+
+
+def check_library_and_get_path(library_path):
+    if library_path is None:
+        return None
+
+    path = '--with-library "{}"'.format(library_path)
+    try:
+        with open(devnull, "w") as nullout:
+            call(["calibredb"], stdout=nullout, stderr=nullout)
+    except OSError as e:
+        if e.errno == ENOENT:
+            raise RuntimeError(
+                "Calibredb is not installed on this system. Cannot search the "
+                "Calibre library or update it.",
+            )
+    try:
+        check_or_create_words_column(path)
+        check_or_create_extra_series_columns(path)
+    except CalledProcessError as e:
+        raise RuntimeError(
+            "Error while making sure custom columns exist in Calibre library",
+        )
+
+    return path
 
 
 def _add_grouped_search_terms(path):
