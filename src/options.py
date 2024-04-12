@@ -1,8 +1,71 @@
 # encoding: utf-8
 from configparser import ConfigParser
-from optparse import OptionParser
+from optparse import OptionParser, OptionValueError
 
 from .utils import touch
+
+SOURCES = "sources"
+SOURCE_FILE = "file"
+SOURCE_BOOKMARKS = "bookmarks"
+SOURCE_WORKS = "works"
+SOURCE_GIFTS = "gifts"
+SOURCE_LATER = "later"
+SOURCE_STDIN = "stdin"
+SOURCE_WORK_SUBSCRIPTIONS = "work_subscriptions"
+SOURCE_SERIES_SUBSCRIPTIONS = "series_subscriptions"
+SOURCE_USER_SUBSCRIPTIONS = "user_subscriptions"
+SOURCE_ALL_SUBSCRIPTIONS = "all_subscriptions"
+SOURCE_USERNAMES = "usernames"
+SOURCE_SERIES = "series"
+SOURCE_COLLECTIONS = "collections"
+
+DEFAULT_SOURCES = [SOURCE_FILE, SOURCE_BOOKMARKS, SOURCE_LATER]
+SUBSCRIPTION_SOURCES = [
+    SOURCE_SERIES_SUBSCRIPTIONS,
+    SOURCE_USER_SUBSCRIPTIONS,
+    SOURCE_WORK_SUBSCRIPTIONS,
+]
+VALID_INPUT_SOURCES = [
+    SOURCE_FILE,
+    SOURCE_BOOKMARKS,
+    SOURCE_WORKS,
+    SOURCE_GIFTS,
+    SOURCE_LATER,
+    SOURCE_STDIN,
+    SOURCE_WORK_SUBSCRIPTIONS,
+    SOURCE_SERIES_SUBSCRIPTIONS,
+    SOURCE_USER_SUBSCRIPTIONS,
+    SOURCE_ALL_SUBSCRIPTIONS,
+    SOURCE_USERNAMES,
+    SOURCE_SERIES,
+    SOURCE_COLLECTIONS,
+]
+
+
+def set_sources(option, opt_str, value, parser):
+    if len(value) == 0:
+        return DEFAULT_SOURCES
+
+    sources = []
+    if value == SOURCE_USERNAMES and parser.values.usernames is None:
+        raise OptionValueError(
+            "A list of usernames is required when source 'usernames' is given."
+        )
+    if value == SOURCE_SERIES and parser.values.series is None:
+        raise OptionValueError(
+            "A list of series ids is required when source 'series' is given."
+        )
+    if value == SOURCE_COLLECTIONS and parser.values.collections is None:
+        raise OptionValueError(
+            "A list of collection ids is required when source 'collections' is given."
+        )
+
+    if value == SOURCE_ALL_SUBSCRIPTIONS:
+        sources.extend(SUBSCRIPTION_SOURCES)
+    else:
+        sources.append(value)
+
+    parser.values.source = sources
 
 
 def set_up_options():
@@ -24,29 +87,41 @@ analyse     Analyse contents of Calibre library and AO3 data
         "--cookie",
         action="store",
         dest="cookie",
-        help="Contents of _otwarchive_session cookie. Required.",
+        help="""Contents of _otwarchive_session cookie. Required (if
+--use-browser-cookie is not set).""",
+    )
+
+    option_parser.add_option(
+        "--use-browser-cookie",
+        action="store_true",
+        dest="use_browser_cookie",
+        help="""Get the _otwarchive_session cookie from your browser instead of 
+passing it in with the -c option.""",
     )
 
     option_parser.add_option(
         "-s",
         "--source",
-        action="store",
-        dest="source",
-        help="""Comma-separated.
-'file': the file specified in --input.
-'bookmarks': user's bookmarks. 'later': works marked for later.
-'works': user's works. 'gifts': user's gifted works.
-'work_subscriptions': all works subscribed to. Using this with --since or
---since-last-update is slow!
-'series_subscriptions': all works from all series subscribed to.
-'user_subscriptions': all works from all users subscribed to.
-'all_subscriptions': all works from all works, series and users subscribed to.
+        action="callback",
+        callback=set_sources,
+        type="choice",
+        choices=VALID_INPUT_SOURCES,
+        nargs=1,
+        help=f"""Valid sources are: {', '.join(VALID_INPUT_SOURCES)}.
+        
+Specify each source separately, e.g.:
+
+-s bookmarks -s later -s usernames --usernames janedoe,johndoe
+
+Using '⁻s work_subscriptions' with --since or --since-last-update is slow!
+'file': read AO3 urls from the file specified in --input.
 'stdin': read AO3 urls from stdin.
 'usernames': get all works from one or more users. Specify users with --usernames.
 'series': get all works from one or more series. Specify series ids with --series.
 'collections': get all works from one or more collections. Specify collection ids with
 --collections.
-Default: 'file,bookmarks,later'.""",
+
+Default: file,bookmarks,later""",
     )
 
     option_parser.add_option(
@@ -54,15 +129,16 @@ Default: 'file,bookmarks,later'.""",
         "--max-count",
         action="store",
         dest="max_count",
-        help="""Maximum number of fics to get from AO3. Enter 'none' (or any string) to
-get all bookmarks.""",
+        type="int",
+        default=None,
+        help="""Maximum number of fics to get from AO3. Default: no limit.""",
     )
 
     option_parser.add_option(
         "--usernames",
         action="store",
         dest="usernames",
-        help="""One or more usernames to download all works from.""",
+        help="""One or more usernames to download all works from, comma separated.""",
     )
 
     option_parser.add_option(
@@ -94,6 +170,7 @@ Using this with source=work_subscriptions is slow!""",
         "--since-last-update",
         action="store_true",
         dest="since_last_update",
+        default=False,
         help="""Only fetch work ids from AO3 for works that have been changed since the
 last update, as saved in the last_update_file. For bookmarked works, this fetches works 
 that have been bookmarked or updated since the last update. For marked-for-later works, 
@@ -108,6 +185,7 @@ any dates. This option overrides --since.""",
         "--expand-series",
         action="store_true",
         dest="expand_series",
+        default=False,
         help="Whether to get all works from a bookmarked series.",
     )
 
@@ -116,6 +194,7 @@ any dates. This option overrides --since.""",
         "--force",
         action="store_true",
         dest="force",
+        default=False,
         help="""Whether to force downloads of stories even when they have the same
 number of chapters locally as online.""",
     )
@@ -144,6 +223,7 @@ downloads stories into the current directory as epub files.""",
         "--dry-run",
         action="store_true",
         dest="dry_run",
+        default=False,
         help="Dry run: only fetch bookmark links from AO3, don't add them to calibre",
     )
 
@@ -152,7 +232,7 @@ downloads stories into the current directory as epub files.""",
         "--config",
         action="store",
         dest="config",
-        help="""Config file for inputs. Blank config file is provided. No default.
+        help="""Config file for inputs. Blank config file is provided.
 Commandline options overrule config file.
 Do not put any quotation marks in the options.""",
     )
@@ -170,6 +250,7 @@ Do not put any quotation marks in the options.""",
         "--output",
         action="store_true",
         dest="live",
+        default=False,
         help="""Include this if you want all the output to be saved and posted live.
 Useful when multithreading.""",
     )
@@ -179,6 +260,7 @@ Useful when multithreading.""",
         "--last-update-file",
         action="store",
         dest="last_update_file",
+        default="last_update.json",
         help="""Json file storing dates of last successful update from various sources.
 Example: {"later": "01.01.2021", "bookmarks": "02.01.2021"}.
 Will be created if it doesn't exist. Default: 'last_update.json'.""",
@@ -189,6 +271,7 @@ Will be created if it doesn't exist. Default: 'last_update.json'.""",
         "--analysis-dir",
         action="store",
         dest="analysis_dir",
+        default="analysis",
         help="""Directory to save output of analysis in. Will be created if it doesn't
 exist. Default: analysis/""",
     )
@@ -197,6 +280,7 @@ exist. Default: analysis/""",
         "--analysis-type",
         action="store",
         dest="analysis_type",
+        default="user_subscriptions,series_subscriptions,incomplete_works",
         help="""Which source(s) should be analysed to see if all works are in Calibre?
 Options: 'user_subscriptions', 'series_subscriptions', 'incomplete_works'. Default is
 all of these.""",
@@ -206,6 +290,7 @@ all of these.""",
         "--fix",
         action="store_true",
         dest="fix",
+        default=False,
         help="""If missing works are discovered during analysis, download them.""",
     )
 
@@ -224,63 +309,12 @@ all of these.""",
         def updater(option, newval):
             return newval if newval is not None else option
 
-        options.user = updater(config.get("login", "user").strip(), options.user)
-        options.cookie = updater(config.get("login", "cookie").strip(), options.cookie)
-        options.max_count = updater(
-            config.get("import", "max_count"), options.max_count
-        )
+        for sect in config.sections():
+            for opt in config.options(sect):
+                config_file_option = config.get(sect, opt).strip()
+                cli_option = getattr(options, opt)
+                setattr(options, opt, updater(config_file_option, cli_option))
 
-        options.expand_series = updater(
-            config.getboolean("import", "expand_series"), options.expand_series
-        )
-        options.force = updater(config.getboolean("import", "force"), options.force)
-        options.dry_run = updater(
-            config.getboolean("import", "dry_run"), options.dry_run
-        )
-        options.source = updater(config.get("import", "source").strip(), options.source)
-        options.since = updater(config.get("import", "since").strip(), options.since)
-        options.since_last_update = updater(
-            config.getboolean("import", "since_last_update"),
-            options.since_last_update,
-        )
-        options.usernames = updater(
-            config.get("import", "usernames").strip(), options.usernames
-        )
-        options.series = updater(config.get("import", "series").strip(), options.series)
-        options.collections = updater(
-            config.get("import", "collections").strip(), options.collections
-        )
-
-        options.library = updater(
-            config.get("locations", "library").strip(), options.library
-        )
-        options.input = updater(config.get("locations", "input").strip(), options.input)
-        options.fanficfare_config = updater(
-            config.get("locations", "fanficfare_config").strip(),
-            options.fanficfare_config,
-        )
-        options.last_update_file = updater(
-            config.get("locations", "last_update_file").strip(),
-            options.last_update_file,
-        )
-        options.analysis_dir = updater(
-            config.get("locations", "analysis_dir").strip(),
-            options.analysis_dir,
-        )
-
-        options.analysis_type = updater(
-            config.get("analysis", "analysis_type"), options.analysis_type
-        )
-        options.fix = updater(config.getboolean("analysis", "fix"), options.fix)
-
-        options.live = updater(config.getboolean("output", "live"), options.live)
-
-    try:
-        options.max_count = int(options.max_count)
-    except ValueError:
-        options.max_count = None
-
-    options.source = options.source.split(",")
     options.usernames = (
         options.usernames.split(",") if len(options.usernames) > 0 else []
     )

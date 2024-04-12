@@ -13,6 +13,8 @@ from shutil import rmtree
 from subprocess import PIPE, STDOUT, CalledProcessError, call, check_output
 from tempfile import mkdtemp
 
+import browser_cookie3
+
 from .ao3_utils import (
     get_ao3_bookmark_urls,
     get_ao3_collection_work_urls,
@@ -41,31 +43,11 @@ from .exceptions import (
     TooManyRequestsException,
     UrlsCollectionException,
 )
-from .utils import Bcolors, get_files, log, touch
-
-SOURCES = "sources"
-SOURCE_FILE = "file"
-SOURCE_BOOKMARKS = "bookmarks"
-SOURCE_WORKS = "works"
-SOURCE_GIFTS = "gifts"
-SOURCE_LATER = "later"
-SOURCE_STDIN = "stdin"
-SOURCE_WORK_SUBSCRIPTIONS = "work_subscriptions"
-SOURCE_SERIES_SUBSCRIPTIONS = "series_subscriptions"
-SOURCE_USER_SUBSCRIPTIONS = "user_subscriptions"
-SOURCE_ALL_SUBSCRIPTIONS = "all_subscriptions"
-SOURCE_USERNAMES = "usernames"
-SOURCE_SERIES = "series"
-SOURCE_COLLECTIONS = "collections"
-
-DEFAULT_SOURCES = [SOURCE_FILE, SOURCE_BOOKMARKS, SOURCE_LATER]
-SUBSCRIPTION_SOURCES = [
-    SOURCE_SERIES_SUBSCRIPTIONS,
-    SOURCE_USER_SUBSCRIPTIONS,
-    SOURCE_WORK_SUBSCRIPTIONS,
-]
-VALID_INPUT_SOURCES = [
-    SOURCE_FILE,
+from .options import (
+    SOURCES,
+    SOURCE_USERNAMES,
+    SOURCE_COLLECTIONS,
+    SOURCE_SERIES,
     SOURCE_BOOKMARKS,
     SOURCE_WORKS,
     SOURCE_GIFTS,
@@ -74,11 +56,11 @@ VALID_INPUT_SOURCES = [
     SOURCE_WORK_SUBSCRIPTIONS,
     SOURCE_SERIES_SUBSCRIPTIONS,
     SOURCE_USER_SUBSCRIPTIONS,
-    SOURCE_ALL_SUBSCRIPTIONS,
-    SOURCE_USERNAMES,
-    SOURCE_SERIES,
-    SOURCE_COLLECTIONS,
-]
+    SOURCE_FILE,
+)
+from .utils import Bcolors, get_files, log, touch
+
+
 LAST_UPDATE_KEYS = [SOURCES, SOURCE_USERNAMES, SOURCE_COLLECTIONS, SOURCE_SERIES]
 
 DATE_FORMAT = "%d.%m.%Y"
@@ -461,12 +443,12 @@ def downloader(args):
                 fp.write("{}\n".format(url))
 
 
-def get_urls(inout_file, sources, options, oldest_dates):
+def get_urls(inout_file, options, oldest_dates):
     urls = set([])
     url_count = 0
 
     try:
-        if SOURCE_FILE in sources:
+        if SOURCE_FILE in options.sources:
             with open(inout_file, "r") as fp:
                 urls = set([x.replace("\n", "") for x in fp.readlines()])
 
@@ -476,7 +458,7 @@ def get_urls(inout_file, sources, options, oldest_dates):
             with open(inout_file, "w") as fp:
                 fp.write("")
 
-        if SOURCE_LATER in sources:
+        if SOURCE_LATER in options.sources:
             log("Getting URLs from Marked for Later", Bcolors.HEADER)
             urls |= get_ao3_marked_for_later_urls(
                 options.cookie,
@@ -490,7 +472,7 @@ def get_urls(inout_file, sources, options, oldest_dates):
             )
             url_count = len(urls)
 
-        if SOURCE_BOOKMARKS in sources:
+        if SOURCE_BOOKMARKS in options.sources:
             log(
                 "Getting URLs from Bookmarks (sorted by bookmarking date)",
                 Bcolors.HEADER,
@@ -522,7 +504,7 @@ def get_urls(inout_file, sources, options, oldest_dates):
             log("{} URLs from bookmarks".format(len(urls) - url_count), Bcolors.OKGREEN)
             url_count = len(urls)
 
-        if SOURCE_WORKS in sources:
+        if SOURCE_WORKS in options.sources:
             log("Getting URLs from User's Works", Bcolors.HEADER)
             urls |= get_ao3_users_work_urls(
                 options.cookie,
@@ -537,7 +519,7 @@ def get_urls(inout_file, sources, options, oldest_dates):
             )
             url_count = len(urls)
 
-        if SOURCE_GIFTS in sources:
+        if SOURCE_GIFTS in options.sources:
             log("Getting URLs from User's Gifts", Bcolors.HEADER)
             urls |= get_ao3_gift_urls(
                 options.cookie,
@@ -551,7 +533,7 @@ def get_urls(inout_file, sources, options, oldest_dates):
             )
             url_count = len(urls)
 
-        if SOURCE_WORK_SUBSCRIPTIONS in sources:
+        if SOURCE_WORK_SUBSCRIPTIONS in options.sources:
             log("Getting URLs from Subscribed Works", Bcolors.HEADER)
             urls |= get_ao3_work_subscription_urls(
                 options.cookie,
@@ -565,7 +547,7 @@ def get_urls(inout_file, sources, options, oldest_dates):
             )
             url_count = len(urls)
 
-        if SOURCE_SERIES_SUBSCRIPTIONS in sources:
+        if SOURCE_SERIES_SUBSCRIPTIONS in options.sources:
             log("Getting URLs from Subscribed Series", Bcolors.HEADER)
             urls |= get_ao3_series_subscription_urls(
                 options.cookie,
@@ -579,7 +561,7 @@ def get_urls(inout_file, sources, options, oldest_dates):
             )
             url_count = len(urls)
 
-        if SOURCE_USER_SUBSCRIPTIONS in sources:
+        if SOURCE_USER_SUBSCRIPTIONS in options.sources:
             log("Getting URLs from Subscribed Users", Bcolors.HEADER)
             urls |= get_ao3_user_subscription_urls(
                 options.cookie,
@@ -593,7 +575,7 @@ def get_urls(inout_file, sources, options, oldest_dates):
             )
             url_count = len(urls)
 
-        if SOURCE_USERNAMES in sources:
+        if SOURCE_USERNAMES in options.sources:
             log(
                 "Getting URLs from following users' works: {}".format(
                     ",".join(options.usernames)
@@ -610,7 +592,7 @@ def get_urls(inout_file, sources, options, oldest_dates):
             log("{} URLs from usernames".format(len(urls) - url_count), Bcolors.OKGREEN)
             url_count = len(urls)
 
-        if SOURCE_SERIES in sources:
+        if SOURCE_SERIES in options.sources:
             log(
                 "Getting URLs from following series: {}".format(
                     ",".join(options.series)
@@ -627,7 +609,7 @@ def get_urls(inout_file, sources, options, oldest_dates):
             log("{} URLs from series".format(len(urls) - url_count), Bcolors.OKGREEN)
             url_count = len(urls)
 
-        if SOURCE_COLLECTIONS in sources:
+        if SOURCE_COLLECTIONS in options.sources:
             log(
                 "Getting URLs from following collections: {}".format(
                     ",".join(options.collections)
@@ -647,7 +629,7 @@ def get_urls(inout_file, sources, options, oldest_dates):
             )
             url_count = len(urls)
 
-        if SOURCE_STDIN in sources:
+        if SOURCE_STDIN in options.sources:
             stdin_urls = set()
             for line in sys.stdin:
                 stdin_urls.add(line.rstrip())
@@ -662,17 +644,17 @@ def get_urls(inout_file, sources, options, oldest_dates):
     return urls
 
 
-def get_all_sources_for_last_updated_file(options, sources):
+def get_all_sources_for_last_updated_file(options):
     return {
-        SOURCES: sources,
+        SOURCES: options.sources,
         SOURCE_USERNAMES: options.usernames,
         SOURCE_SERIES: options.series,
         SOURCE_COLLECTIONS: options.collections,
     }
 
 
-def update_last_updated_file(options, sources):
-    all_sources = get_all_sources_for_last_updated_file(options, sources)
+def update_last_updated_file(options):
+    all_sources = get_all_sources_for_last_updated_file(options)
     today = datetime.now().strftime(DATE_FORMAT)
 
     with open(options.last_update_file, "r") as f:
@@ -696,8 +678,8 @@ def update_last_updated_file(options, sources):
         f.write(data)
 
 
-def get_oldest_date(options, sources):
-    all_sources = get_all_sources_for_last_updated_file(options, sources)
+def get_oldest_date(options):
+    all_sources = get_all_sources_for_last_updated_file(options)
     if not (options.since or options.since_last_update):
         dates = {}
         for key in LAST_UPDATE_KEYS:
@@ -750,38 +732,53 @@ def get_oldest_date(options, sources):
     return oldest_date_per_source
 
 
-def get_sources(options):
-    source_input = options.source
-    if len(source_input) == 0:
-        return DEFAULT_SOURCES
+def setup_login(options):
+    if options.use_browswer_cookie:
+        found_cookie = False
+        cookie_jar = browser_cookie3.load(domain_name="archiveofourown.org")
+        for cookie in cookie_jar:
+            if cookie.name == "_otwarchive_session":
+                options.cookie = cookie
+                found_cookie = True
+                break
 
-    sources = []
-    for s in source_input:
-        if s not in VALID_INPUT_SOURCES:
+        if not found_cookie:
             raise InvalidConfig(
-                "Valid 'source' options are {}, not {}".format(
-                    ", ".join(VALID_INPUT_SOURCES), s
-                )
-            )
-        if s == SOURCE_USERNAMES and len(options.usernames) == 0:
-            raise InvalidConfig(
-                "A list of usernames is required when source 'usernames' is given."
-            )
-        if s == SOURCE_SERIES and len(options.series) == 0:
-            raise InvalidConfig(
-                "A list of series ids is required when source 'series' is given."
-            )
-        if s == SOURCE_COLLECTIONS and len(options.collections) == 0:
-            raise InvalidConfig(
-                "A list of collection ids is required when source 'collections' is given."
+                "Tried to get the _otwarchive_session cookie from your browser, "
+                "but couldn't find it. Are you logged in to AO3?"
             )
 
-        if s == SOURCE_ALL_SUBSCRIPTIONS:
-            sources.extend(SUBSCRIPTION_SOURCES)
-        else:
-            sources.append(s)
+    if not (options.user and options.cookie):
+        raise InvalidConfig("User and cookie are required for downloading from AO3")
 
-    return sources
+
+def setup_library(options):
+    if options.library is None:
+        return None
+
+    path = '--with-library "{}"'.format(options.library)
+    try:
+        with open(devnull, "w") as nullout:
+            call(["calibredb"], stdout=nullout, stderr=nullout)
+    except OSError as e:
+        if e.errno == ENOENT:
+            log(
+                "Calibredb is not installed on this system. Cannot search the Calibre library or update it.",
+                Bcolors.FAIL,
+            )
+            return
+    try:
+        check_or_create_words_column(path)
+        check_or_create_extra_series_columns(path)
+    except CalledProcessError as e:
+        log(
+            "Error while making sure custom columns exist in Calibre library",
+            Bcolors.FAIL,
+        )
+        log(e.output)
+        return
+
+    return path
 
 
 global lock
@@ -793,49 +790,23 @@ def init(lo):
 
 
 def download(options):
-    if not (options.user and options.cookie):
-        log("User and Cookie are required for downloading from AO3", Bcolors.FAIL)
-        return
+    setup_login(options)
+    path = setup_library(options)
 
-    path = options.library
-    if path:
-        path = '--with-library "{}"'.format(path)
-        try:
-            with open(devnull, "w") as nullout:
-                call(["calibredb"], stdout=nullout, stderr=nullout)
-        except OSError as e:
-            if e.errno == ENOENT:
-                log(
-                    "Calibredb is not installed on this system. Cannot search the Calibre library or update it.",
-                    Bcolors.FAIL,
-                )
-                return
-        try:
-            check_or_create_words_column(path)
-            check_or_create_extra_series_columns(path)
-        except CalledProcessError as e:
-            log(
-                "Error while making sure custom columns exist in Calibre library",
-                Bcolors.FAIL,
-            )
-            log(e.output)
-            return
-
-    last_update_file = options.last_update_file or "last_update.json"
+    last_update_file = options.last_update_file
     touch(last_update_file)
-
-    try:
-        sources = get_sources(options)
-        oldest_dates_per_source = get_oldest_date(options, sources)
-    except InvalidConfig as e:
-        log(e.message, Bcolors.FAIL)
-        return
 
     inout_file = options.input
     touch(inout_file)
 
     try:
-        urls = get_urls(inout_file, sources, options, oldest_dates_per_source)
+        oldest_dates_per_source = get_oldest_date(options)
+    except InvalidConfig as e:
+        log(e.message, Bcolors.FAIL)
+        return
+
+    try:
+        urls = get_urls(inout_file, options, oldest_dates_per_source)
     except UrlsCollectionException as e:
         log("Error getting urls: {}".format(e))
 
@@ -872,4 +843,4 @@ def download(options):
             ],
         )
 
-    update_last_updated_file(options, sources)
+    update_last_updated_file(options)
