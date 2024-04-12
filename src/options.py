@@ -48,9 +48,6 @@ VALID_INPUT_SOURCES = [
 
 
 def validate_sources(options):
-    if len(options.sources) == 0:
-        return DEFAULT_SOURCES
-
     if SOURCE_USERNAMES in options.sources and options.usernames is None:
         raise ArgumentTypeError(
             "A list of usernames is required when source 'usernames' is given."
@@ -131,6 +128,7 @@ passing it in with the -c option.""",
         action="store",
         dest="sources",
         type=comma_separated_list,
+        default=DEFAULT_SOURCES,
         help=f"""A comma-separated list of sources to get AO3 urls from.
         
 Valid sources: {", ".join(VALID_INPUT_SOURCES)}
@@ -141,7 +139,7 @@ If using 'usernames' --usernames is required.
 If using 'series', --series is required.
 If using 'collections', --collections is required.
 
-Default: file,bookmarks,later""",
+Default: {DEFAULT_SOURCES}""",
     )
 
     arg_parser.add_argument(
@@ -159,6 +157,7 @@ Default: file,bookmarks,later""",
         action="store",
         dest="usernames",
         type=comma_separated_list,
+        default=[],
         help="""One or more usernames to download all works from, comma separated.""",
     )
 
@@ -167,6 +166,7 @@ Default: file,bookmarks,later""",
         action="store",
         dest="series",
         type=comma_separated_list,
+        default=[],
         help="""One or more series to download all works from.""",
     )
 
@@ -175,6 +175,7 @@ Default: file,bookmarks,later""",
         action="store",
         dest="collections",
         type=comma_separated_list,
+        default=[],
         help="""One or more collections to download all works from.""",
     )
 
@@ -304,6 +305,7 @@ exist. Default: analysis/""",
         action="store",
         dest="analysis_type",
         type=comma_separated_list,
+        default=ANALYSIS_TYPES,
         help=f"""Which source(s) should be analysed to see if all works are in Calibre?
         
 Valid analysis types: {", ".join(ANALYSIS_TYPES)}
@@ -332,6 +334,7 @@ Default: all.""",
     else:
         parsed_args = cli_args
 
+    # Validate options and set default values
     validate_user(parsed_args)
     validate_cookie(parsed_args)
     validate_sources(parsed_args)
