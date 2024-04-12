@@ -1,6 +1,6 @@
 # encoding: utf-8
 from configparser import ConfigParser
-from optparse import OptionParser, OptionValueError
+from argparse import ArgumentParser, ArgumentTypeError
 
 from .utils import touch
 
@@ -48,15 +48,15 @@ def set_sources(option, opt_str, value, parser):
 
     sources = []
     if value == SOURCE_USERNAMES and parser.values.usernames is None:
-        raise OptionValueError(
+        raise ArgumentTypeError(
             "A list of usernames is required when source 'usernames' is given."
         )
     if value == SOURCE_SERIES and parser.values.series is None:
-        raise OptionValueError(
+        raise ArgumentTypeError(
             "A list of series ids is required when source 'series' is given."
         )
     if value == SOURCE_COLLECTIONS and parser.values.collections is None:
-        raise OptionValueError(
+        raise ArgumentTypeError(
             "A list of collection ids is required when source 'collections' is given."
         )
 
@@ -76,13 +76,13 @@ Commands available:
 download    Download fics from AO3 and save to Calibre library
 analyse     Analyse contents of Calibre library and AO3 data
     """
-    option_parser = OptionParser(usage=usage)
+    arg_parser = ArgumentParser(usage=usage)
 
-    option_parser.add_option(
+    arg_parser.add_argument(
         "-u", "--user", action="store", dest="user", help="AO3 username. Required."
     )
 
-    option_parser.add_option(
+    arg_parser.add_argument(
         "-c",
         "--cookie",
         action="store",
@@ -91,7 +91,7 @@ analyse     Analyse contents of Calibre library and AO3 data
 --use-browser-cookie is not set).""",
     )
 
-    option_parser.add_option(
+    arg_parser.add_argument(
         "--use-browser-cookie",
         action="store_true",
         dest="use_browser_cookie",
@@ -99,7 +99,7 @@ analyse     Analyse contents of Calibre library and AO3 data
 passing it in with the -c option.""",
     )
 
-    option_parser.add_option(
+    arg_parser.add_argument(
         "-s",
         "--source",
         action="callback",
@@ -124,7 +124,7 @@ Using '⁻s work_subscriptions' with --since or --since-last-update is slow!
 Default: file,bookmarks,later""",
     )
 
-    option_parser.add_option(
+    arg_parser.add_argument(
         "-m",
         "--max-count",
         action="store",
@@ -134,28 +134,28 @@ Default: file,bookmarks,later""",
         help="""Maximum number of fics to get from AO3. Default: no limit.""",
     )
 
-    option_parser.add_option(
+    arg_parser.add_argument(
         "--usernames",
         action="store",
         dest="usernames",
         help="""One or more usernames to download all works from, comma separated.""",
     )
 
-    option_parser.add_option(
+    arg_parser.add_argument(
         "--series",
         action="store",
         dest="series",
         help="""One or more series to download all works from.""",
     )
 
-    option_parser.add_option(
+    arg_parser.add_argument(
         "--collections",
         action="store",
         dest="collections",
         help="""One or more collections to download all works from.""",
     )
 
-    option_parser.add_option(
+    arg_parser.add_argument(
         "-S",
         "--since",
         action="store",
@@ -165,7 +165,7 @@ bookmarked or updated for bookmarks, date last visited for marked-for-later).
 Using this with source=work_subscriptions is slow!""",
     )
 
-    option_parser.add_option(
+    arg_parser.add_argument(
         "-L",
         "--since-last-update",
         action="store_true",
@@ -180,7 +180,7 @@ Lists of work urls (from the input file or from stdin) will be handled without c
 any dates. This option overrides --since.""",
     )
 
-    option_parser.add_option(
+    arg_parser.add_argument(
         "-e",
         "--expand-series",
         action="store_true",
@@ -189,7 +189,7 @@ any dates. This option overrides --since.""",
         help="Whether to get all works from a bookmarked series.",
     )
 
-    option_parser.add_option(
+    arg_parser.add_argument(
         "-f",
         "--force",
         action="store_true",
@@ -199,7 +199,7 @@ any dates. This option overrides --since.""",
 number of chapters locally as online.""",
     )
 
-    option_parser.add_option(
+    arg_parser.add_argument(
         "-i",
         "--input",
         action="store",
@@ -209,7 +209,7 @@ read to find any urls that failed previously. If file does not exist will create
 is overwitten every time the program is run.""",
     )
 
-    option_parser.add_option(
+    arg_parser.add_argument(
         "-l",
         "--library",
         action="store",
@@ -218,7 +218,7 @@ is overwitten every time the program is run.""",
 downloads stories into the current directory as epub files.""",
     )
 
-    option_parser.add_option(
+    arg_parser.add_argument(
         "-d",
         "--dry-run",
         action="store_true",
@@ -227,7 +227,7 @@ downloads stories into the current directory as epub files.""",
         help="Dry run: only fetch bookmark links from AO3, don't add them to calibre",
     )
 
-    option_parser.add_option(
+    arg_parser.add_argument(
         "-C",
         "--config",
         action="store",
@@ -237,7 +237,7 @@ Commandline options overrule config file.
 Do not put any quotation marks in the options.""",
     )
 
-    option_parser.add_option(
+    arg_parser.add_argument(
         "-F",
         "--fanficfare-config",
         action="store",
@@ -245,7 +245,7 @@ Do not put any quotation marks in the options.""",
         help="Config file for fanficfare.",
     )
 
-    option_parser.add_option(
+    arg_parser.add_argument(
         "-o",
         "--output",
         action="store_true",
@@ -255,7 +255,7 @@ Do not put any quotation marks in the options.""",
 Useful when multithreading.""",
     )
 
-    option_parser.add_option(
+    arg_parser.add_argument(
         "-U",
         "--last-update-file",
         action="store",
@@ -266,7 +266,7 @@ Example: {"later": "01.01.2021", "bookmarks": "02.01.2021"}.
 Will be created if it doesn't exist. Default: 'last_update.json'.""",
     )
 
-    option_parser.add_option(
+    arg_parser.add_argument(
         "-a",
         "--analysis-dir",
         action="store",
@@ -276,7 +276,7 @@ Will be created if it doesn't exist. Default: 'last_update.json'.""",
 exist. Default: analysis/""",
     )
 
-    option_parser.add_option(
+    arg_parser.add_argument(
         "--analysis-type",
         action="store",
         dest="analysis_type",
@@ -286,7 +286,7 @@ Options: 'user_subscriptions', 'series_subscriptions', 'incomplete_works'. Defau
 all of these.""",
     )
 
-    option_parser.add_option(
+    arg_parser.add_argument(
         "--fix",
         action="store_true",
         dest="fix",
@@ -294,7 +294,7 @@ all of these.""",
         help="""If missing works are discovered during analysis, download them.""",
     )
 
-    (options, args) = option_parser.parse_args()
+    (options, args) = arg_parser.parse_args()
 
     if len(args) != 1:
         raise ValueError("Please input exactly one command, e.g. 'download'")
