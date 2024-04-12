@@ -14,7 +14,7 @@ if __name__ == "__main__":
     try:
         command, options = set_up_options()
     except ValueError as e:
-        sys.exit(e)
+        sys.exit(str(e))
 
     permitted_commands = {"download": download, "analyse": analyse}
 
