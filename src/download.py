@@ -685,12 +685,7 @@ def get_oldest_date(options):
                 dates[key][s] = None
         return dates
 
-    oldest_date_per_source = {
-        SOURCES: {},
-        SOURCE_USERNAMES: {},
-        SOURCE_SERIES: {},
-        SOURCE_COLLECTIONS: {},
-    }
+    oldest_date_per_source = {key: {} for key in LAST_UPDATE_KEYS}
 
     if options.since_last_update:
         last_updates = {}
