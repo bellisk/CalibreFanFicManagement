@@ -39,11 +39,6 @@ def log(msg, color=None, output=True):
         return line + "\n"
 
 
-def touch(fname, times=None):
-    with open(fname, "a"):
-        utime(fname, times)
-
-
 def get_files(mypath, filetype=None, fullpath=False):
     ans = []
     if filetype:

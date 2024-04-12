@@ -3,8 +3,6 @@ from argparse import ArgumentParser, ArgumentTypeError
 from configparser import ConfigParser
 from sys import argv
 
-from .utils import touch
-
 COMMANDS = ["download", "analyse"]
 
 SOURCES = "sources"
@@ -365,7 +363,6 @@ def get_config_file_arguments(cli_args):
     """If we have a config file, get the options from there, and then parse them
     using the arg_parser. This ensures values are converted into the right types.
     """
-    touch(cli_args.config)
     config_parser = ConfigParser(allow_no_value=True)
     config_parser.read(cli_args.config)
     config_file_args = [cli_args.command]

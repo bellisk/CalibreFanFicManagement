@@ -20,7 +20,7 @@ from .calibre_utils import (
     get_series_works_count,
 )
 from .download import download
-from .utils import Bcolors, log, touch
+from .utils import Bcolors, log
 
 
 def _compare_user_subscriptions(username, cookie, path, output_file):
@@ -197,9 +197,7 @@ def analyse(options):
     if options.fix:
         log("Sending missing/incomplete works to be downloaded", Bcolors.HEADER)
         # Save work urls to file, then import from file
-        inout_file = options.input
-        touch(inout_file)
-        with open(inout_file, "a") as fp:
+        with open(options.input, "a") as fp:
             for url in missing_works:
                 fp.write(url + "\n")
 
