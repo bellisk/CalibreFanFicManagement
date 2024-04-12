@@ -1,5 +1,6 @@
 -e ao3/
 beautifulsoup4==4.9.3
+browser-cookie3==0.19.1
 certifi==2024.2.2
 chardet==4.0.0
 cloudscraper==1.2.50
