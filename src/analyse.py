@@ -12,6 +12,7 @@ from .ao3_utils import (
     get_ao3_users_work_urls,
 )
 from .calibre_utils import (
+    check_library_and_get_path,
     get_author_work_urls,
     get_author_works_count,
     get_incomplete_work_data,
@@ -19,10 +20,7 @@ from .calibre_utils import (
     get_series_works_count,
 )
 from .download import download
-from .exceptions import InvalidConfig
-from .utils import Bcolors, log, touch
-
-ANALYSIS_TYPES = ["user_subscriptions", "series_subscriptions", "incomplete_works"]
+from .utils import Bcolors, log
 
 
 def _compare_user_subscriptions(username, cookie, path, output_file):
@@ -161,47 +159,19 @@ def _collect_incomplete_works(path, output_file):
     return [work_data["url"] for work_data in results]
 
 
-def get_analysis_type(analysis_types):
-    if len(analysis_types) == 0:
-        return ANALYSIS_TYPES
-
-    for t in analysis_types:
-        if t not in ANALYSIS_TYPES:
-            raise InvalidConfig(
-                "Valid 'analysis_type' options are {}, not {}".format(
-                    ", ".join(ANALYSIS_TYPES), t
-                )
-            )
-
-    return analysis_types
-
-
 def analyse(options):
-    if not (options.user and options.cookie):
-        log("User and Cookie are required for downloading from AO3", Bcolors.FAIL)
-        return
+    path = check_library_and_get_path(options.library)
 
-    path = options.library
-    if path:
-        path = '--with-library "{}"'.format(path)
-        # todo: abstract checking that the library is OK from download and do that here too
-
-    analysis_types = get_analysis_type(options.analysis_type)
-
-    analysis_dir = (
-        options.analysis_dir if options.analysis_dir else join(getcwd(), "analysis")
-    )
-
-    if not isdir(analysis_dir):
-        mkdir(analysis_dir)
+    if not isdir(options.analysis_dir):
+        mkdir(options.analysis_dir)
 
     missing_works = []
 
-    for analysis_type in analysis_types:
+    for analysis_type in options.analysis_type:
         filename = "{}_{}.csv".format(
             analysis_type, datetime.strftime(datetime.now(), "%Y%m%d_%H%M%S")
         )
-        output_file = join(analysis_dir, filename)
+        output_file = join(options.analysis_dir, filename)
 
         if analysis_type == "user_subscriptions":
             users_missing_works = _compare_user_subscriptions(
@@ -227,9 +197,7 @@ def analyse(options):
     if options.fix:
         log("Sending missing/incomplete works to be downloaded", Bcolors.HEADER)
         # Save work urls to file, then import from file
-        inout_file = options.input
-        touch(inout_file)
-        with open(inout_file, "a") as fp:
+        with open(options.input, "a") as fp:
             for url in missing_works:
                 fp.write(url + "\n")
 
