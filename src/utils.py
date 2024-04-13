@@ -1,6 +1,6 @@
 # encoding: utf-8
 import logging
-from os import listdir, utime
+from os import listdir
 from os.path import isfile, join
 from time import localtime, strftime
 

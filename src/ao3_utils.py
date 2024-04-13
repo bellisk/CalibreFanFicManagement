@@ -1,6 +1,4 @@
 # encoding: utf-8
-import time
-
 from ao3 import AO3
 
 AO3_SERIES_KEYS = ["series00", "series01", "series02", "series03"]
