@@ -152,8 +152,6 @@ def test_set_up_options_from_config_file_and_override_with_cli():
     with patch("sys.argv", args):
         command, namespace = options.set_up_options()
 
-    print(vars(namespace))
-
     assert command == "download"
     assert vars(namespace) == {
         "command": "download",
