@@ -1,4 +1,4 @@
-from argparse import Namespace, ArgumentTypeError
+from argparse import ArgumentTypeError, Namespace
 
 import pytest
 
