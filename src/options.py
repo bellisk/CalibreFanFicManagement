@@ -84,16 +84,14 @@ def validate_user(options):
         raise ArgumentTypeError("The argument user is required.")
 
 
-def validate_analysis_type(analysis_types):
-    for t in analysis_types:
+def validate_analysis_type(options):
+    for t in options.analysis_type:
         if t not in ANALYSIS_TYPES:
             raise ArgumentTypeError(
                 "Valid 'analysis_type' options are {}, not {}".format(
                     ", ".join(ANALYSIS_TYPES), t
                 )
             )
-
-    return analysis_types
 
 
 def comma_separated_list(value):
