@@ -2,7 +2,7 @@
 import locale
 from csv import DictWriter
 from datetime import datetime
-from os import getcwd, mkdir
+from os import mkdir
 from os.path import isdir, join
 
 from .ao3_utils import (
