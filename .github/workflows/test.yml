@@ -1,0 +1,19 @@
+name: Tests
+on: [push, pull_request]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install requirements
+        run: pip install flake8 pycodestyle black isort
+      - name: Check syntax and complexity
+        run: |
+          flake8 . --count --select=C901,E901,E999,F401,F821,F822,F823 --show-source --statistics
+      - name: Check codestyle
+        run: |
+          isort --diff --check .
+          black --diff --check .
