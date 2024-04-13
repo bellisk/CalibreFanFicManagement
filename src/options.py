@@ -200,7 +200,7 @@ Default: {DEFAULT_SOURCES}""",
         dest="since",
         help="""DD.MM.YYYY. The date since which fics should be downloaded (date 
 bookmarked or updated for bookmarks, date last visited for marked-for-later).
-Using this with source=work_subscriptions is slow!""",
+Using this with sources=work_subscriptions is slow!""",
     )
 
     arg_parser.add_argument(
