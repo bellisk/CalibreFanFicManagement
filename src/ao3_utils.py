@@ -151,7 +151,9 @@ def get_ao3_series_work_urls(cookie, max_count, user, series_id, oldest_date=Non
     return set(urls)
 
 
-def get_ao3_collection_work_urls(cookie, max_count, user, series_id, oldest_date=None):
+def get_ao3_collection_work_urls(
+    cookie, max_count, user, collection_id, oldest_date=None
+):
     if max_count == 0:
         return set([])
 
@@ -160,7 +162,7 @@ def get_ao3_collection_work_urls(cookie, max_count, user, series_id, oldest_date
 
     urls = [
         _work_url_from_id(work_id)
-        for work_id in api.collection_work_ids(series_id, max_count, oldest_date)
+        for work_id in api.collection_work_ids(collection_id, max_count, oldest_date)
     ]
 
     return set(urls)
