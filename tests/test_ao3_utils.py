@@ -5,6 +5,7 @@ from ao3 import AO3
 from src import ao3_utils
 
 api = AO3()
+oldest_date = datetime.strptime("01.01.2020", "%d.%m.%Y")
 
 
 @patch("src.ao3_utils.AO3")
@@ -16,7 +17,7 @@ def test_get_ao3_bookmark_urls(mock_ao3):
         expand_series=True,
         max_count=10,
         user="testuser",
-        oldest_date="01.01.2020",
+        oldest_date=oldest_date,
         sort_by_updated=True,
     )
 
@@ -36,7 +37,7 @@ def test_get_ao3_users_work_urls(mock_ao3):
         max_count=10,
         user="testuser",
         username="testuser2",
-        oldest_date="01.01.2020",
+        oldest_date=oldest_date,
     )
 
     assert urls == {
@@ -54,7 +55,7 @@ def test_get_ao3_gift_urls(mock_ao3):
         cookie="cookie",
         max_count=10,
         user="testuser",
-        oldest_date="01.01.2020",
+        oldest_date=oldest_date,
     )
 
     assert urls == {
@@ -72,7 +73,7 @@ def test_get_ao3_marked_for_later_urls(mock_ao3):
         cookie="cookie",
         max_count=10,
         user="testuser",
-        oldest_date="01.01.2020",
+        oldest_date=oldest_date,
     )
 
     assert urls == {
@@ -84,26 +85,36 @@ def test_get_ao3_marked_for_later_urls(mock_ao3):
 
 @patch("src.ao3_utils.AO3")
 def test_get_ao3_work_subscription_urls(mock_ao3):
-    mock_ao3().user.work_subscription_ids.return_value = ["1", "2", "3"]
+    mock_ao3().user.work_subscription_ids.return_value = ["1", "2", "3", "4", "5"]
 
     def get_mock_work(work_id):
+        work_published_date = {
+            "1": "2021-01-01",
+            "2": "2022-01-01",
+            "3": "2023-01-01",
+            "4": "2024-01-01",
+            "5": "2025-01-01",
+        }[work_id]
+
         mock_work = MagicMock(url="https://archiveofourown.org/works/" + work_id)
-        mock_work.completed = datetime.strptime("2024-01-01", "%Y-%m-%d").date()
+        mock_work.completed = datetime.strptime(work_published_date, "%Y-%m-%d").date()
         return mock_work
 
     mock_ao3().work.side_effect = get_mock_work
+
+    # We only want works published *after* 01.01.2023, not including that date
+    oldest_work_date = datetime.strptime("01.01.2023", "%d.%m.%Y")
 
     urls = ao3_utils.get_ao3_work_subscription_urls(
         cookie="testcookie",
         max_count=10,
         user="testuser",
-        oldest_date=datetime.strptime("01.01.2020", "%d.%m.%Y"),
+        oldest_date=oldest_work_date,
     )
 
     assert urls == {
-        "https://archiveofourown.org/works/1",
-        "https://archiveofourown.org/works/2",
-        "https://archiveofourown.org/works/3",
+        "https://archiveofourown.org/works/4",
+        "https://archiveofourown.org/works/5",
     }
 
 
@@ -120,7 +131,7 @@ def test_get_ao3_series_subscription_urls(mock_ao3):
         cookie="cookie",
         max_count=10,
         user="testuser",
-        oldest_date="01.01.2020",
+        oldest_date=oldest_date,
     )
 
     assert urls == {
@@ -149,7 +160,7 @@ def test_get_ao3_user_subscription_urls(mock_ao3):
         cookie="cookie",
         max_count=10,
         user="testuser",
-        oldest_date="01.01.2020",
+        oldest_date=oldest_date,
     )
 
     assert urls == {
@@ -174,7 +185,7 @@ def test_get_ao3_series_work_urls(mock_ao3):
         max_count=10,
         user="testuser",
         series_id="123",
-        oldest_date="01.01.2020",
+        oldest_date=oldest_date,
     )
 
     assert urls == {
@@ -193,7 +204,7 @@ def test_get_ao3_collection_work_urls(mock_ao3):
         max_count=10,
         user="testuser",
         collection_id="123",
-        oldest_date="01.01.2020",
+        oldest_date=oldest_date,
     )
 
     assert urls == {
