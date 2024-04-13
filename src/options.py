@@ -1,7 +1,7 @@
 # encoding: utf-8
+import sys
 from argparse import ArgumentParser, ArgumentTypeError
 from configparser import ConfigParser
-from sys import argv
 
 COMMANDS = ["download", "analyse"]
 
@@ -342,7 +342,7 @@ Default: all.""",
         # override them. We don't want to add the argv[0] (the script filename) or the
         # command to the list.
         total_args = get_config_file_arguments(cli_args) + [
-            a for a in argv[1:] if a != cli_args.command
+            a for a in sys.argv[1:] if a != cli_args.command
         ]
         parsed_args = arg_parser.parse_args(total_args)
     else:
