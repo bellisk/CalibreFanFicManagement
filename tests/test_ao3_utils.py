@@ -1,4 +1,5 @@
-from unittest.mock import patch
+from datetime import datetime
+from unittest.mock import MagicMock, patch
 
 from ao3 import AO3
 from src import ao3_utils
@@ -83,7 +84,27 @@ def test_get_ao3_marked_for_later_urls(mock_ao3):
 
 @patch("src.ao3_utils.AO3")
 def test_get_ao3_work_subscription_urls(mock_ao3):
-    pass
+    mock_ao3().user.work_subscription_ids.return_value = ["1", "2", "3"]
+
+    def get_mock_work(work_id):
+        mock_work = MagicMock(url="https://archiveofourown.org/works/" + work_id)
+        mock_work.completed = datetime.strptime("2024-01-01", "%Y-%m-%d").date()
+        return mock_work
+
+    mock_ao3().work.side_effect = get_mock_work
+
+    urls = ao3_utils.get_ao3_work_subscription_urls(
+        cookie="testcookie",
+        max_count=10,
+        user="testuser",
+        oldest_date=datetime.strptime("01.01.2020", "%d.%m.%Y"),
+    )
+
+    assert urls == {
+        "https://archiveofourown.org/works/1",
+        "https://archiveofourown.org/works/2",
+        "https://archiveofourown.org/works/3",
+    }
 
 
 @patch("src.ao3_utils.AO3")
