@@ -1,5 +1,6 @@
 *.cfg
 *.ini
+.coverage
 fanfiction.txt
 last_update.json
 analysis/

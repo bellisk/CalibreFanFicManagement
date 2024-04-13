@@ -9,7 +9,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install requirements
-        run: pip install flake8 pycodestyle black isort
+        run: pip install -r dev-requirements.txt
       - name: Check syntax and complexity
         run: |
           flake8 . --count --select=C901,E901,E999,F401,F821,F822,F823 --show-source --statistics
@@ -17,3 +17,19 @@ jobs:
         run: |
           isort --diff --check .
           black --diff --check .
+
+  tests:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install requirements
+        run: |
+          pip install -r requirements.txt
+          pip install -r dev-requirements.txt
+      - name: Run tests
+        run: |
+          pytest --cov=src tests/
