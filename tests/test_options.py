@@ -4,7 +4,9 @@ from unittest.mock import patch
 
 from src import options
 
-valid_config_path = os.path.realpath("tests/fixtures/valid_config.ini")
+valid_config_path = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), "fixtures", "valid_config.ini"
+)
 
 
 def test_get_config_file_arguments():
