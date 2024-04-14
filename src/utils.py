@@ -40,7 +40,6 @@ def log(msg, color=None, output=True):
 
 
 def get_files(mypath, filetype=None, fullpath=False):
-    ans = []
     if filetype:
         ans = [
             f

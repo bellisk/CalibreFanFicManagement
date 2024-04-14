@@ -1,7 +1,7 @@
 # encoding: utf-8
+import sys
 from argparse import ArgumentParser, ArgumentTypeError
 from configparser import ConfigParser
-from sys import argv
 
 COMMANDS = ["download", "analyse"]
 
@@ -84,16 +84,14 @@ def validate_user(options):
         raise ArgumentTypeError("The argument user is required.")
 
 
-def validate_analysis_type(analysis_types):
-    for t in analysis_types:
+def validate_analysis_type(options):
+    for t in options.analysis_type:
         if t not in ANALYSIS_TYPES:
             raise ArgumentTypeError(
                 "Valid 'analysis_type' options are {}, not {}".format(
                     ", ".join(ANALYSIS_TYPES), t
                 )
             )
-
-    return analysis_types
 
 
 def comma_separated_list(value):
@@ -202,7 +200,7 @@ Default: {DEFAULT_SOURCES}""",
         dest="since",
         help="""DD.MM.YYYY. The date since which fics should be downloaded (date 
 bookmarked or updated for bookmarks, date last visited for marked-for-later).
-Using this with source=work_subscriptions is slow!""",
+Using this with sources=work_subscriptions is slow!""",
     )
 
     arg_parser.add_argument(
@@ -344,7 +342,7 @@ Default: all.""",
         # override them. We don't want to add the argv[0] (the script filename) or the
         # command to the list.
         total_args = get_config_file_arguments(cli_args) + [
-            a for a in argv[1:] if a != cli_args.command
+            a for a in sys.argv[1:] if a != cli_args.command
         ]
         parsed_args = arg_parser.parse_args(total_args)
     else:

@@ -20,6 +20,7 @@ from .calibre_utils import (
     get_series_works_count,
 )
 from .download import download
+from .options import INCOMPLETE, SOURCE_SERIES_SUBSCRIPTIONS, SOURCE_USER_SUBSCRIPTIONS
 from .utils import Bcolors, log
 
 
@@ -173,7 +174,7 @@ def analyse(options):
         )
         output_file = join(options.analysis_dir, filename)
 
-        if analysis_type == "user_subscriptions":
+        if analysis_type == SOURCE_USER_SUBSCRIPTIONS:
             users_missing_works = _compare_user_subscriptions(
                 options.user, options.cookie, path, output_file
             )
@@ -182,7 +183,7 @@ def analyse(options):
                     users_missing_works, options.user, options.cookie, path
                 )
             )
-        elif analysis_type == "series_subscriptions":
+        elif analysis_type == SOURCE_SERIES_SUBSCRIPTIONS:
             series_missing_works = _compare_series_subscriptions(
                 options.user, options.cookie, path, output_file
             )
@@ -191,7 +192,7 @@ def analyse(options):
                     series_missing_works, options.user, options.cookie, path
                 )
             )
-        elif analysis_type == "incomplete_works":
+        elif analysis_type == INCOMPLETE:
             missing_works.extend(_collect_incomplete_works(path, output_file))
 
     if options.fix:

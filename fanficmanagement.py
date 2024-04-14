@@ -19,7 +19,7 @@ if __name__ == "__main__":
         sys.exit(str(e))
 
     print(f"\nNow running the command {options.command} with the following options:")
-    pprint({k: v for k, v in vars(options).items() if k != "command"})
+    pprint({k: v for k, v in vars(options).items() if k != "command"}, sort_dicts=False)
 
     permitted_commands = {"download": download, "analyse": analyse}
     eval(command + "(options)", permitted_commands, {"options": options})
