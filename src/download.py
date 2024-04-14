@@ -12,8 +12,6 @@ from shutil import rmtree
 from subprocess import PIPE, STDOUT, CalledProcessError, check_output
 from tempfile import mkdtemp
 
-import browser_cookie3
-
 from .ao3_utils import (
     get_ao3_bookmark_urls,
     get_ao3_collection_work_urls,
@@ -56,7 +54,7 @@ from .options import (
     SOURCE_WORKS,
     SOURCES,
 )
-from .utils import Bcolors, get_files, log
+from .utils import Bcolors, get_files, log, setup_login
 
 LAST_UPDATE_KEYS = [SOURCES, SOURCE_USERNAMES, SOURCE_COLLECTIONS, SOURCE_SERIES]
 
@@ -722,26 +720,6 @@ def get_oldest_date(options):
     log(oldest_date_per_source, Bcolors.OKBLUE)
 
     return oldest_date_per_source
-
-
-def setup_login(options):
-    if options.use_browser_cookie:
-        found_cookie = False
-        cookie_jar = browser_cookie3.load(domain_name="archiveofourown.org")
-        for cookie in cookie_jar:
-            if cookie.name == "_otwarchive_session":
-                options.cookie = cookie.value
-                found_cookie = True
-                break
-
-        if not found_cookie:
-            raise InvalidConfig(
-                "Tried to get the _otwarchive_session cookie from your browser, "
-                "but couldn't find it. Are you logged in to AO3?"
-            )
-
-    if not (options.user and options.cookie):
-        raise InvalidConfig("User and cookie are required for downloading from AO3")
 
 
 global lock
