@@ -21,7 +21,7 @@ from .calibre_utils import (
 )
 from .download import download
 from .options import INCOMPLETE, SOURCE_SERIES_SUBSCRIPTIONS, SOURCE_USER_SUBSCRIPTIONS
-from .utils import Bcolors, log
+from .utils import Bcolors, log, setup_login
 
 
 def _compare_user_subscriptions(username, cookie, path, output_file):
@@ -161,7 +161,12 @@ def _collect_incomplete_works(path, output_file):
 
 
 def analyse(options):
-    path = check_library_and_get_path(options.library)
+    setup_login(options)
+    try:
+        path = check_library_and_get_path(options.library)
+    except RuntimeError as e:
+        log(str(e), Bcolors.FAIL)
+        return
 
     if not isdir(options.analysis_dir):
         mkdir(options.analysis_dir)

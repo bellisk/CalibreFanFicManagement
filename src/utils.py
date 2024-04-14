@@ -4,6 +4,10 @@ from os import listdir
 from os.path import isfile, join
 from time import localtime, strftime
 
+import browser_cookie3
+
+from src.exceptions import InvalidConfig
+
 logging.getLogger("fanficfare").setLevel(logging.ERROR)
 
 
@@ -52,3 +56,23 @@ def get_files(mypath, filetype=None, fullpath=False):
         return [join(mypath, f) for f in ans]
     else:
         return ans
+
+
+def setup_login(options):
+    if options.use_browser_cookie:
+        found_cookie = False
+        cookie_jar = browser_cookie3.load(domain_name="archiveofourown.org")
+        for cookie in cookie_jar:
+            if cookie.name == "_otwarchive_session":
+                options.cookie = cookie.value
+                found_cookie = True
+                break
+
+        if not found_cookie:
+            raise InvalidConfig(
+                "Tried to get the _otwarchive_session cookie from your browser, "
+                "but couldn't find it. Are you logged in to AO3?"
+            )
+
+    if not (options.user and options.cookie):
+        raise InvalidConfig("User and cookie are required for downloading from AO3")
