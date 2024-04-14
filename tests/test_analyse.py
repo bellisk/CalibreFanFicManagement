@@ -18,7 +18,23 @@ def mock_check_library(path):
     return f'--with-library "{path}"'
 
 
+def mock_check_output(command, *args, **kwargs):
+    print(command)
+    if command.startswith("calibredb search author"):
+        return "1,2,3,4,5,6,7,8,9,10"
+
+
+@patch("src.calibre_utils.check_output", side_effect=mock_check_output)
+@patch("src.ao3_utils.AO3")
 @patch("src.analyse.check_library_and_get_path", side_effect=mock_check_library)
-def test_analyse_user_subscriptions(mock_check_library_and_get_path):
+def test_analyse_user_subscriptions(mock_check_library_and_get_path, mock_ao3, mock_subprocess_check_output):
+    mock_ao3().user.user_subscription_ids.return_value = ["user1", "user2", "user3"]
+
+    def mock_users_works_counts(username):
+        return int(username[-1]) * 10
+
+    mock_ao3().users_works_count.side_effect = mock_users_works_counts
+
     command, namespace = _get_options(options.SOURCE_USER_SUBSCRIPTIONS)
     analyse.analyse(namespace)
+    assert 1 == 0
