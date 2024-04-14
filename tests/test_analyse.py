@@ -31,22 +31,45 @@ def mock_check_library(path):
 
 
 def mock_check_output(command, *args, **kwargs):
-    print(command)
     if command.startswith("calibredb search author"):
         return "1,2,3,4,5,6,7,8,9,10"
+    elif command.startswith("calibredb list --search"):
+        result = [
+            {
+                "*identifier": f"https://archiveofourown.org/works/{randint(100, 100000)}",
+                "id": randint(0, 10000),
+            }
+            for i in range(10)
+        ]
+        return bytes(json.dumps(result), "utf-8")
+    print(command)
 
 
-@patch("src.calibre_utils.check_output", side_effect=mock_check_output)
-@patch("src.ao3_utils.AO3")
-@patch("src.analyse.check_library_and_get_path", side_effect=mock_check_library)
-def test_analyse_user_subscriptions(mock_check_library_and_get_path, mock_ao3, mock_subprocess_check_output):
-    mock_ao3().user.user_subscription_ids.return_value = ["user1", "user2", "user3"]
+def mocked_localtime():
+    return time.struct_time((2024, 4, 13, 9, 0, 0, 5, 104, 1))
 
-    def mock_users_works_counts(username):
-        return int(username[-1]) * 10
 
-    mock_ao3().users_works_count.side_effect = mock_users_works_counts
-
+@patch("src.calibre_utils.check_output", mock_check_output)
+@patch("src.ao3_utils.AO3", MockAO3)
+@patch("src.analyse.check_library_and_get_path", mock_check_library)
+def test_analyse_user_subscriptions(capsys):
     command, namespace = _get_options(options.SOURCE_USER_SUBSCRIPTIONS)
-    analyse.analyse(namespace)
-    assert 1 == 0
+
+    with patch("src.utils.localtime", mocked_localtime):
+        analyse.analyse(namespace)
+
+    captured = capsys.readouterr()
+
+    # mock_check_output tells us that every author has 10 works in Calibre.
+    # MockAO3 tells us that user2 and user3 have 20 and 30 fics on AO3, so they should
+    # be reported here.
+    users_msg = "\x1b[1m04/13/2024 09:00:00\x1b[0m: \t \x1b[95m{}\x1b[0m\n\x1b[1m04/13/2024 09:00:00\x1b[0m: \t \x1b[94m\t{}\x1b[0m\n\x1b[1m04/13/2024 09:00:00\x1b[0m: \t \x1b[94m\t{}\x1b[0m\n".format(
+        "Subscribed users who have fewer works on Calibre than on AO3:",
+        "user2",
+        "user3",
+    )
+    # MockAO3 returns 5 work urls for each user, which makes 10 in total.
+    urls_found_msg = "Found 10 urls to import"
+
+    assert users_msg in captured.out
+    assert urls_found_msg in captured.out
