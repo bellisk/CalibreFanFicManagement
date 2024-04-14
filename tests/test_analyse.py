@@ -1,7 +1,12 @@
+import json
 import os.path
+import time
+from random import randint
 from unittest.mock import patch
 
 from src import analyse, options
+
+from .mock_ao3 import MockAO3
 
 valid_config_path = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "fixtures", "valid_config.ini"
@@ -9,7 +14,14 @@ valid_config_path = os.path.join(
 
 
 def _get_options(analysis_type):
-    args = ["fanficmanagement.py", "analyse", "-C", valid_config_path, "--analysis-type", analysis_type]
+    args = [
+        "fanficmanagement.py",
+        "analyse",
+        "-C",
+        valid_config_path,
+        "--analysis-type",
+        analysis_type,
+    ]
     with patch("sys.argv", args):
         return options.set_up_options()
 

@@ -1,11 +1,10 @@
 from datetime import datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-from ao3 import AO3
 from src import ao3_utils
+
 from .mock_ao3 import MockAO3
 
-api = AO3()
 oldest_date = datetime.strptime("01.01.2020", "%d.%m.%Y")
 
 

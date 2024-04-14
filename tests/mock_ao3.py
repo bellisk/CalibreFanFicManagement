@@ -64,7 +64,13 @@ class MockAO3(AO3):
         return int(username[-1]) * 10
 
     def users_work_ids(self, username, max_count=0, oldest_date=None):
-        ids = [username[-1] + "1", username[-1] + "2", username[-1] + "3", username[-1] + "4", username[-1] + "5"]
+        ids = [
+            username[-1] + "1",
+            username[-1] + "2",
+            username[-1] + "3",
+            username[-1] + "4",
+            username[-1] + "5",
+        ]
 
         if max_count:
             return ids[:max_count]
@@ -93,5 +99,3 @@ class MockAO3(AO3):
 
     def series_info(self, series_id):
         return {"Title": "Series " + series_id}
-
-
