@@ -59,6 +59,8 @@ def get_files(mypath, filetype=None, fullpath=False):
 
 
 def setup_login(options):
+    # We have already validated in setup_options that we have at least one of
+    # options.cookie and options.use_browser_cookie.
     if options.use_browser_cookie:
         found_cookie = False
         cookie_jar = browser_cookie3.load(domain_name="archiveofourown.org")
@@ -68,11 +70,21 @@ def setup_login(options):
                 found_cookie = True
                 break
 
-        if not found_cookie:
-            raise InvalidConfig(
-                "Tried to get the _otwarchive_session cookie from your browser, "
-                "but couldn't find it. Are you logged in to AO3?"
-            )
+        if found_cookie:
+            log("Found _otwarchive_session cookie from the browser")
+            return
 
-    if not (options.user and options.cookie):
-        raise InvalidConfig("User and cookie are required for downloading from AO3")
+        log(
+            "Tried to get the _otwarchive_session cookie from your browser, "
+            "but couldn't find it. Are you logged in to AO3?"
+        )
+        if options.cookie:
+            log("Falling back to the cookie value you passed in")
+            return
+
+        raise InvalidConfig(
+            "Tried to get the _otwarchive_session cookie from your browser, "
+            "but couldn't find it. Are you logged in to AO3?"
+        )
+
+    log("Using the cookie value you passed in")
