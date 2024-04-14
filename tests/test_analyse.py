@@ -1,5 +1,6 @@
 import json
 import os.path
+import re
 import time
 from random import randint
 from unittest.mock import patch
@@ -30,10 +31,14 @@ def mock_check_library(path):
     return f'--with-library "{path}"'
 
 
+def mocked_localtime():
+    return time.struct_time((2024, 4, 13, 9, 0, 0, 5, 104, 1))
+
+
 def mock_check_output(command, *args, **kwargs):
     if command.startswith("calibredb search author"):
         return "1,2,3,4,5,6,7,8,9,10"
-    elif command.startswith("calibredb list --search"):
+    elif command.startswith("calibredb list --search author"):
         result = [
             {
                 "*identifier": f"https://archiveofourown.org/works/{randint(100, 100000)}",
@@ -42,11 +47,22 @@ def mock_check_output(command, *args, **kwargs):
             for i in range(10)
         ]
         return bytes(json.dumps(result), "utf-8")
+    elif command.startswith("calibredb search series"):
+        return "1,2"
+    elif command.startswith("calibredb list --search series"):
+        pattern = r"Series (\d)"
+        m = re.search(pattern, command)
+        if m is not None:
+            m.group(1)
+            result = [
+                {
+                    "*identifier": f"https://archiveofourown.org/works/{m.group(1)}{i}",
+                    "id": 2,
+                }
+                for i in range(2)
+            ]
+            return bytes(json.dumps(result), "utf-8")
     print(command)
-
-
-def mocked_localtime():
-    return time.struct_time((2024, 4, 13, 9, 0, 0, 5, 104, 1))
 
 
 @patch("src.calibre_utils.check_output", mock_check_output)
@@ -63,13 +79,48 @@ def test_analyse_user_subscriptions(capsys):
     # mock_check_output tells us that every author has 10 works in Calibre.
     # MockAO3 tells us that user2 and user3 have 20 and 30 fics on AO3, so they should
     # be reported here.
-    users_msg = "\x1b[1m04/13/2024 09:00:00\x1b[0m: \t \x1b[95m{}\x1b[0m\n\x1b[1m04/13/2024 09:00:00\x1b[0m: \t \x1b[94m\t{}\x1b[0m\n\x1b[1m04/13/2024 09:00:00\x1b[0m: \t \x1b[94m\t{}\x1b[0m\n".format(
-        "Subscribed users who have fewer works on Calibre than on AO3:",
-        "user2",
-        "user3",
+    users_msg = "\x1b[1m04/13/2024 09:00:00\x1b[0m: \t \x1b[95m{}".format(
+        "Subscribed users who have fewer works on Calibre than on AO3:"
     )
-    # MockAO3 returns 5 work urls for each user, which makes 10 in total.
-    urls_found_msg = "Found 10 urls to import"
+
+    for username in ["user2", "user3"]:
+        users_msg += (
+            "\x1b[0m\n\x1b[1m04/13/2024 09:00:00\x1b[0m: \t \x1b[94m\t{}".format(
+                username
+            )
+        )
 
     assert users_msg in captured.out
+
+    # MockAO3 returns 5 work urls for each user, which makes 10 in total.
+    urls_found_msg = "Found 10 urls to import"
+    assert urls_found_msg in captured.out
+
+
+@patch("src.calibre_utils.check_output", mock_check_output)
+@patch("src.ao3_utils.AO3", MockAO3)
+@patch("src.analyse.check_library_and_get_path", mock_check_library)
+def test_analyse_series_subscriptions(capsys):
+    command, namespace = _get_options(options.SOURCE_SERIES_SUBSCRIPTIONS)
+
+    with patch("src.utils.localtime", mocked_localtime):
+        analyse.analyse(namespace)
+
+    captured = capsys.readouterr()
+
+    # mock_check_output tells us that every series has 2 works in Calibre.
+    # MockAO3 tells us that series 3, 4, and 5 have 3, 4, and 5 works on AO3, so they
+    # should be reported here.
+    series_msg = "\x1b[1m04/13/2024 09:00:00\x1b[0m: \t \x1b[95m{}".format(
+        "Subscribed users who have fewer works on Calibre than on AO3:"
+    )
+    for series_id in ["Series 3", "Series 4", "Series 5"]:
+        series_msg += (
+            "\x1b[0m\n\x1b[1m04/13/2024 09:00:00\x1b[0m: \t \x1b[94m\t{}".format(
+                series_id
+            )
+        )
+
+    # We need to import 1 url for series 3, 2 for series 4, and 3 for series 5.
+    urls_found_msg = "Found 6 urls to import"
     assert urls_found_msg in captured.out

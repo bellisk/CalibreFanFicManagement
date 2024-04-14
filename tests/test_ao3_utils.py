@@ -1,4 +1,5 @@
 from datetime import datetime
+from pprint import pprint
 from unittest.mock import patch
 
 from src import ao3_utils
@@ -192,15 +193,12 @@ def test_get_ao3_series_subscription_urls():
     )
 
     assert urls == {
-        "https://archiveofourown.org/works/11",
-        "https://archiveofourown.org/works/12",
-        "https://archiveofourown.org/works/13",
+        "https://archiveofourown.org/works/10",
+        "https://archiveofourown.org/works/20",
         "https://archiveofourown.org/works/21",
-        "https://archiveofourown.org/works/22",
-        "https://archiveofourown.org/works/23",
+        "https://archiveofourown.org/works/30",
         "https://archiveofourown.org/works/31",
         "https://archiveofourown.org/works/32",
-        "https://archiveofourown.org/works/33",
     }
 
 
@@ -254,14 +252,14 @@ def test_get_ao3_series_work_urls():
         cookie="cookie",
         max_count=3,
         user="testuser",
-        series_id="123",
+        series_id="3",
         oldest_date=oldest_date,
     )
 
     assert urls == {
-        "https://archiveofourown.org/works/1231",
-        "https://archiveofourown.org/works/1232",
-        "https://archiveofourown.org/works/1233",
+        "https://archiveofourown.org/works/30",
+        "https://archiveofourown.org/works/31",
+        "https://archiveofourown.org/works/32",
     }
 
 
@@ -322,9 +320,9 @@ def test_get_ao3_subscribed_series_work_stats():
     )
 
     assert stats == {
-        "1": {"Title": "Series 1"},
-        "2": {"Title": "Series 2"},
-        "3": {"Title": "Series 3"},
-        "4": {"Title": "Series 4"},
-        "5": {"Title": "Series 5"},
+        "1": {"Title": "Series 1", "Works": "1"},
+        "2": {"Title": "Series 2", "Works": "2"},
+        "3": {"Title": "Series 3", "Works": "3"},
+        "4": {"Title": "Series 4", "Works": "4"},
+        "5": {"Title": "Series 5", "Works": "5"},
     }

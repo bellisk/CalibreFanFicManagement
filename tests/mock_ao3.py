@@ -92,10 +92,13 @@ class MockAO3(AO3):
         return mock_work
 
     def series_work_ids(self, series_id, max_count=0, oldest_date=None):
-        return [series_id + "1", series_id + "2", series_id + "3"]
+        return [series_id + str(n) for n in range(int(series_id))]
 
     def collection_work_ids(self, collection_id, max_count=0, oldest_date=None):
         return ["1", "2", "3"]
 
     def series_info(self, series_id):
-        return {"Title": "Series " + series_id}
+        return {
+            "Title": "Series " + series_id,
+            "Works": series_id,
+        }
