@@ -24,6 +24,9 @@ If you want to save bookmarks in a calibre library, you will need to install the
 - If needed, copy `config.ini.dist` to `config.ini` and fill in
 - Copy [FanFicFare example config](https://github.com/JimmXinu/FanFicFare/blob/master/fanficfare/example.ini)
   to `personal.ini` and fill in necessary fields
+  - NB: if you want to include images in your downloaded fanfics, you must set `include_images: true` in `personal.ini`.
+    See the [FanFicFare docs](https://github.com/JimmXinu/FanFicFare/wiki/FAQs#can-fanficfare-download-a-story-containing-images)
+    for more details.
 - `python fanficmanagement.py download -C config.ini`
 - For help: `python fanficmanagement.py -h`
 

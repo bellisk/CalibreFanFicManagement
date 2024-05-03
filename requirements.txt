@@ -4,10 +4,11 @@ browser-cookie3==0.19.1
 certifi==2024.2.2
 chardet==4.0.0
 cloudscraper==1.2.50
-FanFicFare==3.27.0
+FanFicFare==4.34.0
 html2text==2020.1.16
 html5lib==1.1
 idna==3.7
+pillow==10.3.0
 pyparsing==2.4.7
 requests==2.31.0
 requests-toolbelt==0.9.1
