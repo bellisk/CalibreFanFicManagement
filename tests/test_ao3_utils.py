@@ -1,5 +1,4 @@
 from datetime import datetime
-from pprint import pprint
 from unittest.mock import patch
 
 from src import ao3_utils
