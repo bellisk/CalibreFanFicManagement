@@ -1,16 +1,16 @@
 [login]
 user=
 cookie=
-use_browser_cookie=
+use-browser-cookie=
 
 [import]
-max_count=
-expand_series=
+max-count=
+expand-series=
 force=
-dry_run=
+dry-run=
 source=
 since=
-since_last_update=
+since-last-update=
 usernames=
 series=
 collections=
@@ -18,12 +18,12 @@ collections=
 [locations]
 library=
 input=
-fanficfare_config=
-last_update_file=
-analysis_dir=
+fanficfare-config=
+last-update-file=
+analysis-dir=
 
 [analysis]
-analysis_type=
+analysis-type=
 fix=
 
 [output]
