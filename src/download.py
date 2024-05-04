@@ -88,6 +88,7 @@ updated_more_recently = re.compile(
 
 
 def check_fff_output(output):
+    print(output)
     output = output.decode("utf-8")
     if equal_chapters.search(output):
         raise StoryUpToDateException()
