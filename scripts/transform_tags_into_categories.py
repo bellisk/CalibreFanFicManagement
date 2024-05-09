@@ -1,7 +1,7 @@
 # encoding: utf-8
 import csv
 import json
-from subprocess import check_output, STDOUT, PIPE
+from subprocess import PIPE, STDOUT, check_output
 from sys import argv
 
 PATH = '--with-library "/home/rae/Calibre Fanfic Library"'
