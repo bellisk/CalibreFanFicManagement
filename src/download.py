@@ -378,7 +378,7 @@ def downloader(args):
                 except CalledProcessError as e:
                     lock.release()
                     output += log(
-                        "\tError setting series data.",
+                        "\tError setting custom data.",
                         Bcolors.WARNING,
                         live,
                     )
