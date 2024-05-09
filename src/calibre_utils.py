@@ -58,32 +58,34 @@ def check_or_create_extra_columns(path):
     )
     # Get rid of the number after each column name, e.g. "columnname (1)"
     columns = [c.split(" ")[0] for c in res.decode("utf-8").split("\n")]
-    if set(columns).intersection(AO3_SERIES_KEYS + TAG_TYPES) == set(AO3_SERIES_KEYS + TAG_TYPES):
+    if set(columns).intersection(AO3_SERIES_KEYS) == set(AO3_SERIES_KEYS):
         log("Custom AO3 series columns are in Calibre Library")
-        return
+    else:
+        log("Adding custom AO3 series columns to Calibre library")
+        for c in AO3_SERIES_KEYS:
+            check_output(
+                "calibredb add_custom_column {} {} {} series".format(path, c, c),
+                shell=True,
+                stderr=STDOUT,
+                stdin=PIPE,
+            )
 
-    log("Adding custom AO3 series columns to Calibre library")
-    for c in AO3_SERIES_KEYS:
-        check_output(
-            "calibredb add_custom_column {} {} {} series".format(path, c, c),
-            shell=True,
-            stderr=STDOUT,
-            stdin=PIPE,
-        )
+        log("Adding grouped search term 'allseries' to Calibre Library")
+        _add_grouped_search_terms(path)
 
-    log("Adding grouped search term 'allseries' to Calibre Library")
-    _add_grouped_search_terms(path)
-
-    log("Adding AO3 tag types as columns in Calibre library")
-    for tag in TAG_TYPES:
-        check_output(
-            "calibredb add_custom_column {} {} {} text --is-multiple".format(
-                path, tag, tag
-            ),
-            shell=True,
-            stderr=STDOUT,
-            stdin=PIPE,
-        )
+    if set(columns).intersection(TAG_TYPES) == set(TAG_TYPES):
+        log("Custom AO3 tag-type columns are in Calibre Library")
+    else:
+        log("Adding AO3 tag types as columns in Calibre library")
+        for tag in TAG_TYPES:
+            check_output(
+                "calibredb add_custom_column {} {} {} text --is-multiple".format(
+                    path, tag, tag
+                ),
+                shell=True,
+                stderr=STDOUT,
+                stdin=PIPE,
+            )
 
 
 def check_library_and_get_path(library_path):
@@ -105,7 +107,7 @@ def check_library_and_get_path(library_path):
         check_or_create_extra_columns(path)
     except CalledProcessError as e:
         raise RuntimeError(
-            "Error while making sure custom columns exist in Calibre library",
+            f"Error while making sure custom columns exist in Calibre library: {e}",
         )
 
     return path
