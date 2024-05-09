@@ -37,7 +37,7 @@ def get_files(mypath, filetype=None, fullpath=False):
 
 def get_existing_tag_string(story_id):
     metadata = check_output(
-        "calibredb show_metadata {} {}".format(path, story_id),
+        f"calibredb show_metadata {path} {story_id}",
         shell=True,
         stdin=PIPE,
         stderr=STDOUT,
@@ -49,7 +49,7 @@ def get_existing_tag_string(story_id):
         if line.startswith("Tags"):
             tags = line[len("Tags                : ") :].split(", ")
             for tag in tags:
-                existing_tag_string += '"{}",'.format(tag)
+                existing_tag_string += f'"{tag}",'
             return existing_tag_string
 
 
@@ -63,9 +63,7 @@ if __name__ == "__main__":
         print(story_id)
         loc = mkdtemp()
         check_output(
-            'calibredb export --dont-save-cover --dont-write-opf --single-dir --to-dir "{}" {} {}'.format(
-                loc, path, story_id
-            ),
+            f'calibredb export --dont-save-cover --dont-write-opf --single-dir --to-dir "{loc}" {path} {story_id}',
             shell=True,
             stdin=PIPE,
             stderr=STDOUT,
@@ -80,9 +78,7 @@ if __name__ == "__main__":
             word_count = m2.group(1)
             word_count = word_count.replace(",", "")
             check_output(
-                "calibredb set_custom {} words {} {}".format(
-                    path, story_id, word_count
-                ),
+                f"calibredb set_custom {path} words {story_id} {word_count}",
                 shell=True,
                 stderr=STDOUT,
                 stdin=PIPE,
@@ -96,13 +92,11 @@ if __name__ == "__main__":
             rating = m1.group(1)
             tag_string = existing_tag_string + '"fanfic.rating.' + rating + '"'
 
-            command = "calibredb set_metadata {} --field tags:{} {}".format(
-                path, tag_string, story_id
+            command = (
+                f"calibredb set_metadata {path} --field tags:{tag_string} {story_id}"
             )
             result = check_output(
-                "calibredb set_metadata {} --field tags:{} {}".format(
-                    path, tag_string, story_id
-                ),
+                f"calibredb set_metadata {path} --field tags:{tag_string} {story_id}",
                 shell=True,
                 stderr=STDOUT,
                 stdin=PIPE,

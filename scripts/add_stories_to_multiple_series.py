@@ -25,7 +25,7 @@ series_link_pattern = re.compile(
 
 def check_or_create_extra_series_columns(path):
     res = check_output(
-        "calibredb custom_columns --with-library {}".format(path),
+        f"calibredb custom_columns --with-library {path}",
         shell=True,
         stderr=STDOUT,
         stdin=PIPE,
@@ -38,9 +38,7 @@ def check_or_create_extra_series_columns(path):
         print("Adding custom AO3 series columns to Calibre library")
         for c in AO3_SERIES_KEYS:
             check_output(
-                "calibredb add_custom_column --with-library {} {} {} series".format(
-                    path, c, c
-                ),
+                f"calibredb add_custom_column --with-library {path} {c} {c} series",
                 shell=True,
                 stderr=STDOUT,
                 stdin=PIPE,
@@ -55,7 +53,7 @@ def _add_grouped_search_terms(path):
     # the series columns.
     script = ADD_GROUPED_SEARCH_SCRIPT % path
     res = check_output(
-        "calibre-debug -c '{}'".format(script),
+        f"calibre-debug -c '{script}'",
         shell=True,
         stderr=STDOUT,
         stdin=PIPE,
@@ -65,15 +63,13 @@ def _add_grouped_search_terms(path):
 
 def find_books_in_series(path):
     res = check_output(
-        "calibredb list --with-library {} --search series:true --fields id,series,series_index --for-machine".format(
-            path
-        ),
+        f"calibredb list --with-library {path} --search series:true --fields id,series,series_index --for-machine",
         shell=True,
         stderr=STDOUT,
         stdin=PIPE,
     )
     book_data = json.loads(res.decode("utf-8"))
-    print("Found data about {} books that belong to series".format(len(book_data)))
+    print(f"Found data about {len(book_data)} books that belong to series")
     return book_data
 
 
@@ -82,14 +78,12 @@ def filter_books_in_multiple_series(path, book_data):
     series_ids_to_import = []
     for book in book_data:
         if n % 10 == 0:
-            print("Processed {} books".format(str(n)))
+            print(f"Processed {str(n)} books")
 
         series_1 = book["series"]
         loc = mkdtemp()
         check_output(
-            'calibredb export --dont-save-cover --dont-write-opf --single-dir --to-dir "{}" --with-library {} {}'.format(
-                loc, path, book["id"]
-            ),
+            f"calibredb export --dont-save-cover --dont-write-opf --single-dir --to-dir \"{loc}\" --with-library {path} {book['id']}",
             shell=True,
             stdin=PIPE,
             stderr=STDOUT,
@@ -106,9 +100,7 @@ def filter_books_in_multiple_series(path, book_data):
             if series_1 != series_2:
                 series_ids_to_import.append(series_2_id)
                 print(
-                    "{} (series saved in Calibre) does not match {} ({}) (series in epub title page)".format(
-                        series_1, series_2, series_2_id
-                    )
+                    f"{series_1} (series saved in Calibre) does not match {series_2} ({series_2_id}) (series in epub title page)"
                 )
         else:
             print("No series title found!")

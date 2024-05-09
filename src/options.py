@@ -49,9 +49,7 @@ def validate_sources(options):
     for s in options.sources:
         if s not in VALID_INPUT_SOURCES:
             raise ArgumentTypeError(
-                "Valid 'sources' options are {}, not {}".format(
-                    ", ".join(VALID_INPUT_SOURCES), s
-                )
+                f"Valid 'sources' options are {', '.join(VALID_INPUT_SOURCES)}, not {s}"
             )
 
     if SOURCE_USERNAMES in options.sources and options.usernames is None:
@@ -88,9 +86,7 @@ def validate_analysis_type(options):
     for t in options.analysis_type:
         if t not in ANALYSIS_TYPES:
             raise ArgumentTypeError(
-                "Valid 'analysis_type' options are {}, not {}".format(
-                    ", ".join(ANALYSIS_TYPES), t
-                )
+                f"Valid 'analysis_type' options are {', '.join(ANALYSIS_TYPES)}, not {t}"
             )
 
 

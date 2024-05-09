@@ -7,7 +7,7 @@ path = '--with-library "/home/rae/Calibre Fanfic Library"'
 
 def get_existing_tag_string(story_id):
     metadata = check_output(
-        "calibredb show_metadata {} {}".format(path, story_id),
+        f"calibredb show_metadata {path} {story_id}",
         shell=True,
         stdin=PIPE,
         stderr=STDOUT,
@@ -19,13 +19,13 @@ def get_existing_tag_string(story_id):
         if line.startswith("Tags"):
             tags = line[len("Tags                : ") :].split(", ")
             for tag in tags:
-                existing_tag_string += '"{}",'.format(tag)
+                existing_tag_string += f'"{tag}",'
             return existing_tag_string
 
 
 if __name__ == "__main__":
     ids = check_output(
-        "calibredb list {} --for-machine --fields=id".format(path),
+        f"calibredb list {path} --for-machine --fields=id",
         shell=True,
         stderr=STDOUT,
         stdin=PIPE,
@@ -42,9 +42,7 @@ if __name__ == "__main__":
         new_tag_string = existing_tag_string.replace("fanfic.", "")
 
         result = check_output(
-            "calibredb set_metadata {} --field tags:{} {}".format(
-                path, new_tag_string, story_id
-            ),
+            f"calibredb set_metadata {path} --field tags:{new_tag_string} {story_id}",
             shell=True,
             stderr=STDOUT,
             stdin=PIPE,

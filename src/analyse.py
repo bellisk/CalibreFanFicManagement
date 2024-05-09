@@ -58,7 +58,7 @@ def _compare_user_subscriptions(username, cookie, path, output_file):
             Bcolors.HEADER,
         )
         for user in users_missing_works:
-            log("\t{}".format(user), Bcolors.OKBLUE)
+            log(f"\t{user}", Bcolors.OKBLUE)
     else:
         log(
             "All subscribed users have as many or more works on Calibre than on AO3.",
@@ -105,7 +105,7 @@ def _compare_series_subscriptions(username, cookie, path, output_file):
             Bcolors.HEADER,
         )
         for series in series_missing_works.values():
-            log("\t{}".format(series), Bcolors.OKBLUE)
+            log(f"\t{series}", Bcolors.OKBLUE)
     else:
         log(
             "All subscribed series have as many or more works on Calibre than on AO3.",
@@ -126,7 +126,7 @@ def _get_missing_work_urls_from_users(users_missing_works, username, cookie, pat
         calibre_urls = get_author_work_urls(u, path)
         missing_work_urls.extend(set(ao3_urls) - set(calibre_urls))
 
-    log("Found {} urls to import".format(len(missing_work_urls)))
+    log(f"Found {len(missing_work_urls)} urls to import")
     return missing_work_urls
 
 
@@ -141,7 +141,7 @@ def _get_missing_work_urls_from_series(series_missing_works, username, cookie, p
         calibre_urls = get_series_work_urls(series_title, path)
         missing_work_urls.extend(set(ao3_urls) - set(calibre_urls))
 
-    log("Found {} urls to import.".format(len(missing_work_urls)))
+    log(f"Found {len(missing_work_urls)} urls to import.")
     return missing_work_urls
 
 
@@ -155,7 +155,7 @@ def _collect_incomplete_works(path, output_file):
         for work_data in results:
             writer.writerow(work_data)
 
-    log("Found {} incomplete works.".format(len(results)))
+    log(f"Found {len(results)} incomplete works.")
 
     return [work_data["url"] for work_data in results]
 
@@ -174,8 +174,8 @@ def analyse(options):
     missing_works = []
 
     for analysis_type in options.analysis_type:
-        filename = "{}_{}.csv".format(
-            analysis_type, datetime.strftime(datetime.now(), "%Y%m%d_%H%M%S")
+        filename = (
+            f"{analysis_type}_{datetime.strftime(datetime.now(), '%Y%m%d_%H%M%S')}.csv"
         )
         output_file = join(options.analysis_dir, filename)
 

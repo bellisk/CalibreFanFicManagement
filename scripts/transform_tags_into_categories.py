@@ -19,7 +19,7 @@ TAG_TYPES = [
 
 def check_or_create_extra_tag_type_columns(path):
     res = check_output(
-        "calibredb custom_columns {}".format(path),
+        f"calibredb custom_columns {path}",
         shell=True,
         stderr=STDOUT,
         stdin=PIPE,
@@ -32,9 +32,7 @@ def check_or_create_extra_tag_type_columns(path):
     print("Adding AO3 tag types as columns in Calibre library")
     for tag in TAG_TYPES:
         check_output(
-            "calibredb add_custom_column {} {} {} text --is-multiple".format(
-                path, tag, tag
-            ),
+            f"calibredb add_custom_column {path} {tag} {tag} text --is-multiple",
             shell=True,
             stderr=STDOUT,
             stdin=PIPE,
@@ -43,7 +41,7 @@ def check_or_create_extra_tag_type_columns(path):
 
 def check_tag_data(tag_type):
     check_output(
-        "calibredb list_categories -r tags --csv {} > all_tags.csv".format(path),
+        f"calibredb list_categories -r tags --csv {path} > all_tags.csv",
         shell=True,
         stdin=PIPE,
         stderr=STDOUT,
@@ -62,7 +60,7 @@ def check_tag_data(tag_type):
 
 def get_all_fic_data():
     res = check_output(
-        "calibredb list {} --for-machine".format(path),
+        f"calibredb list {path} --for-machine",
         shell=True,
         stdin=PIPE,
         stderr=STDOUT,
@@ -72,7 +70,7 @@ def get_all_fic_data():
 
 def get_existing_tags(story_id):
     metadata = check_output(
-        "calibredb show_metadata {} {}".format(path, story_id),
+        f"calibredb show_metadata {path} {story_id}",
         shell=True,
         stdin=PIPE,
         stderr=STDOUT,
