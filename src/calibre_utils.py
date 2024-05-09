@@ -185,7 +185,7 @@ def get_author_works_count(author, path):
     # author:"=author or \(author\)"
     # This catches both exact use of the author name, or use of a pseud,
     # e.g. "MyPseud (MyUsername)"
-    print("getting work count for {} in calibre".format(author))
+    log("getting work count for {} in calibre".format(author))
     try:
         result = check_output(
             'calibredb search author:"={} or \({}\)" {}'.format(author, author, path),
