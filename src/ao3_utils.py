@@ -96,7 +96,7 @@ def _append_work_id_if_newer_than_given_date(api, oldest_date, urls, work_id):
 
 
 def _work_url_from_id(work_id):
-    return "https://archiveofourown.org/works/%s" % work_id
+    return f"https://archiveofourown.org/works/{work_id}"
 
 
 def get_ao3_series_subscription_urls(cookie, max_count, user, oldest_date=None):

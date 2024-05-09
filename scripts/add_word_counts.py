@@ -13,7 +13,8 @@ from ebooklib import epub
 # For each id, export the book as epub
 # Use ebooklib to load the book, get the title_page and load the body text
 # Use beautifulsoup to get the rating and the wordcount
-# Add the rating tag (fanfic.rating.XXX) and wordcount (in custom column words) to the book
+# Add the rating tag (fanfic.rating.XXX) and wordcount (in custom column words) to the
+# book
 path = '--with-library "/home/rae/Calibre Library"'
 word_count_pattern = re.compile("<b>Words:</b> ([0-9,]*)<br/>")
 rating_pattern = re.compile("<b>Rating:</b> ([A-z ]*)<br/>")
@@ -37,7 +38,7 @@ def get_files(mypath, filetype=None, fullpath=False):
 
 def get_existing_tag_string(story_id):
     metadata = check_output(
-        "calibredb show_metadata {} {}".format(path, story_id),
+        f"calibredb show_metadata {path} {story_id}",
         shell=True,
         stdin=PIPE,
         stderr=STDOUT,
@@ -49,7 +50,7 @@ def get_existing_tag_string(story_id):
         if line.startswith("Tags"):
             tags = line[len("Tags                : ") :].split(", ")
             for tag in tags:
-                existing_tag_string += '"{}",'.format(tag)
+                existing_tag_string += f'"{tag}",'
             return existing_tag_string
 
 
@@ -63,9 +64,8 @@ if __name__ == "__main__":
         print(story_id)
         loc = mkdtemp()
         check_output(
-            'calibredb export --dont-save-cover --dont-write-opf --single-dir --to-dir "{}" {} {}'.format(
-                loc, path, story_id
-            ),
+            f"calibredb export --dont-save-cover --dont-write-opf --single-dir "
+            f'--to-dir "{loc}" {path} {story_id}',
             shell=True,
             stdin=PIPE,
             stderr=STDOUT,
@@ -80,9 +80,7 @@ if __name__ == "__main__":
             word_count = m2.group(1)
             word_count = word_count.replace(",", "")
             check_output(
-                "calibredb set_custom {} words {} {}".format(
-                    path, story_id, word_count
-                ),
+                f"calibredb set_custom {path} words {story_id} {word_count}",
                 shell=True,
                 stderr=STDOUT,
                 stdin=PIPE,
@@ -96,13 +94,11 @@ if __name__ == "__main__":
             rating = m1.group(1)
             tag_string = existing_tag_string + '"fanfic.rating.' + rating + '"'
 
-            command = "calibredb set_metadata {} --field tags:{} {}".format(
-                path, tag_string, story_id
+            command = (
+                f"calibredb set_metadata {path} --field tags:{tag_string} {story_id}"
             )
             result = check_output(
-                "calibredb set_metadata {} --field tags:{} {}".format(
-                    path, tag_string, story_id
-                ),
+                f"calibredb set_metadata {path} --field tags:{tag_string} {story_id}",
                 shell=True,
                 stderr=STDOUT,
                 stdin=PIPE,

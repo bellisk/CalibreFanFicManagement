@@ -87,15 +87,11 @@ class TestAnalysisClass(object):
         # mock_check_output tells us that every author has 10 works in Calibre.
         # MockAO3 tells us that user2 and user3 have 20 and 30 fics on AO3, so they should
         # be reported here.
-        users_msg = "\x1b[1m04/13/2024 09:00:00\x1b[0m: \t \x1b[95m{}".format(
-            "Subscribed users who have fewer works on Calibre than on AO3:"
-        )
+        users_msg = "\x1b[1m04/13/2024 09:00:00\x1b[0m: \t \x1b[95mSubscribed users who have fewer works on Calibre than on AO3:"
 
         for username in ["user2", "user3"]:
             users_msg += (
-                "\x1b[0m\n\x1b[1m04/13/2024 09:00:00\x1b[0m: \t \x1b[94m\t{}".format(
-                    username
-                )
+                f"\x1b[0m\n\x1b[1m04/13/2024 09:00:00\x1b[0m: \t \x1b[94m\t{username}"
             )
 
         assert users_msg in captured.out
@@ -115,14 +111,10 @@ class TestAnalysisClass(object):
         # mock_check_output tells us that every series has 2 works in Calibre.
         # MockAO3 tells us that series 3, 4, and 5 have 3, 4, and 5 works on AO3, so they
         # should be reported here.
-        series_msg = "\x1b[1m04/13/2024 09:00:00\x1b[0m: \t \x1b[95m{}".format(
-            "Subscribed users who have fewer works on Calibre than on AO3:"
-        )
+        series_msg = "\x1b[1m04/13/2024 09:00:00\x1b[0m: \t \x1b[95mSubscribed users who have fewer works on Calibre than on AO3:"
         for series_id in ["Series 3", "Series 4", "Series 5"]:
             series_msg += (
-                "\x1b[0m\n\x1b[1m04/13/2024 09:00:00\x1b[0m: \t \x1b[94m\t{}".format(
-                    series_id
-                )
+                f"\x1b[0m\n\x1b[1m04/13/2024 09:00:00\x1b[0m: \t \x1b[94m\t{series_id}"
             )
 
         # We need to import 1 url for series 3, 2 for series 4, and 3 for series 5.

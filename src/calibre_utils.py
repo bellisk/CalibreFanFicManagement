@@ -25,12 +25,12 @@ db = db("%s").new_api
 db.set_pref("grouped_search_terms", {"allseries": ["series", "#series00", "#series01", "#series02", "#series03"]})
 print(db.pref("grouped_search_terms"))
 """
-series_pattern = re.compile("(.*) \[(.*)\]")
+series_pattern = re.compile(r"(.*) \[(.*)]")
 
 
 def check_or_create_words_column(path):
     res = check_output(
-        "calibredb custom_columns {}".format(path),
+        f"calibredb custom_columns {path}",
         shell=True,
         stderr=STDOUT,
         stdin=PIPE,
@@ -42,7 +42,7 @@ def check_or_create_words_column(path):
 
     log("Adding custom column 'words' to Calibre library")
     check_output(
-        "calibredb add_custom_column {} words Words int".format(path),
+        f"calibredb add_custom_column {path} words Words int",
         shell=True,
         stderr=STDOUT,
         stdin=PIPE,
@@ -51,7 +51,7 @@ def check_or_create_words_column(path):
 
 def check_or_create_extra_columns(path):
     res = check_output(
-        "calibredb custom_columns {}".format(path),
+        f"calibredb custom_columns {path}",
         shell=True,
         stderr=STDOUT,
         stdin=PIPE,
@@ -64,7 +64,7 @@ def check_or_create_extra_columns(path):
         log("Adding custom AO3 series columns to Calibre library")
         for c in AO3_SERIES_KEYS:
             check_output(
-                "calibredb add_custom_column {} {} {} series".format(path, c, c),
+                f"calibredb add_custom_column {path} {c} {c} series",
                 shell=True,
                 stderr=STDOUT,
                 stdin=PIPE,
@@ -79,9 +79,7 @@ def check_or_create_extra_columns(path):
         log("Adding AO3 tag types as columns in Calibre library")
         for tag in TAG_TYPES:
             check_output(
-                "calibredb add_custom_column {} {} {} text --is-multiple".format(
-                    path, tag, tag
-                ),
+                f"calibredb add_custom_column {path} {tag} {tag} text --is-multiple",
                 shell=True,
                 stderr=STDOUT,
                 stdin=PIPE,
@@ -92,7 +90,7 @@ def check_library_and_get_path(library_path):
     if library_path is None:
         return None
 
-    path = '--with-library "{}"'.format(library_path)
+    path = f'--with-library "{library_path}"'
     try:
         with open(devnull, "w") as nullout:
             call(["calibredb"], stdout=nullout, stderr=nullout)
@@ -122,7 +120,7 @@ def _add_grouped_search_terms(path):
     # the series columns.
     script = ADD_GROUPED_SEARCH_SCRIPT % just_library_path
     res = check_output(
-        "calibre-debug -c '{}'".format(script),
+        f"calibre-debug -c '{script}'",
         shell=True,
         stderr=STDOUT,
         stdin=PIPE,
@@ -133,7 +131,7 @@ def _add_grouped_search_terms(path):
 def get_series_options(metadata):
     if len(metadata["series"]) > 0:
         m = series_pattern.match(metadata["series"])
-        return '--series="{}" --series-index={} '.format(m.group(1), m.group(2))
+        return f'--series="{m.group(1)}" --series-index={m.group(2)} '
     return ""
 
 
@@ -190,10 +188,10 @@ def get_author_works_count(author, path):
     # author:"=author or \(author\)"
     # This catches both exact use of the author name, or use of a pseud,
     # e.g. "MyPseud (MyUsername)"
-    log("getting work count for {} in calibre".format(author))
+    log(f"getting work count for {author} in calibre")
     try:
         result = check_output(
-            'calibredb search author:"={} or \({}\)" {}'.format(author, author, path),
+            f'calibredb search author:"={author} or \\({author}\\)" {path}',
             shell=True,
             stderr=STDOUT,
             stdin=PIPE,
@@ -205,9 +203,8 @@ def get_author_works_count(author, path):
 
 def get_author_work_urls(author, path):
     result = check_output(
-        'calibredb list --search author:"={} or \({}\)" {} --fields *identifier --for-machine'.format(
-            author, author, path
-        ),
+        f'calibredb list --search author:"={author} or \\({author}\\)" {path} '
+        f"--fields *identifier --for-machine",
         shell=True,
         stderr=STDOUT,
         stdin=PIPE,
@@ -221,7 +218,7 @@ def get_series_works_count(series_title, path):
     series_title = series_title.replace("&", "&amp;")
     try:
         result = check_output(
-            'calibredb search series:"=\\"{}\\"" {}'.format(series_title, path),
+            f'calibredb search series:"=\\"{series_title}\\"" {path}',
             shell=True,
             stderr=STDOUT,
             stdin=PIPE,
@@ -235,9 +232,8 @@ def get_series_work_urls(series_title, path):
     # Calibre seems to escape only this character in series titles
     series_title = series_title.replace("&", "&amp;")
     result = check_output(
-        'calibredb list --search series:"=\\"{}\\"" {} --fields *identifier --for-machine'.format(
-            series_title, path
-        ),
+        f'calibredb list --search series:"=\\"{series_title}\\"" {path} '
+        f"--fields *identifier --for-machine",
         shell=True,
         stderr=STDOUT,
         stdin=PIPE,
@@ -248,9 +244,8 @@ def get_series_work_urls(series_title, path):
 
 def get_incomplete_work_data(path):
     result = check_output(
-        'calibredb list --search tags:""status.In Progress"" {} --fields title,*identifier --for-machine'.format(
-            path
-        ),
+        f'calibredb list --search tags:""status.In Progress"" {path} '
+        f"--fields title,*identifier --for-machine",
         shell=True,
         stderr=STDOUT,
         stdin=PIPE,
