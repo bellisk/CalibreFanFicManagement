@@ -65,7 +65,7 @@ def get_all_fic_data():
         stdin=PIPE,
         stderr=STDOUT,
     )
-    return json.loads(res.decode("utf-8")[: -len("Initialized urlfixer\n")])
+    return json.loads(res.decode("utf-8").replace("Initialized urlfixer\n", ""))
 
 
 def get_existing_tags(story_id):
