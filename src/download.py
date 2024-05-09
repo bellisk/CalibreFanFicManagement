@@ -220,7 +220,7 @@ def downloader(args):
                     )
 
             check_output(
-                "cp {} {}/personal.ini".format(fanficfare_config, loc),
+                f'cp "{fanficfare_config}" {loc}/personal.ini',
                 shell=True,
                 stderr=STDOUT,
                 stdin=PIPE,
