@@ -137,41 +137,35 @@ def get_series_options(metadata):
     return ""
 
 
-def get_extra_series_data(story_id, metadata):
+def get_extra_series_options(metadata):
     # The command to set custom column data is:
     # 'calibredb set_custom [options] column id value'
     # Here we return a list of (column, value) tuples for each additional series
     # field that contains data, plus its index.
     existing_series = metadata["series"]
     series_keys = ["series00", "series01", "series02", "series03"]
-    result = []
+    opts = ""
     for key in series_keys:
         if len(metadata[key]) > 0 and metadata[key] != existing_series:
             m = series_pattern.match(metadata[key])
-            result.append((key, m.group(0)))
+            opts += f'--field=#{key}:"{m.group(0)}" '
 
-    return result
+    return opts
 
 
 def get_tags_options(metadata):
-    tag_keys = [
-        "ao3categories",
-        "characters",
-        "fandoms",
-        "freeformtags",
-        "rating",
-        "ships",
-        "status",
-        "warnings",
-    ]
-    opts = "--tags="
-    for key in tag_keys:
-        if len(metadata[key]) > 0:
-            tags = metadata[key].split(", ")
-            for tag in tags:
-                # Replace characters that give Calibre trouble in tags.
-                tag = tag.replace('"', "'").replace("...", "…").replace(".", "．")
-                opts += '"{}",'.format(key + "." + tag)
+    # FFF will save all fic tags to the tags column, but we want to separate them out,
+    # so remove them from there.
+    opts = "--field=tags:'' "
+    for tag_type in TAG_TYPES:
+        if len(metadata[tag_type]) > 0:
+            tags = metadata[tag_type].split(", ")
+            # Replace characters that give Calibre trouble in tags.
+            tags = [
+                '"' + tag.replace('"', "'").replace("...", "…").replace(".", "．").replace("&amp;", "&") + '"'
+                for tag in tags
+            ]
+            opts += f"--field=#{tag_type}:{','.join(tags)} "
 
     return opts
 

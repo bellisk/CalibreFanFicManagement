@@ -25,7 +25,7 @@ from .ao3_utils import (
 )
 from .calibre_utils import (
     check_library_and_get_path,
-    get_extra_series_data,
+    get_extra_series_options,
     get_series_options,
     get_tags_options,
     get_word_count,
@@ -278,7 +278,6 @@ def downloader(args):
 
             metadata = get_metadata(res)
             series_options = get_series_options(metadata)
-            tags_options = get_tags_options(metadata)
             word_count = get_word_count(metadata)
             cur = get_files(loc, ".epub", True)[0]
 
@@ -286,9 +285,7 @@ def downloader(args):
             try:
                 lock.acquire()
                 check_output(
-                    'calibredb add -d {} "{}" {} {}'.format(
-                        path, cur, series_options, tags_options
-                    ),
+                    'calibredb add -d {} "{}" {}'.format(path, cur, series_options),
                     shell=True,
                     stderr=STDOUT,
                     stdin=PIPE,
@@ -356,25 +353,23 @@ def downloader(args):
                     )
                     output += log("\t{}".format(e.output))
 
-                extra_series = get_extra_series_data(new_story_id, metadata)
+                extra_series_options = get_extra_series_options(metadata)
+                tags_options = get_tags_options(metadata)
                 try:
                     lock.acquire()
-                    for column_data in extra_series:
-                        output += log(
-                            "\tSetting custom field {}, value {} on story {}".format(
-                                column_data[0], column_data[1], new_story_id
-                            ),
-                            Bcolors.OKBLUE,
-                            live,
-                        )
-                        check_output(
-                            'calibredb set_custom {} {} {} "{}"'.format(
-                                path, column_data[0], new_story_id, column_data[1]
-                            ),
-                            shell=True,
-                            stderr=STDOUT,
-                            stdin=PIPE,
-                        )
+                    output += log(
+                        "\tSetting custom fields on story {}".format(new_story_id),
+                        Bcolors.OKBLUE,
+                        live,
+                    )
+                    update_command = f"calibredb set_metadata {str(new_story_id)} {path} {tags_options} {extra_series_options}"
+                    output += log(update_command, Bcolors.OKBLUE, live)
+                    check_output(
+                        update_command,
+                        shell=True,
+                        stderr=STDOUT,
+                        stdin=PIPE,
+                    )
                     lock.release()
                 except CalledProcessError as e:
                     lock.release()
