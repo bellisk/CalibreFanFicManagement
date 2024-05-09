@@ -25,7 +25,7 @@ db = db("%s").new_api
 db.set_pref("grouped_search_terms", {"allseries": ["series", "#series00", "#series01", "#series02", "#series03"]})
 print(db.pref("grouped_search_terms"))
 """
-series_pattern = re.compile("(.*) \[(.*)\]")
+series_pattern = re.compile(r"(.*) \[(.*)]")
 
 
 def check_or_create_words_column(path):
@@ -203,7 +203,8 @@ def get_author_works_count(author, path):
 
 def get_author_work_urls(author, path):
     result = check_output(
-        f'calibredb list --search author:"={author} or \\({author}\\)" {path} --fields *identifier --for-machine',
+        f'calibredb list --search author:"={author} or \\({author}\\)" {path} '
+        f"--fields *identifier --for-machine",
         shell=True,
         stderr=STDOUT,
         stdin=PIPE,
@@ -231,7 +232,8 @@ def get_series_work_urls(series_title, path):
     # Calibre seems to escape only this character in series titles
     series_title = series_title.replace("&", "&amp;")
     result = check_output(
-        f'calibredb list --search series:"=\\"{series_title}\\"" {path} --fields *identifier --for-machine',
+        f'calibredb list --search series:"=\\"{series_title}\\"" {path} '
+        f"--fields *identifier --for-machine",
         shell=True,
         stderr=STDOUT,
         stdin=PIPE,
@@ -242,7 +244,8 @@ def get_series_work_urls(series_title, path):
 
 def get_incomplete_work_data(path):
     result = check_output(
-        f'calibredb list --search tags:""status.In Progress"" {path} --fields title,*identifier --for-machine',
+        f'calibredb list --search tags:""status.In Progress"" {path} '
+        f"--fields title,*identifier --for-machine",
         shell=True,
         stderr=STDOUT,
         stdin=PIPE,

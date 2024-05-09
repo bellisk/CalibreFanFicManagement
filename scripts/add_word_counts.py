@@ -13,7 +13,8 @@ from ebooklib import epub
 # For each id, export the book as epub
 # Use ebooklib to load the book, get the title_page and load the body text
 # Use beautifulsoup to get the rating and the wordcount
-# Add the rating tag (fanfic.rating.XXX) and wordcount (in custom column words) to the book
+# Add the rating tag (fanfic.rating.XXX) and wordcount (in custom column words) to the
+# book
 path = '--with-library "/home/rae/Calibre Library"'
 word_count_pattern = re.compile("<b>Words:</b> ([0-9,]*)<br/>")
 rating_pattern = re.compile("<b>Rating:</b> ([A-z ]*)<br/>")
@@ -63,7 +64,8 @@ if __name__ == "__main__":
         print(story_id)
         loc = mkdtemp()
         check_output(
-            f'calibredb export --dont-save-cover --dont-write-opf --single-dir --to-dir "{loc}" {path} {story_id}',
+            f"calibredb export --dont-save-cover --dont-write-opf --single-dir "
+            f'--to-dir "{loc}" {path} {story_id}',
             shell=True,
             stdin=PIPE,
             stderr=STDOUT,

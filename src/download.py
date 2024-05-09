@@ -65,7 +65,8 @@ story_url = re.compile(r"(https://archiveofourown.org/works/\d*).*")
 
 # Responses from fanficfare that mean we won't update the story
 bad_chapters = re.compile(
-    ".* doesn't contain any recognizable chapters, probably from a different source. {2}Not updating."
+    ".* doesn't contain any recognizable chapters, probably from a different source. "
+    "{2}Not updating."
 )
 no_url = re.compile("No story URL found in epub to update.")
 too_many_requests = re.compile("HTTP Error 429: Too Many Requests")
@@ -183,13 +184,15 @@ def downloader(args):
                 )
                 output += log("\tExporting file", Bcolors.OKBLUE, live)
                 output += log(
-                    f'\tcalibredb export {story_id} --dont-save-cover --dont-write-opf --single-dir --to-dir "{loc}" {path}',
+                    f"\tcalibredb export {story_id} --dont-save-cover --dont-write-opf "
+                    f'--single-dir --to-dir "{loc}" {path}',
                     Bcolors.OKBLUE,
                     live,
                 )
                 lock.acquire()
                 res = check_output(
-                    f'calibredb export {story_id} --dont-save-cover --dont-write-opf --single-dir --to-dir "{loc}" {path}',
+                    f"calibredb export {story_id} --dont-save-cover --dont-write-opf "
+                    f'--single-dir --to-dir "{loc}" {path}',
                     shell=True,
                     stdin=PIPE,
                     stderr=STDOUT,
@@ -239,9 +242,9 @@ def downloader(args):
                     "AttributeError: 'NoneType' object has no attribute 'get_text'"
                     in e.output.decode("utf-8")
                 ):
-                    # This is an uncaught error fanficfare returns when it can't make the expected
-                    # BeautifulSoup out of the story page, e.g. when a story has been added to a hidden
-                    # AO3 collection.
+                    # This is an uncaught error fanficfare returns when it can't make
+                    # the expected BeautifulSoup out of the story page, e.g. when a
+                    # story has been added to a hidden AO3 collection.
                     raise BadDataException(
                         "No story found at this url. It might have been hidden."
                     )
@@ -250,8 +253,8 @@ def downloader(args):
                 # Throws an exception if we couldn't/shouldn't update the epub
                 check_fff_output(res)
             except Exception as e:
-                if type(e) == TempFileUpdatedMoreRecentlyException or (
-                    force and type(e) == StoryUpToDateException
+                if isinstance(e, TempFileUpdatedMoreRecentlyException) or (
+                    force and isinstance(e, StoryUpToDateException)
                 ):
                     output += log(
                         "\tForcing download update. FanFicFare error message:",
@@ -263,7 +266,8 @@ def downloader(args):
                             break
                         output += log(f"\t\t{str(line)}", Bcolors.WARNING, live)
                     res = check_output(
-                        f'cd "{loc}" && fanficfare -u -j "{cur}" --force --update-cover',
+                        f'cd "{loc}" && fanficfare -u -j "{cur}" --force '
+                        f"--update-cover",
                         shell=True,
                         stderr=STDOUT,
                         stdin=PIPE,
@@ -330,7 +334,8 @@ def downloader(args):
                 try:
                     lock.acquire()
                     check_output(
-                        f"calibredb set_custom {path} words {new_story_id} '{word_count}'",
+                        f"calibredb set_custom {path} words {new_story_id} "
+                        f"'{word_count}'",
                         shell=True,
                         stderr=STDOUT,
                         stdin=PIPE,
@@ -354,7 +359,10 @@ def downloader(args):
                         Bcolors.OKBLUE,
                         live,
                     )
-                    update_command = f"calibredb set_metadata {str(new_story_id)} {path} {tags_options} {extra_series_options}"
+                    update_command = (
+                        f"calibredb set_metadata {str(new_story_id)} "
+                        f"{path} {tags_options} {extra_series_options}"
+                    )
                     output += log(update_command, Bcolors.OKBLUE, live)
                     check_output(
                         update_command,
@@ -413,12 +421,12 @@ def downloader(args):
         rmtree(loc)
     except Exception as e:
         output += log(f"\tException: {e}", Bcolors.FAIL, live)
-        if type(e) == CalledProcessError:
+        if isinstance(e, CalledProcessError):
             output += log(f"\t{e.output.decode('utf-8')}", Bcolors.FAIL, live)
         if not live:
             print(output.strip())
         rmtree(loc, ignore_errors=True)
-        if type(e) != StoryUpToDateException:
+        if isinstance(e, StoryUpToDateException):
             with open(inout_file, "a") as fp:
                 fp.write(f"{url}\n")
 
@@ -557,7 +565,8 @@ def get_urls(inout_file, options, oldest_dates):
 
         if SOURCE_USERNAMES in options.sources:
             log(
-                f"Getting URLs from following users' works: {','.join(options.usernames)}"
+                f"Getting URLs from following users' works: "
+                f"{','.join(options.usernames)}"
             )
             for u in options.usernames:
                 urls |= get_ao3_users_work_urls(
@@ -585,7 +594,8 @@ def get_urls(inout_file, options, oldest_dates):
 
         if SOURCE_COLLECTIONS in options.sources:
             log(
-                f"Getting URLs from following collections: {','.join(options.collections)}"
+                f"Getting URLs from following collections: "
+                f"{','.join(options.collections)}"
             )
             for c in options.collections:
                 urls |= get_ao3_collection_work_urls(

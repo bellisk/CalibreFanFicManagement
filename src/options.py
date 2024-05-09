@@ -86,7 +86,8 @@ def validate_analysis_type(options):
     for t in options.analysis_type:
         if t not in ANALYSIS_TYPES:
             raise ArgumentTypeError(
-                f"Valid 'analysis_type' options are {', '.join(ANALYSIS_TYPES)}, not {t}"
+                f"Valid 'analysis_type' options are "
+                f"{', '.join(ANALYSIS_TYPES)}, not {t}"
             )
 
 
@@ -96,9 +97,9 @@ def comma_separated_list(value):
 
 def set_up_options():
     usage = """usage: python %(prog)s [command] [flags]
-    
+
 Commands available:
-    
+
 download    Download fics from AO3 and save to Calibre library
 analyse     Analyse contents of Calibre library and AO3 data
     """
@@ -128,7 +129,7 @@ analyse     Analyse contents of Calibre library and AO3 data
         "--use-browser-cookie",
         action="store_true",
         dest="use_browser_cookie",
-        help="""Get the _otwarchive_session cookie from your browser instead of 
+        help="""Get the _otwarchive_session cookie from your browser instead of
 passing it in with the -c option.""",
     )
 
@@ -140,7 +141,7 @@ passing it in with the -c option.""",
         type=comma_separated_list,
         default=DEFAULT_SOURCES,
         help=f"""A comma-separated list of sources to get AO3 urls from.
-        
+
 Valid sources: {", ".join(VALID_INPUT_SOURCES)}
 
 Using '⁻s work_subscriptions' with --since or --since-last-update is slow!
@@ -194,7 +195,7 @@ Default: {DEFAULT_SOURCES}""",
         "--since",
         action="store",
         dest="since",
-        help="""DD.MM.YYYY. The date since which fics should be downloaded (date 
+        help="""DD.MM.YYYY. The date since which fics should be downloaded (date
 bookmarked or updated for bookmarks, date last visited for marked-for-later).
 Using this with sources=work_subscriptions is slow!""",
     )
@@ -206,11 +207,11 @@ Using this with sources=work_subscriptions is slow!""",
         dest="since_last_update",
         default=False,
         help="""Only fetch work ids from AO3 for works that have been changed since the
-last update, as saved in the last_update_file. For bookmarked works, this fetches works 
-that have been bookmarked or updated since the last update. For marked-for-later works, 
+last update, as saved in the last_update_file. For bookmarked works, this fetches works
+that have been bookmarked or updated since the last update. For marked-for-later works,
 it fetches works that have been marked-for-later since the last update. For works from
 subscriptions, it fetches works that have been posted or updated since the last update.
-Lists of work urls (from the input file or from stdin) will be handled without checking 
+Lists of work urls (from the input file or from stdin) will be handled without checking
 any dates. This option overrides --since.""",
     )
 
@@ -240,7 +241,7 @@ number of chapters locally as online.""",
         dest="input",
         default="fanfiction.txt",
         help="""Error file. Any urls that fail will be output here, and file will be
-read to find any urls that failed previously. The file is overwitten every time the 
+read to find any urls that failed previously. The file is overwitten every time the
 program is run. Default: fanfiction.txt.""",
     )
 
@@ -249,7 +250,7 @@ program is run. Default: fanfiction.txt.""",
         "--library",
         action="store",
         dest="library",
-        help="""Calibre library db location. If none is passed, then this merely 
+        help="""Calibre library db location. If none is passed, then this merely
 downloads stories into the current directory as epub files.""",
     )
 
@@ -317,7 +318,7 @@ exist. Default: analysis/""",
         type=comma_separated_list,
         default=ANALYSIS_TYPES,
         help=f"""Which source(s) should be analysed to see if all works are in Calibre?
-        
+
 Valid analysis types: {", ".join(ANALYSIS_TYPES)}
 Default: all.""",
     )

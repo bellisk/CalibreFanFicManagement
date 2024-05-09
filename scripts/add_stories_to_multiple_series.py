@@ -19,7 +19,7 @@ db.set_pref("grouped_search_terms", {"allseries": ["series", "series00", "series
 print(db.pref("grouped_search_terms"))
 """
 series_link_pattern = re.compile(
-    '<a class="serieslink" href="https://archiveofourown\.org/series/([\d]+)">(.+) \[[\d]*]</a>'
+    r'<a class="serieslink" href="https://archiveofourown\.org/series/([\d]+)">(.+) \[[\d]*]</a>'
 )
 
 
@@ -63,7 +63,8 @@ def _add_grouped_search_terms(path):
 
 def find_books_in_series(path):
     res = check_output(
-        f"calibredb list --with-library {path} --search series:true --fields id,series,series_index --for-machine",
+        f"calibredb list --with-library {path} --search series:true "
+        f"--fields id,series,series_index --for-machine",
         shell=True,
         stderr=STDOUT,
         stdin=PIPE,
@@ -83,7 +84,8 @@ def filter_books_in_multiple_series(path, book_data):
         series_1 = book["series"]
         loc = mkdtemp()
         check_output(
-            f"calibredb export --dont-save-cover --dont-write-opf --single-dir --to-dir \"{loc}\" --with-library {path} {book['id']}",
+            f"calibredb export --dont-save-cover --dont-write-opf --single-dir"
+            f" --to-dir \"{loc}\" --with-library {path} {book['id']}",
             shell=True,
             stdin=PIPE,
             stderr=STDOUT,
@@ -100,7 +102,8 @@ def filter_books_in_multiple_series(path, book_data):
             if series_1 != series_2:
                 series_ids_to_import.append(series_2_id)
                 print(
-                    f"{series_1} (series saved in Calibre) does not match {series_2} ({series_2_id}) (series in epub title page)"
+                    f"{series_1} (series saved in Calibre) does not match {series_2} "
+                    f"({series_2_id}) (series in epub title page)"
                 )
         else:
             print("No series title found!")
@@ -142,6 +145,7 @@ if __name__ == "__main__":
 
     # Then output series ids so they can be manually reimported.
     print(
-        "Series that should be reimported, because they contain books that have not had the series saved on them:"
+        "Series that should be reimported, because they contain books that have not "
+        "had the series saved on them:"
     )
     print(",".join(series_to_reimport))

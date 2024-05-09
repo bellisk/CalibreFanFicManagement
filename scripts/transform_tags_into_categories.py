@@ -95,15 +95,13 @@ def fix_tags_for_fic(fic_id, path):
             if tag.startswith(tag_type)
         ]
         update_command += f"--field=#{tag_type}:{','.join(tags)} "
-    # print(update_command)
 
-    res = check_output(
+    check_output(
         update_command,
         shell=True,
         stderr=STDOUT,
         stdin=PIPE,
     )
-    # print(res)
 
 
 if __name__ == "__main__":

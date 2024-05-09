@@ -24,9 +24,15 @@ class Bcolors:
 
 def log(msg, color=None, output=True):
     if color:
-        line = f"{Bcolors.BOLD}{strftime('%m/%d/%Y %H:%M:%S', localtime())}{Bcolors.ENDC}: \t {color}{msg}{Bcolors.ENDC}"
+        line = (
+            f"{Bcolors.BOLD}{strftime('%m/%d/%Y %H:%M:%S', localtime())}"
+            f"{Bcolors.ENDC}: \t {color}{msg}{Bcolors.ENDC}"
+        )
     else:
-        line = f"{Bcolors.BOLD}{strftime('%m/%d/%Y %H:%M:%S', localtime())}{Bcolors.ENDC}: \t {msg}"
+        line = (
+            f"{Bcolors.BOLD}{strftime('%m/%d/%Y %H:%M:%S', localtime())}"
+            f"{Bcolors.ENDC}: \t {msg}"
+        )
     if output:
         print(line)
         return ""
