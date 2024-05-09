@@ -135,7 +135,9 @@ def get_url_without_chapter(url):
 
 def get_new_story_id(bytestring):
     # We get something like b'123,124,125' and want the last id as a string
-    return bytestring.decode("utf-8").split(",")[-1]
+    return (
+        bytestring.decode("utf-8").replace("Initialized urlfixer\n", "").split(",")[-1]
+    )
 
 
 def downloader(args):
@@ -171,7 +173,9 @@ def downloader(args):
                 cur = url
 
             if story_id is not None:
-                story_id = story_id.decode("utf-8")
+                story_id = story_id.decode("utf-8").replace(
+                    "Initialized urlfixer\n", ""
+                )
                 output += log(
                     "\tStory is in Calibre with id {}".format(story_id),
                     Bcolors.OKBLUE,
@@ -306,12 +310,12 @@ def downloader(args):
                     stdin=PIPE,
                 )
                 lock.release()
+                new_story_id = get_new_story_id(res)
                 output += log(
-                    "\tAdded {} to library with id {}".format(cur, res),
+                    "\tAdded {} to library with id {}".format(cur, new_story_id),
                     Bcolors.OKGREEN,
                     live,
                 )
-                new_story_id = get_new_story_id(res)
             except CalledProcessError as e:
                 lock.release()
                 output += log(
