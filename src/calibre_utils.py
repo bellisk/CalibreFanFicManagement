@@ -9,6 +9,16 @@ from subprocess import PIPE, STDOUT, CalledProcessError, call, check_output
 from .ao3_utils import AO3_SERIES_KEYS
 from .utils import log
 
+TAG_TYPES = [
+    "ao3categories",
+    "characters",
+    "fandoms",
+    "freeformtags",
+    "rating",
+    "ships",
+    "status",
+    "warnings",
+]
 ADD_GROUPED_SEARCH_SCRIPT = """from calibre.library import db
 
 db = db("%s").new_api
@@ -39,7 +49,7 @@ def check_or_create_words_column(path):
     )
 
 
-def check_or_create_extra_series_columns(path):
+def check_or_create_extra_columns(path):
     res = check_output(
         "calibredb custom_columns {}".format(path),
         shell=True,
@@ -48,19 +58,32 @@ def check_or_create_extra_series_columns(path):
     )
     # Get rid of the number after each column name, e.g. "columnname (1)"
     columns = [c.split(" ")[0] for c in res.decode("utf-8").split("\n")]
-    if set(columns).intersection(AO3_SERIES_KEYS) == set(AO3_SERIES_KEYS):
+    if set(columns).intersection(AO3_SERIES_KEYS + TAG_TYPES) == set(AO3_SERIES_KEYS + TAG_TYPES):
         log("Custom AO3 series columns are in Calibre Library")
-    else:
-        log("Adding custom AO3 series columns to Calibre library")
-        for c in AO3_SERIES_KEYS:
-            check_output(
-                "calibredb add_custom_column {} {} {} series".format(path, c, c),
-                shell=True,
-                stderr=STDOUT,
-                stdin=PIPE,
-            )
-        log("Adding grouped search term 'allseries' to Calibre Library")
-        _add_grouped_search_terms(path)
+        return
+
+    log("Adding custom AO3 series columns to Calibre library")
+    for c in AO3_SERIES_KEYS:
+        check_output(
+            "calibredb add_custom_column {} {} {} series".format(path, c, c),
+            shell=True,
+            stderr=STDOUT,
+            stdin=PIPE,
+        )
+
+    log("Adding grouped search term 'allseries' to Calibre Library")
+    _add_grouped_search_terms(path)
+
+    log("Adding AO3 tag types as columns in Calibre library")
+    for tag in TAG_TYPES:
+        check_output(
+            "calibredb add_custom_column {} {} {} text --is-multiple".format(
+                path, tag, tag
+            ),
+            shell=True,
+            stderr=STDOUT,
+            stdin=PIPE,
+        )
 
 
 def check_library_and_get_path(library_path):
@@ -79,7 +102,7 @@ def check_library_and_get_path(library_path):
             )
     try:
         check_or_create_words_column(path)
-        check_or_create_extra_series_columns(path)
+        check_or_create_extra_columns(path)
     except CalledProcessError as e:
         raise RuntimeError(
             "Error while making sure custom columns exist in Calibre library",
