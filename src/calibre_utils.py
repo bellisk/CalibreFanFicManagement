@@ -9,6 +9,16 @@ from subprocess import PIPE, STDOUT, CalledProcessError, call, check_output
 from .ao3_utils import AO3_SERIES_KEYS
 from .utils import log
 
+TAG_TYPES = [
+    "ao3categories",
+    "characters",
+    "fandoms",
+    "freeformtags",
+    "rating",
+    "ships",
+    "status",
+    "warnings",
+]
 ADD_GROUPED_SEARCH_SCRIPT = """from calibre.library import db
 
 db = db("%s").new_api
@@ -39,7 +49,7 @@ def check_or_create_words_column(path):
     )
 
 
-def check_or_create_extra_series_columns(path):
+def check_or_create_extra_columns(path):
     res = check_output(
         "calibredb custom_columns {}".format(path),
         shell=True,
@@ -59,8 +69,23 @@ def check_or_create_extra_series_columns(path):
                 stderr=STDOUT,
                 stdin=PIPE,
             )
+
         log("Adding grouped search term 'allseries' to Calibre Library")
         _add_grouped_search_terms(path)
+
+    if set(columns).intersection(TAG_TYPES) == set(TAG_TYPES):
+        log("Custom AO3 tag-type columns are in Calibre Library")
+    else:
+        log("Adding AO3 tag types as columns in Calibre library")
+        for tag in TAG_TYPES:
+            check_output(
+                "calibredb add_custom_column {} {} {} text --is-multiple".format(
+                    path, tag, tag
+                ),
+                shell=True,
+                stderr=STDOUT,
+                stdin=PIPE,
+            )
 
 
 def check_library_and_get_path(library_path):
@@ -79,10 +104,10 @@ def check_library_and_get_path(library_path):
             )
     try:
         check_or_create_words_column(path)
-        check_or_create_extra_series_columns(path)
+        check_or_create_extra_columns(path)
     except CalledProcessError as e:
         raise RuntimeError(
-            "Error while making sure custom columns exist in Calibre library",
+            f"Error while making sure custom columns exist in Calibre library: {e}",
         )
 
     return path
@@ -112,41 +137,40 @@ def get_series_options(metadata):
     return ""
 
 
-def get_extra_series_data(story_id, metadata):
+def get_extra_series_options(metadata):
     # The command to set custom column data is:
     # 'calibredb set_custom [options] column id value'
     # Here we return a list of (column, value) tuples for each additional series
     # field that contains data, plus its index.
     existing_series = metadata["series"]
     series_keys = ["series00", "series01", "series02", "series03"]
-    result = []
+    opts = ""
     for key in series_keys:
         if len(metadata[key]) > 0 and metadata[key] != existing_series:
             m = series_pattern.match(metadata[key])
-            result.append((key, m.group(0)))
+            opts += f'--field=#{key}:"{m.group(0)}" '
 
-    return result
+    return opts
 
 
 def get_tags_options(metadata):
-    tag_keys = [
-        "ao3categories",
-        "characters",
-        "fandoms",
-        "freeformtags",
-        "rating",
-        "ships",
-        "status",
-        "warnings",
-    ]
-    opts = "--tags="
-    for key in tag_keys:
-        if len(metadata[key]) > 0:
-            tags = metadata[key].split(", ")
-            for tag in tags:
-                # Replace characters that give Calibre trouble in tags.
-                tag = tag.replace('"', "'").replace("...", "…").replace(".", "．")
-                opts += '"{}",'.format(key + "." + tag)
+    # FFF will save all fic tags to the tags column, but we want to separate them out,
+    # so remove them from there.
+    opts = "--field=tags:'' "
+    for tag_type in TAG_TYPES:
+        if len(metadata[tag_type]) > 0:
+            tags = metadata[tag_type].split(", ")
+            # Replace characters that give Calibre trouble in tags.
+            tags = [
+                '"'
+                + tag.replace('"', "'")
+                .replace("...", "…")
+                .replace(".", "．")
+                .replace("&amp;", "&")
+                + '"'
+                for tag in tags
+            ]
+            opts += f"--field=#{tag_type}:{','.join(tags)} "
 
     return opts
 
@@ -166,7 +190,7 @@ def get_author_works_count(author, path):
     # author:"=author or \(author\)"
     # This catches both exact use of the author name, or use of a pseud,
     # e.g. "MyPseud (MyUsername)"
-    print("getting work count for {} in calibre".format(author))
+    log("getting work count for {} in calibre".format(author))
     try:
         result = check_output(
             'calibredb search author:"={} or \({}\)" {}'.format(author, author, path),
