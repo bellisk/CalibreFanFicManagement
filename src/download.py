@@ -254,6 +254,8 @@ def downloader(args):
                 # Throws an exception if we couldn't/shouldn't update the epub
                 check_fff_output(res)
             except Exception as e:
+                print(f"got error: {e}")
+
                 if isinstance(e, TempFileUpdatedMoreRecentlyException) or (
                     force and isinstance(e, StoryUpToDateException)
                 ):
