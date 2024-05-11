@@ -119,7 +119,10 @@ if __name__ == "__main__":
     n = 0
     for fic in fics:
         print(f"Fixing tags for fic {fic['id']} {fic['title']}")
-        fix_tags_for_fic(fic["id"], path)
+        try:
+            fix_tags_for_fic(fic["id"], path)
+        except Exception as e:
+            print(f"Got exception, skipping this fic for now: {e}")
         n += 1
         if n % 100 == 0:
             print(f"PROGRESS: {n}/{len(fics)}, {n * 100 / len(fics)}%")
