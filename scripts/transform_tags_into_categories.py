@@ -58,9 +58,9 @@ def check_tag_data(tag_type):
     print(f"Got {len(tags_of_type)} tags of the type {tag_type}")
 
 
-def get_all_fic_data():
+def get_all_untransformed_fic_data():
     res = check_output(
-        f"calibredb list {path} --for-machine",
+        f"calibredb list --search=#ao3categories:false {path} --for-machine",
         shell=True,
         stdin=PIPE,
         stderr=STDOUT,
@@ -113,7 +113,7 @@ if __name__ == "__main__":
     for tag_type in TAG_TYPES:
         check_tag_data(tag_type)
 
-    fics = get_all_fic_data()
+    fics = get_all_untransformed_fic_data()
     print(f"Fixing tags for {len(fics)} fics")
 
     n = 0
