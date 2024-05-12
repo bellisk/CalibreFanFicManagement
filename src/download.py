@@ -89,7 +89,8 @@ updated_more_recently = re.compile(
 
 
 def check_fff_output(output, command=""):
-    output = output.decode("utf-8")
+    if isinstance(output, bytes):
+        output = output.decode("utf-8")
     if len(output) == 0:
         raise EmptyFanFicFareResponseException(command)
     if equal_chapters.search(output):
