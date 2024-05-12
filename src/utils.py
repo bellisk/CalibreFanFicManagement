@@ -2,6 +2,7 @@
 import logging
 from os import listdir
 from os.path import isfile, join
+from subprocess import PIPE, STDOUT, check_output
 from time import localtime, strftime
 
 import browser_cookie3
@@ -85,3 +86,7 @@ def setup_login(options):
         )
 
     log("Using the cookie value you passed in")
+
+
+def check_subprocess_output(command):
+    return check_output(command, shell=True, stderr=STDOUT, stdin=PIPE)

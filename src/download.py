@@ -9,7 +9,7 @@ from json.decoder import JSONDecodeError
 from multiprocessing import Lock, Pool
 from os import rename
 from shutil import rmtree
-from subprocess import PIPE, STDOUT, CalledProcessError, check_output
+from subprocess import CalledProcessError
 from tempfile import mkdtemp
 
 from .ao3_utils import (
@@ -54,7 +54,7 @@ from .options import (
     SOURCE_WORKS,
     SOURCES,
 )
-from .utils import Bcolors, get_files, log, setup_login
+from .utils import Bcolors, check_subprocess_output, get_files, log, setup_login
 
 LAST_UPDATE_KEYS = [SOURCES, SOURCE_USERNAMES, SOURCE_COLLECTIONS, SOURCE_SERIES]
 
@@ -161,11 +161,8 @@ def downloader(args):
         if path:
             try:
                 lock.acquire()
-                story_id = check_output(
-                    f'calibredb search "Identifiers:url:={url}" {path}',
-                    shell=True,
-                    stderr=STDOUT,
-                    stdin=PIPE,
+                story_id = check_subprocess_output(
+                    f'calibredb search "Identifiers:url:={url}" {path}'
                 )
                 lock.release()
             except CalledProcessError:
@@ -190,12 +187,9 @@ def downloader(args):
                     live,
                 )
                 lock.acquire()
-                res = check_output(
+                res = check_subprocess_output(
                     f"calibredb export {story_id} --dont-save-cover --dont-write-opf "
                     f'--single-dir --to-dir "{loc}" {path}',
-                    shell=True,
-                    stdin=PIPE,
-                    stderr=STDOUT,
                 )
                 lock.release()
 
@@ -218,12 +212,7 @@ def downloader(args):
                         live,
                     )
 
-            check_output(
-                f'cp "{fanficfare_config}" {loc}/personal.ini',
-                shell=True,
-                stderr=STDOUT,
-                stdin=PIPE,
-            )
+            check_subprocess_output(f'cp "{fanficfare_config}" {loc}/personal.ini')
 
             output += log(
                 f'\tRunning: cd "{loc}" && fanficfare -j -u "{cur}" --update-cover',
@@ -231,11 +220,8 @@ def downloader(args):
                 live,
             )
             try:
-                res = check_output(
-                    f'cd "{loc}" && fanficfare -j -u "{cur}" --update-cover',
-                    shell=True,
-                    stderr=STDOUT,
-                    stdin=PIPE,
+                res = check_subprocess_output(
+                    f'cd "{loc}" && fanficfare -j -u "{cur}" --update-cover'
                 )
             except CalledProcessError as e:
                 if (
@@ -265,12 +251,8 @@ def downloader(args):
                         if line == b"{":
                             break
                         output += log(f"\t\t{str(line)}", Bcolors.WARNING, live)
-                    res = check_output(
-                        f'cd "{loc}" && fanficfare -u -j "{cur}" --force '
-                        f"--update-cover",
-                        shell=True,
-                        stderr=STDOUT,
-                        stdin=PIPE,
+                    res = check_subprocess_output(
+                        f'cd "{loc}" && fanficfare -u -j "{cur}" --force "--update-cover"'
                     )
                     check_fff_output(res)
                 else:
@@ -284,11 +266,8 @@ def downloader(args):
             output += log(f"\tAdding {cur} to library", Bcolors.OKBLUE, live)
             try:
                 lock.acquire()
-                check_output(
-                    f'calibredb add -d {path} "{cur}" {series_options}',
-                    shell=True,
-                    stderr=STDOUT,
-                    stdin=PIPE,
+                check_subprocess_output(
+                    f'calibredb add -d {path} "{cur}" {series_options}'
                 )
                 lock.release()
             except Exception as e:
@@ -299,11 +278,8 @@ def downloader(args):
                 raise
             try:
                 lock.acquire()
-                res = check_output(
-                    f'calibredb search "Identifiers:url:={url}" {path}',
-                    shell=True,
-                    stderr=STDOUT,
-                    stdin=PIPE,
+                res = check_subprocess_output(
+                    f'calibredb search "Identifiers:url:={url}" {path}'
                 )
                 lock.release()
                 new_story_id = get_new_story_id(res)
@@ -333,12 +309,8 @@ def downloader(args):
                 )
                 try:
                     lock.acquire()
-                    check_output(
-                        f"calibredb set_custom {path} words {new_story_id} "
-                        f"'{word_count}'",
-                        shell=True,
-                        stderr=STDOUT,
-                        stdin=PIPE,
+                    check_subprocess_output(
+                        f"calibredb set_custom {path} words {new_story_id} '{word_count}'"
                     )
                     lock.release()
                 except CalledProcessError as e:
@@ -364,12 +336,7 @@ def downloader(args):
                         f"{path} {tags_options} {extra_series_options}"
                     )
                     output += log(update_command, Bcolors.OKBLUE, live)
-                    check_output(
-                        update_command,
-                        shell=True,
-                        stderr=STDOUT,
-                        stdin=PIPE,
-                    )
+                    check_subprocess_output(update_command)
                     lock.release()
                 except CalledProcessError as e:
                     lock.release()
@@ -386,12 +353,7 @@ def downloader(args):
                 )
                 try:
                     lock.acquire()
-                    check_output(
-                        f"calibredb remove {path} {story_id}",
-                        shell=True,
-                        stderr=STDOUT,
-                        stdin=PIPE,
-                    )
+                    check_subprocess_output(f"calibredb remove {path} {story_id}")
                     lock.release()
                 except BaseException:
                     lock.release()
@@ -400,11 +362,8 @@ def downloader(args):
                     raise
         else:
             # We have no path to a Calibre library, so just download the story.
-            res = check_output(
-                f'cd "{loc}" && fanficfare -u "{url}" --update-cover',
-                shell=True,
-                stderr=STDOUT,
-                stdin=PIPE,
+            res = check_subprocess_output(
+                f'cd "{loc}" && fanficfare -u "{url}" --update-cover'
             )
             check_fff_output(res)
             cur = get_files(loc, ".epub", True)[0]
