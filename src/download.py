@@ -383,7 +383,7 @@ def downloader(args):
         if not live:
             print(output.strip())
         rmtree(loc, ignore_errors=True)
-        if isinstance(e, StoryUpToDateException):
+        if not isinstance(e, StoryUpToDateException):
             with open(inout_file, "a") as fp:
                 fp.write(f"{url}\n")
 
