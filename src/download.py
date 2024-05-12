@@ -88,8 +88,10 @@ updated_more_recently = re.compile(
 )
 
 
-def check_fff_output(output):
+def check_fff_output(output, command=""):
     output = output.decode("utf-8")
+    if len(output) == 0:
+        raise EmptyCalibreResponseException(command)
     if equal_chapters.search(output):
         raise StoryUpToDateException()
     if bad_chapters.search(output):
@@ -145,10 +147,9 @@ def get_new_story_id(bytestring):
 def do_download(path, loc, url, fanficfare_config, output, force, live):
     if not path:
         # We have no path to a Calibre library, so just download the story.
-        fff_update_result = check_subprocess_output(
-            f'cd "{loc}" && fanficfare -u "{url}" --update-cover'
-        )
-        check_fff_output(fff_update_result)
+        command = f'cd "{loc}" && fanficfare -u "{url}" --update-cover'
+        fff_update_result = check_subprocess_output(command)
+        check_fff_output(fff_update_result, command)
         cur = get_files(loc, ".epub", True)[0]
         name = get_files(loc, ".epub", False)[0]
         rename(cur, name)
@@ -223,8 +224,6 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
     fff_update_result = ""
     try:
         fff_update_result = check_subprocess_output(command)
-        if len(fff_update_result) == 0:
-            raise EmptyCalibreResponseException(command)
     except CalledProcessError as e:
         if (
             "AttributeError: 'NoneType' object has no attribute 'get_text'"
@@ -239,7 +238,7 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
 
     try:
         # Throws an exception if we couldn't/shouldn't update the epub
-        check_fff_output(fff_update_result)
+        check_fff_output(fff_update_result, command)
     except Exception as e:
         if isinstance(e, TempFileUpdatedMoreRecentlyException) or (
             force and isinstance(e, StoryUpToDateException)
@@ -253,10 +252,9 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
                 if line == b"{":
                     break
                 output += log(f"\t\t{str(line)}", Bcolors.WARNING, live)
-            fff_update_result = check_subprocess_output(
-                f'cd "{loc}" && fanficfare -u -j "{cur}" --force "--update-cover"'
-            )
-            check_fff_output(fff_update_result)
+            command += " --force"
+            fff_update_result = check_subprocess_output(command)
+            check_fff_output(fff_update_result, command)
         else:
             raise e
 
