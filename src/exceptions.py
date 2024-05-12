@@ -54,3 +54,4 @@ class EmptyFanFicFareResponseException(Exception):
         self.message = (
             f"Got no output when running the following command: {command}"
         )
+        super().__init__(self.message)
