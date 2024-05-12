@@ -159,210 +159,7 @@ def downloader(args):
     story_id = None
 
     try:
-        if path:
-            try:
-                lock.acquire()
-                story_id = check_subprocess_output(
-                    f'calibredb search "Identifiers:url:={url}" {path}'
-                )
-                lock.release()
-            except CalledProcessError:
-                # story is not in Calibre
-                lock.release()
-                cur = url
-
-            if story_id is not None:
-                story_id = story_id.decode("utf-8").replace(
-                    "Initialized urlfixer\n", ""
-                )
-                output += log(
-                    f"\tStory is in Calibre with id {story_id}",
-                    Bcolors.OKBLUE,
-                    live,
-                )
-                output += log("\tExporting file", Bcolors.OKBLUE, live)
-                output += log(
-                    f"\tcalibredb export {story_id} --dont-save-cover --dont-write-opf "
-                    f'--single-dir --to-dir "{loc}" {path}',
-                    Bcolors.OKBLUE,
-                    live,
-                )
-                lock.acquire()
-                res = check_subprocess_output(
-                    f"calibredb export {story_id} --dont-save-cover --dont-write-opf "
-                    f'--single-dir --to-dir "{loc}" {path}',
-                )
-                lock.release()
-
-                try:
-                    cur = get_files(loc, ".epub", True)[0]
-                    output += log(
-                        f'\tDownloading with fanficfare, updating file "{cur}"',
-                        Bcolors.OKGREEN,
-                        live,
-                    )
-                except IndexError:
-                    # Calibre doesn't have this story in epub format.
-                    # the ebook-convert and ebook-meta CLIs can't save an epub
-                    # with a source url in the way fanficfare expects, so
-                    # we'll download a new copy as if we didn't have it at all
-                    cur = url
-                    output += log(
-                        f'\tNo epub for story id "{story_id}" in Calibre',
-                        Bcolors.OKBLUE,
-                        live,
-                    )
-
-            check_subprocess_output(f'cp "{fanficfare_config}" {loc}/personal.ini')
-
-            command = f'cd "{loc}" && fanficfare -j -u "{cur}" --update-cover'
-            output += log(
-                f"\tRunning: {command}",
-                Bcolors.OKBLUE,
-                live,
-            )
-            try:
-                res = check_subprocess_output(command)
-                if len(res) == 0:
-                    raise EmptyCalibreResponseException(command)
-            except CalledProcessError as e:
-                if (
-                    "AttributeError: 'NoneType' object has no attribute 'get_text'"
-                    in e.output.decode("utf-8")
-                ):
-                    # This is an uncaught error fanficfare returns when it can't make
-                    # the expected BeautifulSoup out of the story page, e.g. when a
-                    # story has been added to a hidden AO3 collection.
-                    raise BadDataException(
-                        "No story found at this url. It might have been hidden."
-                    )
-
-            try:
-                # Throws an exception if we couldn't/shouldn't update the epub
-                check_fff_output(res)
-            except Exception as e:
-                if isinstance(e, TempFileUpdatedMoreRecentlyException) or (
-                    force and isinstance(e, StoryUpToDateException)
-                ):
-                    output += log(
-                        "\tForcing download update. FanFicFare error message:",
-                        Bcolors.WARNING,
-                        live,
-                    )
-                    for line in res.split(b"\n"):
-                        if line == b"{":
-                            break
-                        output += log(f"\t\t{str(line)}", Bcolors.WARNING, live)
-                    res = check_subprocess_output(
-                        f'cd "{loc}" && fanficfare -u -j "{cur}" --force "--update-cover"'
-                    )
-                    check_fff_output(res)
-                else:
-                    raise e
-
-            metadata = get_metadata(res)
-            series_options = get_series_options(metadata)
-            word_count = get_word_count(metadata)
-            cur = get_files(loc, ".epub", True)[0]
-
-            output += log(f"\tAdding {cur} to library", Bcolors.OKBLUE, live)
-            try:
-                lock.acquire()
-                check_subprocess_output(
-                    f'calibredb add -d {path} "{cur}" {series_options}'
-                )
-                lock.release()
-            except Exception as e:
-                lock.release()
-                output += log(e)
-                if not live:
-                    print(output.strip())
-                raise
-            try:
-                lock.acquire()
-                res = check_subprocess_output(
-                    f'calibredb search "Identifiers:url:={url}" {path}'
-                )
-                lock.release()
-                new_story_id = get_new_story_id(res)
-                output += log(
-                    f"\tAdded {cur} to library with id {new_story_id}",
-                    Bcolors.OKGREEN,
-                    live,
-                )
-            except CalledProcessError as e:
-                lock.release()
-                output += log(
-                    "\tIt's been added to library, but not sure what the ID is.",
-                    Bcolors.WARNING,
-                    live,
-                )
-                output += log(
-                    "\tAdded /Story-file to library with id 0", Bcolors.OKGREEN, live
-                )
-                output += log(f"\t{e.output}")
-                raise
-
-            if new_story_id:
-                output += log(
-                    f"\tSetting word count of {word_count} on story {new_story_id}",
-                    Bcolors.OKBLUE,
-                    live,
-                )
-                try:
-                    lock.acquire()
-                    check_subprocess_output(
-                        f"calibredb set_custom {path} words {new_story_id} '{word_count}'"
-                    )
-                    lock.release()
-                except CalledProcessError as e:
-                    lock.release()
-                    output += log(
-                        "\tError setting word count.",
-                        Bcolors.WARNING,
-                        live,
-                    )
-                    output += log(f"\t{e.output}")
-
-                extra_series_options = get_extra_series_options(metadata)
-                tags_options = get_tags_options(metadata)
-                try:
-                    lock.acquire()
-                    output += log(
-                        f"\tSetting custom fields on story {new_story_id}",
-                        Bcolors.OKBLUE,
-                        live,
-                    )
-                    update_command = (
-                        f"calibredb set_metadata {str(new_story_id)} "
-                        f"{path} {tags_options} {extra_series_options}"
-                    )
-                    output += log(update_command, Bcolors.OKBLUE, live)
-                    check_subprocess_output(update_command)
-                    lock.release()
-                except CalledProcessError as e:
-                    lock.release()
-                    output += log(
-                        "\tError setting custom data.",
-                        Bcolors.WARNING,
-                        live,
-                    )
-                    output += log(f"\t{e.output}")
-
-            if story_id:
-                output += log(
-                    f"\tRemoving {story_id} from library", Bcolors.OKBLUE, live
-                )
-                try:
-                    lock.acquire()
-                    check_subprocess_output(f"calibredb remove {path} {story_id}")
-                    lock.release()
-                except BaseException:
-                    lock.release()
-                    if not live:
-                        print(output.strip())
-                    raise
-        else:
+        if not path:
             # We have no path to a Calibre library, so just download the story.
             res = check_subprocess_output(
                 f'cd "{loc}" && fanficfare -u "{url}" --update-cover'
@@ -376,6 +173,205 @@ def downloader(args):
                 Bcolors.OKGREEN,
                 live,
             )
+
+            return
+
+        try:
+            lock.acquire()
+            story_id = check_subprocess_output(
+                f'calibredb search "Identifiers:url:={url}" {path}'
+            )
+            lock.release()
+        except CalledProcessError:
+            # story is not in Calibre
+            lock.release()
+            cur = url
+
+        if story_id is not None:
+            story_id = story_id.decode("utf-8").replace("Initialized urlfixer\n", "")
+            output += log(
+                f"\tStory is in Calibre with id {story_id}",
+                Bcolors.OKBLUE,
+                live,
+            )
+            output += log("\tExporting file", Bcolors.OKBLUE, live)
+            output += log(
+                f"\tcalibredb export {story_id} --dont-save-cover --dont-write-opf "
+                f'--single-dir --to-dir "{loc}" {path}',
+                Bcolors.OKBLUE,
+                live,
+            )
+            lock.acquire()
+            res = check_subprocess_output(
+                f"calibredb export {story_id} --dont-save-cover --dont-write-opf "
+                f'--single-dir --to-dir "{loc}" {path}',
+            )
+            lock.release()
+
+            try:
+                cur = get_files(loc, ".epub", True)[0]
+                output += log(
+                    f'\tDownloading with fanficfare, updating file "{cur}"',
+                    Bcolors.OKGREEN,
+                    live,
+                )
+            except IndexError:
+                # Calibre doesn't have this story in epub format.
+                # the ebook-convert and ebook-meta CLIs can't save an epub
+                # with a source url in the way fanficfare expects, so
+                # we'll download a new copy as if we didn't have it at all
+                cur = url
+                output += log(
+                    f'\tNo epub for story id "{story_id}" in Calibre',
+                    Bcolors.OKBLUE,
+                    live,
+                )
+
+        check_subprocess_output(f'cp "{fanficfare_config}" {loc}/personal.ini')
+
+        command = f'cd "{loc}" && fanficfare -j -u "{cur}" --update-cover'
+        output += log(
+            f"\tRunning: {command}",
+            Bcolors.OKBLUE,
+            live,
+        )
+        try:
+            res = check_subprocess_output(command)
+            if len(res) == 0:
+                raise EmptyCalibreResponseException(command)
+        except CalledProcessError as e:
+            if (
+                "AttributeError: 'NoneType' object has no attribute 'get_text'"
+                in e.output.decode("utf-8")
+            ):
+                # This is an uncaught error fanficfare returns when it can't make
+                # the expected BeautifulSoup out of the story page, e.g. when a
+                # story has been added to a hidden AO3 collection.
+                raise BadDataException(
+                    "No story found at this url. It might have been hidden."
+                )
+
+        try:
+            # Throws an exception if we couldn't/shouldn't update the epub
+            check_fff_output(res)
+        except Exception as e:
+            if isinstance(e, TempFileUpdatedMoreRecentlyException) or (
+                force and isinstance(e, StoryUpToDateException)
+            ):
+                output += log(
+                    "\tForcing download update. FanFicFare error message:",
+                    Bcolors.WARNING,
+                    live,
+                )
+                for line in res.split(b"\n"):
+                    if line == b"{":
+                        break
+                    output += log(f"\t\t{str(line)}", Bcolors.WARNING, live)
+                res = check_subprocess_output(
+                    f'cd "{loc}" && fanficfare -u -j "{cur}" --force "--update-cover"'
+                )
+                check_fff_output(res)
+            else:
+                raise e
+
+        metadata = get_metadata(res)
+        series_options = get_series_options(metadata)
+        word_count = get_word_count(metadata)
+        cur = get_files(loc, ".epub", True)[0]
+
+        output += log(f"\tAdding {cur} to library", Bcolors.OKBLUE, live)
+        try:
+            lock.acquire()
+            check_subprocess_output(f'calibredb add -d {path} "{cur}" {series_options}')
+            lock.release()
+        except Exception as e:
+            lock.release()
+            output += log(e)
+            if not live:
+                print(output.strip())
+            raise
+        try:
+            lock.acquire()
+            res = check_subprocess_output(
+                f'calibredb search "Identifiers:url:={url}" {path}'
+            )
+            lock.release()
+            new_story_id = get_new_story_id(res)
+            output += log(
+                f"\tAdded {cur} to library with id {new_story_id}",
+                Bcolors.OKGREEN,
+                live,
+            )
+        except CalledProcessError as e:
+            lock.release()
+            output += log(
+                "\tIt's been added to library, but not sure what the ID is.",
+                Bcolors.WARNING,
+                live,
+            )
+            output += log(
+                "\tAdded /Story-file to library with id 0", Bcolors.OKGREEN, live
+            )
+            output += log(f"\t{e.output}")
+            raise
+
+        if new_story_id:
+            output += log(
+                f"\tSetting word count of {word_count} on story {new_story_id}",
+                Bcolors.OKBLUE,
+                live,
+            )
+            try:
+                lock.acquire()
+                check_subprocess_output(
+                    f"calibredb set_custom {path} words {new_story_id} '{word_count}'"
+                )
+                lock.release()
+            except CalledProcessError as e:
+                lock.release()
+                output += log(
+                    "\tError setting word count.",
+                    Bcolors.WARNING,
+                    live,
+                )
+                output += log(f"\t{e.output}")
+
+            extra_series_options = get_extra_series_options(metadata)
+            tags_options = get_tags_options(metadata)
+            try:
+                lock.acquire()
+                output += log(
+                    f"\tSetting custom fields on story {new_story_id}",
+                    Bcolors.OKBLUE,
+                    live,
+                )
+                update_command = (
+                    f"calibredb set_metadata {str(new_story_id)} "
+                    f"{path} {tags_options} {extra_series_options}"
+                )
+                output += log(update_command, Bcolors.OKBLUE, live)
+                check_subprocess_output(update_command)
+                lock.release()
+            except CalledProcessError as e:
+                lock.release()
+                output += log(
+                    "\tError setting custom data.",
+                    Bcolors.WARNING,
+                    live,
+                )
+                output += log(f"\t{e.output}")
+
+        if story_id:
+            output += log(f"\tRemoving {story_id} from library", Bcolors.OKBLUE, live)
+            try:
+                lock.acquire()
+                check_subprocess_output(f"calibredb remove {path} {story_id}")
+                lock.release()
+            except BaseException:
+                lock.release()
+                if not live:
+                    print(output.strip())
+                raise
 
         if not live:
             print(output.strip())
