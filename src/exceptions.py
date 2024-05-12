@@ -49,8 +49,8 @@ class UrlsCollectionException(Exception):
         super().__init__(self.message)
 
 
-class EmptyCalibreResponseException(Exception):
+class EmptyFanFicFareResponseException(Exception):
     def __init__(self, command):
         self.message = (
-            f"Got no output when running the following Calibre command: {command}"
+            f"Got no output when running the following command: {command}"
         )

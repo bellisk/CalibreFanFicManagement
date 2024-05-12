@@ -32,7 +32,7 @@ from .calibre_utils import (
 )
 from .exceptions import (
     BadDataException,
-    EmptyCalibreResponseException,
+    EmptyFanFicFareResponseException,
     InvalidConfig,
     MoreChaptersLocallyException,
     StoryUpToDateException,
@@ -91,7 +91,7 @@ updated_more_recently = re.compile(
 def check_fff_output(output, command=""):
     output = output.decode("utf-8")
     if len(output) == 0:
-        raise EmptyCalibreResponseException(command)
+        raise EmptyFanFicFareResponseException(command)
     if equal_chapters.search(output):
         raise StoryUpToDateException()
     if bad_chapters.search(output):
