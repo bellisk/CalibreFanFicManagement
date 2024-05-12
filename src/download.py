@@ -32,6 +32,7 @@ from .calibre_utils import (
 )
 from .exceptions import (
     BadDataException,
+    EmptyCalibreResponseException,
     InvalidConfig,
     MoreChaptersLocallyException,
     StoryUpToDateException,
@@ -214,15 +215,16 @@ def downloader(args):
 
             check_subprocess_output(f'cp "{fanficfare_config}" {loc}/personal.ini')
 
+            command = f'cd "{loc}" && fanficfare -j -u "{cur}" --update-cover'
             output += log(
-                f'\tRunning: cd "{loc}" && fanficfare -j -u "{cur}" --update-cover',
+                f"\tRunning: {command}",
                 Bcolors.OKBLUE,
                 live,
             )
             try:
-                res = check_subprocess_output(
-                    f'cd "{loc}" && fanficfare -j -u "{cur}" --update-cover'
-                )
+                res = check_subprocess_output(command)
+                if len(res) == 0:
+                    raise EmptyCalibreResponseException(command)
             except CalledProcessError as e:
                 if (
                     "AttributeError: 'NoneType' object has no attribute 'get_text'"
