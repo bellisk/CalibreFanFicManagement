@@ -60,7 +60,9 @@ def check_tag_data(tag_type):
 
 def get_all_untransformed_fic_data():
     res = check_output(
-        f"calibredb list --search=#ao3categories:false {path} --for-machine",
+        f"calibredb list "
+        f'--search="#ao3categories:false #freeformtags:false #fandoms:false tags:true" '
+        f"{path} --for-machine",
         shell=True,
         stdin=PIPE,
         stderr=STDOUT,
@@ -84,8 +86,9 @@ def get_existing_tags(story_id):
 
 
 def fix_tags_for_fic(fic_id, path):
-    update_command = f"calibredb set_metadata {str(fic_id)} {path} --field tags:'' "
+    update_command = f"calibredb set_metadata {str(fic_id)} {path} "
     existing_tags = get_existing_tags(fic_id)
+    tags_to_keep = existing_tags
     if not existing_tags:
         return
     for tag_type in TAG_TYPES:
@@ -95,6 +98,10 @@ def fix_tags_for_fic(fic_id, path):
             if tag.startswith(tag_type)
         ]
         update_command += f"--field=#{tag_type}:{','.join(tags)} "
+        tags_to_keep = [tag for tag in tags_to_keep if not tag.startswith(tag_type)]
+
+    tags_to_keep = [f'"{tag}"' for tag in tags_to_keep]
+    update_command += f"--field=tags:{','.join(tags_to_keep)}"
 
     check_output(
         update_command,
