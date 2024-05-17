@@ -51,7 +51,5 @@ class UrlsCollectionException(Exception):
 
 class EmptyFanFicFareResponseException(Exception):
     def __init__(self, command):
-        self.message = (
-            f"Got no output when running the following command: {command}"
-        )
+        self.message = f"Got no output when running the following command: {command}"
         super().__init__(self.message)
