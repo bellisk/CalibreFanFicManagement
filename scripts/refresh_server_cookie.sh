@@ -11,7 +11,7 @@ NEW_COOKIE="${NEW_COOKIE//%/%%}"
 if [ -n "$NEW_COOKIE" ]; then
   echo "Got AO3 cookie from browser"
 
-  ssh "$SERVER" "sed -i -e 's/cookie=.*/cookie=${NEW_COOKIE}/' $CONFIG_PATH"
+  ssh "$SERVER" "sed -i -e 's/^cookie=.*/cookie=${NEW_COOKIE}/' $CONFIG_PATH"
 
   echo "Updated AO3 cookie in config on server"
 else
