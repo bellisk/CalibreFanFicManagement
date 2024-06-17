@@ -15,7 +15,7 @@ lz4==4.3.3
 pillow==10.3.0
 pycryptodomex==3.20.0
 pyparsing==2.4.7
-requests==2.31.0
+requests==2.32.2
 requests-file==2.0.0
 requests-toolbelt==1.0.0
 six==1.15.0
