@@ -47,3 +47,9 @@ class UrlsCollectionException(Exception):
     def __init__(self, error_message):
         self.message = f"Error collecting fic urls: {error_message}"
         super().__init__(self.message)
+
+
+class EmptyFanFicFareResponseException(Exception):
+    def __init__(self, command):
+        self.message = f"Got no output when running the following command: {command}"
+        super().__init__(self.message)
