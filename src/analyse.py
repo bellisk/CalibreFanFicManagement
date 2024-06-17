@@ -207,7 +207,7 @@ def analyse(options):
             for url in missing_works:
                 fp.write(url + "\n")
 
-        options.source = ["file"]
+        options.sources = ["file"]
         options.since_last_update = False
         options.since = None
 
