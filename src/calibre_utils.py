@@ -244,7 +244,7 @@ def get_series_work_urls(series_title, path):
 
 def get_incomplete_work_data(path):
     result = check_output(
-        f'calibredb list --search tags:""status.In Progress"" {path} '
+        f'calibredb list --search "#status:=In-Progress" {path} '
         f"--fields title,*identifier --for-machine",
         shell=True,
         stderr=STDOUT,
