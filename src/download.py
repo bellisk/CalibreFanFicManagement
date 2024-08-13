@@ -64,7 +64,7 @@ DATE_FORMAT = "%d.%m.%Y"
 story_name = re.compile("(.*)-.*")
 story_url = re.compile(r"(https://archiveofourown.org/works/\d*).*")
 
-# Responses from fanficfare that mean we won't update the story
+# Responses from fanficfare that mean we won't update the story (at least right now)
 bad_chapters = re.compile(
     ".* doesn't contain any recognizable chapters, probably from a different source. "
     "{2}Not updating."
@@ -73,14 +73,17 @@ no_url = re.compile("No story URL found in epub to update.")
 too_many_requests = re.compile("HTTP Error 429: Too Many Requests")
 chapter_difference = re.compile(r".* contains \d* chapters, more than source: \d*.")
 nonexistent_story = re.compile("Story does not exist: ")
+hidden_story = re.compile(
+    "This work is part of an ongoing challenge and will be revealed soon!"
+)
 
-# Response from fanficfare that mean we should force-update the story
+# Response from fanficfare that mean we should force-update the story if force is True.
 # We might have the same number of chapters but know that there have been
 # updates we want to get
 equal_chapters = re.compile(r".* already contains \d* chapters.")
 
 # Response from fanficfare that means we should update the story, even if
-# force is set to false
+# force is set to False.
 # Our tmp epub was just created, so if this is the only reason not to update,
 # we should ignore it and do the update
 updated_more_recently = re.compile(
@@ -105,6 +108,8 @@ def check_fff_output(output, command=""):
         raise BadDataException(
             "No story found at this url. It might have been deleted."
         )
+    if hidden_story.search(output):
+        raise BadDataException("The story at this url has been hidden.")
     if too_many_requests.search(output):
         raise TooManyRequestsException()
     if chapter_difference.search(output):
@@ -222,20 +227,10 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
         Bcolors.OKBLUE,
         live,
     )
-    fff_update_result = ""
     try:
         fff_update_result = check_subprocess_output(command)
     except CalledProcessError as e:
-        if (
-            "AttributeError: 'NoneType' object has no attribute 'get_text'"
-            in e.output.decode("utf-8")
-        ):
-            # This is an uncaught error fanficfare returns when it can't make
-            # the expected BeautifulSoup out of the story page, e.g. when a
-            # story has been added to a hidden AO3 collection.
-            raise BadDataException(
-                "No story found at this url. It might have been hidden."
-            )
+        fff_update_result = e.output
 
     try:
         # Throws an exception if we couldn't/shouldn't update the epub
