@@ -73,8 +73,9 @@ no_url = re.compile("No story URL found in epub to update.")
 too_many_requests = re.compile("HTTP Error 429: Too Many Requests")
 chapter_difference = re.compile(r".* contains \d* chapters, more than source: \d*.")
 nonexistent_story = re.compile("Story does not exist: ")
-hidden_story = re.compile("This work is part of an ongoing challenge "
-                          "and will be revealed soon!")
+hidden_story = re.compile(
+    "This work is part of an ongoing challenge " "and will be revealed soon!"
+)
 
 # Response from fanficfare that mean we should force-update the story if force is True.
 # We might have the same number of chapters but know that there have been
