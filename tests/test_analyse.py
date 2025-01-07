@@ -47,9 +47,9 @@ def mock_check_output(command, *args, **kwargs):
             for i in range(10)
         ]
         return bytes(json.dumps(result), "utf-8")
-    elif command.startswith("calibredb search series"):
+    elif command.startswith("calibredb search allseries"):
         return "1,2"
-    elif command.startswith("calibredb list --search series"):
+    elif command.startswith("calibredb list --search allseries"):
         pattern = r"Series (\d)"
         m = re.search(pattern, command)
         if m is not None:
