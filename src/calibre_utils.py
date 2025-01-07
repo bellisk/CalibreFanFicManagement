@@ -218,7 +218,7 @@ def get_series_works_count(series_title, path):
     series_title = series_title.replace("&", "&amp;")
     try:
         result = check_output(
-            f'calibredb search series:"=\\"{series_title}\\"" {path}',
+            f'calibredb search allseries:"=\\"{series_title}\\"" {path}',
             shell=True,
             stderr=STDOUT,
             stdin=PIPE,
@@ -232,7 +232,7 @@ def get_series_work_urls(series_title, path):
     # Calibre seems to escape only this character in series titles
     series_title = series_title.replace("&", "&amp;")
     result = check_output(
-        f'calibredb list --search series:"=\\"{series_title}\\"" {path} '
+        f'calibredb list --search allseries:"=\\"{series_title}\\"" {path} '
         f"--fields *identifier --for-machine",
         shell=True,
         stderr=STDOUT,
