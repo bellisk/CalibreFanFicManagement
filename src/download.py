@@ -39,6 +39,7 @@ from .exceptions import (
     TempFileUpdatedMoreRecentlyException,
     TooManyRequestsException,
     UrlsCollectionException,
+    CloudflareWebsiteException,
 )
 from .options import (
     SOURCE_BOOKMARKS,
@@ -71,6 +72,7 @@ bad_chapters = re.compile(
 )
 no_url = re.compile("No story URL found in epub to update.")
 too_many_requests = re.compile("HTTP Error 429: Too Many Requests")
+cloudflare_error = re.compile("525 Server Error")
 chapter_difference = re.compile(r".* contains \d* chapters, more than source: \d*.")
 nonexistent_story = re.compile("Story does not exist: ")
 hidden_story = re.compile(
@@ -112,6 +114,8 @@ def check_fff_output(output, command=""):
         raise BadDataException("The story at this url has been hidden.")
     if too_many_requests.search(output):
         raise TooManyRequestsException()
+    if cloudflare_error.search(output):
+        raise CloudflareWebsiteException()
     if chapter_difference.search(output):
         raise MoreChaptersLocallyException()
     if updated_more_recently.search(output):
