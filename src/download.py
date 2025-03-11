@@ -256,7 +256,7 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
     output += log(f"\tAdding {cur} to library", Bcolors.OKBLUE, live)
     try:
         check_subprocess_output(f'calibredb add -d {path} "{cur}" {series_options}')
-    except Exception as e:
+    except CalledProcessError as e:
         output += log(e)
         if not live:
             print(output.strip())
@@ -325,7 +325,7 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
         output += log(f"\tRemoving {story_id} from library", Bcolors.OKBLUE, live)
         try:
             check_subprocess_output(f"calibredb remove {path} {story_id}")
-        except BaseException:
+        except CalledProcessError:
             if not live:
                 print(output.strip())
             raise
