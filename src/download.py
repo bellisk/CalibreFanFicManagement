@@ -4,6 +4,7 @@
 import json
 import re
 import sys
+import time
 from datetime import datetime
 from json.decoder import JSONDecodeError
 from multiprocessing import Lock, Pool
@@ -391,6 +392,14 @@ def downloader(args):
         if not isinstance(e, StoryUpToDateException):
             with open(inout_file, "a") as fp:
                 fp.write(f"{url}\n")
+        if isinstance(e, CloudflareWebsiteException):
+            output += log(
+                f"Waiting 20 seconds to (hopefully) allow AO3 to recover from "
+                f"Cloudflare error",
+                Bcolors.WARNING,
+                live,
+            )
+            time.sleep(20)
 
 
 def get_urls(inout_file, options, oldest_dates):
