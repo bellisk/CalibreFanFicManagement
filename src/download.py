@@ -64,6 +64,7 @@ DATE_FORMAT = "%d.%m.%Y"
 
 story_name = re.compile("(.*)-.*")
 story_url = re.compile(r"(https://archiveofourown.org/works/\d*).*")
+metadata = re.compile(r"\{.*}", flags=re.DOTALL)
 
 # Responses from fanficfare that mean we won't update the story (at least right now)
 bad_chapters = re.compile(
@@ -123,20 +124,16 @@ def check_fff_output(output, command=""):
 
 
 def get_metadata(output):
+    """Get a fic metadata dictionary from the output of an FFF command.
+    If the output doesn't contain a metadata dictionary, raise a RuntimeError: something
+    has gone wrong that we didn't catch before, by checking the output for errors that
+    we know about.
     """
-    When we download an epub and get the json metadata from fanficfare, we get all the
-    output from the command, including lines that are useless to us. Here we get rid of
-    those, so we can load the metadata as json.
-    """
-    output = output.split(b"\n")
-    n = 0
-    line = output[n]
-    while line != b"{":
-        n += 1
-        line = output[n]
-
-    output = b"\n".join(output[n:])
-    return json.loads(output)
+    output = output.decode("utf-8")
+    metadata_json = metadata.search(output)
+    if metadata_json:
+        return json.loads(metadata_json.group(0))
+    raise RuntimeError(f"Got unexpected response from FanFicFare: {output}")
 
 
 def get_url_without_chapter(url):
