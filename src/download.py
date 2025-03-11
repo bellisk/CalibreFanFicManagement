@@ -168,19 +168,18 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
 
         return
 
-    story_id = None
     cur = url
     try:
-        story_id = check_subprocess_output(
-            f'calibredb search "Identifiers:url:={url}" {path}'
+        result = check_subprocess_output(
+            f'calibredb search "Identifiers:url:={url}" "Format:=EPUB" {path}'
         )
+        story_id = result.decode("utf-8").replace("Initialized urlfixer\n", "")
     except CalledProcessError:
         # story is not in Calibre
-        pass
+        story_id = None
 
     if story_id is not None:
         # Story is in Calibre
-        story_id = story_id.decode("utf-8").replace("Initialized urlfixer\n", "")
         output += log(
             f"\tStory is in Calibre with id {story_id}",
             Bcolors.OKBLUE,
@@ -198,23 +197,12 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
             f'--single-dir --to-dir "{loc}" {path}',
         )
 
-        try:
-            cur = get_files(loc, ".epub", True)[0]
-            output += log(
-                f'\tDownloading with fanficfare, updating file "{cur}"',
-                Bcolors.OKGREEN,
-                live,
-            )
-        except IndexError:
-            # Calibre doesn't have this story in epub format.
-            # The ebook-convert and ebook-meta CLIs can't save an epub with a source
-            # url in the way fanficfare expects, so we'll download a new copy as if we
-            # didn't have it at all
-            output += log(
-                f'\tNo epub for story id "{story_id}" in Calibre',
-                Bcolors.OKBLUE,
-                live,
-            )
+        cur = get_files(loc, ".epub", True)[0]
+        output += log(
+            f'\tDownloading with fanficfare, updating file "{cur}"',
+            Bcolors.OKGREEN,
+            live,
+        )
 
     check_subprocess_output(f'cp "{fanficfare_config}" {loc}/personal.ini')
 
