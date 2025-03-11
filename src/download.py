@@ -691,11 +691,12 @@ def download(options):
                 options.live,
             )
         except CloudflareWebsiteException:
+            pause = 30
             log(
-                f"Waiting 20 seconds to (hopefully) allow AO3 to recover from "
+                f"Waiting {pause} seconds to (hopefully) allow AO3 to recover from "
                 f"Cloudflare error",
                 Bcolors.WARNING,
             )
-            time.sleep(20)
+            time.sleep(pause)
 
     update_last_updated_file(options)
