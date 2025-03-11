@@ -7,7 +7,6 @@ import sys
 import time
 from datetime import datetime
 from json.decoder import JSONDecodeError
-from multiprocessing import Lock, Pool
 from os import rename
 from shutil import rmtree
 from subprocess import CalledProcessError
@@ -33,6 +32,7 @@ from .calibre_utils import (
 )
 from .exceptions import (
     BadDataException,
+    CloudflareWebsiteException,
     EmptyFanFicFareResponseException,
     InvalidConfig,
     MoreChaptersLocallyException,
@@ -40,7 +40,6 @@ from .exceptions import (
     TempFileUpdatedMoreRecentlyException,
     TooManyRequestsException,
     UrlsCollectionException,
-    CloudflareWebsiteException,
 )
 from .options import (
     SOURCE_BOOKMARKS,
@@ -172,14 +171,12 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
     story_id = None
     cur = url
     try:
-        lock.acquire()
         story_id = check_subprocess_output(
             f'calibredb search "Identifiers:url:={url}" {path}'
         )
-        lock.release()
     except CalledProcessError:
         # story is not in Calibre
-        lock.release()
+        pass
 
     if story_id is not None:
         # Story is in Calibre
@@ -196,12 +193,10 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
             Bcolors.OKBLUE,
             live,
         )
-        lock.acquire()
         check_subprocess_output(
             f"calibredb export {story_id} --dont-save-cover --dont-write-opf "
             f'--single-dir --to-dir "{loc}" {path}',
         )
-        lock.release()
 
         try:
             cur = get_files(loc, ".epub", True)[0]
@@ -269,21 +264,16 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
 
     output += log(f"\tAdding {cur} to library", Bcolors.OKBLUE, live)
     try:
-        lock.acquire()
         check_subprocess_output(f'calibredb add -d {path} "{cur}" {series_options}')
-        lock.release()
     except Exception as e:
-        lock.release()
         output += log(e)
         if not live:
             print(output.strip())
         raise
     try:
-        lock.acquire()
         calibre_search_result = check_subprocess_output(
             f'calibredb search "Identifiers:url:={url}" {path}'
         )
-        lock.release()
         new_story_id = get_new_story_id(calibre_search_result)
         output += log(
             f"\tAdded {cur} to library with id {new_story_id}",
@@ -291,7 +281,6 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
             live,
         )
     except CalledProcessError as e:
-        lock.release()
         output += log(
             "\tIt's been added to library, but not sure what the ID is.",
             Bcolors.WARNING,
@@ -308,13 +297,10 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
             live,
         )
         try:
-            lock.acquire()
             check_subprocess_output(
                 f"calibredb set_custom {path} words {new_story_id} '{word_count}'"
             )
-            lock.release()
         except CalledProcessError as e:
-            lock.release()
             output += log(
                 "\tError setting word count.",
                 Bcolors.WARNING,
@@ -325,7 +311,6 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
         extra_series_options = get_extra_series_options(metadata)
         tags_options = get_tags_options(metadata)
         try:
-            lock.acquire()
             output += log(
                 f"\tSetting custom fields on story {new_story_id}",
                 Bcolors.OKBLUE,
@@ -337,9 +322,7 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
             )
             output += log(update_command, Bcolors.OKBLUE, live)
             check_subprocess_output(update_command)
-            lock.release()
         except CalledProcessError as e:
-            lock.release()
             output += log(
                 "\tError setting custom data.",
                 Bcolors.WARNING,
@@ -350,11 +333,8 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
     if story_id:
         output += log(f"\tRemoving {story_id} from library", Bcolors.OKBLUE, live)
         try:
-            lock.acquire()
             check_subprocess_output(f"calibredb remove {path} {story_id}")
-            lock.release()
         except BaseException:
-            lock.release()
             if not live:
                 print(output.strip())
             raise
@@ -364,8 +344,7 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
     rmtree(loc)
 
 
-def downloader(args):
-    url, inout_file, fanficfare_config, path, force, live = args
+def downloader(url, inout_file, fanficfare_config, path, force, live):
     output = ""
     output += log(f"Working with url {url}", Bcolors.HEADER, live)
 
@@ -378,7 +357,6 @@ def downloader(args):
         return
 
     loc = mkdtemp()
-    story_id = None
 
     try:
         do_download(path, loc, url, fanficfare_config, output, force, live)
@@ -393,13 +371,9 @@ def downloader(args):
             with open(inout_file, "a") as fp:
                 fp.write(f"{url}\n")
         if isinstance(e, CloudflareWebsiteException):
-            output += log(
-                f"Waiting 20 seconds to (hopefully) allow AO3 to recover from "
-                f"Cloudflare error",
-                Bcolors.WARNING,
-                live,
-            )
-            time.sleep(20)
+            # Let the outer loop know that we need to pause before downloading the next
+            # fic
+            raise
 
 
 def get_urls(inout_file, options, oldest_dates):
@@ -678,14 +652,6 @@ def get_oldest_date(options):
     return oldest_date_per_source
 
 
-global lock
-
-
-def init(lo):
-    global lock
-    lock = lo
-
-
 def download(options):
     setup_login(options)
     try:
@@ -722,22 +688,23 @@ def download(options):
             Bcolors.HEADER,
         )
         return
-    else:
-        lo = Lock()
-        p = Pool(1, initializer=init, initargs=(lo,))
-        p.map(
-            downloader,
-            [
-                [
-                    url,
-                    inout_file,
-                    options.fanficfare_config,
-                    path,
-                    options.force,
-                    options.live,
-                ]
-                for url in urls
-            ],
-        )
+
+    for url in urls:
+        try:
+            downloader(
+                url,
+                inout_file,
+                options.fanficfare_config,
+                path,
+                options.force,
+                options.live,
+            )
+        except CloudflareWebsiteException:
+            log(
+                f"Waiting 20 seconds to (hopefully) allow AO3 to recover from "
+                f"Cloudflare error",
+                Bcolors.WARNING,
+            )
+            time.sleep(20)
 
     update_last_updated_file(options)
