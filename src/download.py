@@ -250,7 +250,12 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
                     break
                 output += log(f"\t\t{str(line)}", Bcolors.WARNING, live)
             command += " --force"
-            print(command)
+
+            output += log(
+                f"\tRunning: {command}",
+                Bcolors.OKBLUE,
+                live,
+            )
             fff_update_result = check_subprocess_output(command)
             check_fff_output(fff_update_result, command)
         else:
