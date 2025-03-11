@@ -240,7 +240,10 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
                 Bcolors.OKBLUE,
                 live,
             )
-            fff_update_result = check_subprocess_output(command)
+            try:
+                fff_update_result = check_subprocess_output(command)
+            except CalledProcessError as e:
+                fff_update_result = e.output
             check_fff_output(fff_update_result, command)
         else:
             raise e
