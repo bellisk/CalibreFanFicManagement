@@ -554,10 +554,12 @@ def get_urls(inout_file, options, oldest_dates):
             urls |= stdin_urls
             log(f"{len(urls) - url_count} URLs from STDIN", Bcolors.OKGREEN)
     except Exception as e:
-        with open(inout_file, "w") as fp:
+        raise UrlsCollectionException(e)
+    finally:
+        # Save work urls to file (add to existing content, don't overwrite)
+        with open(inout_file, "a") as fp:
             for cur in urls:
                 fp.write(f"{cur}\n")
-        raise UrlsCollectionException(e)
 
     return urls
 

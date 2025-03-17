@@ -173,39 +173,39 @@ def analyse(options):
 
     missing_works = []
 
-    for analysis_type in options.analysis_type:
-        filename = (
-            f"{analysis_type}_{datetime.strftime(datetime.now(), '%Y%m%d_%H%M%S')}.csv"
-        )
-        output_file = join(options.analysis_dir, filename)
+    try:
+        for analysis_type in options.analysis_type:
+            filename = f"{analysis_type}_{datetime.strftime(datetime.now(), '%Y%m%d_%H%M%S')}.csv"
+            output_file = join(options.analysis_dir, filename)
 
-        if analysis_type == SOURCE_USER_SUBSCRIPTIONS:
-            users_missing_works = _compare_user_subscriptions(
-                options.user, options.cookie, path, output_file
-            )
-            missing_works.extend(
-                _get_missing_work_urls_from_users(
-                    users_missing_works, options.user, options.cookie, path
+            if analysis_type == SOURCE_USER_SUBSCRIPTIONS:
+                users_missing_works = _compare_user_subscriptions(
+                    options.user, options.cookie, path, output_file
                 )
-            )
-        elif analysis_type == SOURCE_SERIES_SUBSCRIPTIONS:
-            series_missing_works = _compare_series_subscriptions(
-                options.user, options.cookie, path, output_file
-            )
-            missing_works.extend(
-                _get_missing_work_urls_from_series(
-                    series_missing_works, options.user, options.cookie, path
+                missing_works.extend(
+                    _get_missing_work_urls_from_users(
+                        users_missing_works, options.user, options.cookie, path
+                    )
                 )
-            )
-        elif analysis_type == INCOMPLETE:
-            missing_works.extend(_collect_incomplete_works(path, output_file))
-
-    if options.fix:
-        log("Sending missing/incomplete works to be downloaded", Bcolors.HEADER)
-        # Save work urls to file, then import from file
+            elif analysis_type == SOURCE_SERIES_SUBSCRIPTIONS:
+                series_missing_works = _compare_series_subscriptions(
+                    options.user, options.cookie, path, output_file
+                )
+                missing_works.extend(
+                    _get_missing_work_urls_from_series(
+                        series_missing_works, options.user, options.cookie, path
+                    )
+                )
+            elif analysis_type == INCOMPLETE:
+                missing_works.extend(_collect_incomplete_works(path, output_file))
+    finally:
+        # Save work urls to file (add to existing content, don't overwrite)
         with open(options.input, "a") as fp:
             for url in missing_works:
                 fp.write(url + "\n")
+
+    if options.fix:
+        log("Sending missing/incomplete works to be downloaded", Bcolors.HEADER)
 
         options.sources = ["file"]
         options.since_last_update = False
