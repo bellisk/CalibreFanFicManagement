@@ -61,7 +61,7 @@ def setup_login(options):
     # options.cookie and options.use_browser_cookie.
     if options.use_browser_cookie:
         found_cookie = False
-        cookie_jar = browser_cookie3.load(domain_name="archiveofourown.org")
+        cookie_jar = browser_cookie3.firefox(domain_name="archiveofourown.org")
         for cookie in cookie_jar:
             if cookie.name == "_otwarchive_session":
                 options.cookie = cookie.value

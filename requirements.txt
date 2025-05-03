@@ -1,7 +1,7 @@
 -e ao3/
 beautifulsoup4==4.9.3
 Brotli==1.1.0
-browser-cookie3==0.19.1
+browser-cookie3==0.20.1
 certifi==2024.7.4
 chardet==4.0.0
 charset-normalizer==3.3.2
