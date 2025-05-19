@@ -1,12 +1,13 @@
 -e ao3/
-beautifulsoup4==4.9.3
+beautifulsoup4==4.14.3
+black==25.1.0
 Brotli==1.1.0
 browser-cookie3==0.20.1
-certifi==2024.7.4
+certifi==2025.4.26
 chardet==4.0.0
 charset-normalizer==3.3.2
-cloudscraper==1.2.50
-FanFicFare==4.34.0
+cloudscraper==1.2.71
+FanFicFare==4.45.0
 html2text==2020.1.16
 html5lib==1.1
 idna==3.7
@@ -15,10 +16,10 @@ lz4==4.3.3
 pillow==10.3.0
 pycryptodomex==3.20.0
 pyparsing==2.4.7
-requests==2.32.2
+requests==2.32.3
 requests-file==2.0.0
 requests-toolbelt==1.0.0
 six==1.15.0
 soupsieve==2.1
-urllib3==2.2.2
+urllib3==2.4.0
 webencodings==0.5.1
