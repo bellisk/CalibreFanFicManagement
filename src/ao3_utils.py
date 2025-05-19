@@ -17,8 +17,8 @@ def get_ao3_bookmark_urls(
     if max_count == 0:
         return set([])
 
-    api = AO3()
-    api.login(user, cookie, ao3_url=ao3_url)
+    api = AO3(ao3_url=ao3_url)
+    api.login(user, cookie)
     urls = [
         _work_url_from_id(work_id, ao3_url)
         for work_id in api.user.bookmarks_ids(
@@ -35,8 +35,8 @@ def get_ao3_users_work_urls(
     if max_count == 0:
         return set([])
 
-    api = AO3()
-    api.login(user, cookie, ao3_url=ao3_url)
+    api = AO3(ao3_url=ao3_url)
+    api.login(user, cookie)
     urls = [
         _work_url_from_id(work_id, ao3_url)
         for work_id in api.author(username).work_ids(max_count, oldest_date)
@@ -48,8 +48,8 @@ def get_ao3_gift_urls(cookie, max_count, user, oldest_date, ao3_url=AO3_DEFAULT_
     if max_count == 0:
         return set([])
 
-    api = AO3()
-    api.login(user, cookie, ao3_url=ao3_url)
+    api = AO3(ao3_url=ao3_url)
+    api.login(user, cookie)
     urls = [
         _work_url_from_id(work_id, ao3_url)
         for work_id in api.user.gift_ids(max_count, oldest_date)
@@ -63,8 +63,8 @@ def get_ao3_marked_for_later_urls(
     if max_count == 0:
         return set([])
 
-    api = AO3()
-    api.login(user, cookie, ao3_url=ao3_url)
+    api = AO3(ao3_url=ao3_url)
+    api.login(user, cookie)
     urls = [
         _work_url_from_id(work_id, ao3_url)
         for work_id in api.user.marked_for_later_ids(max_count, oldest_date)
@@ -84,8 +84,8 @@ def get_ao3_work_subscription_urls(
     if max_count == 0:
         return set([])
 
-    api = AO3()
-    api.login(user, cookie, ao3_url=ao3_url)
+    api = AO3(ao3_url=ao3_url)
+    api.login(user, cookie)
 
     if oldest_date:
         urls = []
@@ -118,8 +118,8 @@ def get_ao3_series_subscription_urls(
     if max_count == 0:
         return set([])
 
-    api = AO3()
-    api.login(user, cookie, ao3_url=ao3_url)
+    api = AO3(ao3_url=ao3_url)
+    api.login(user, cookie)
     series_ids = api.user.series_subscription_ids(max_count)
 
     urls = []
@@ -138,8 +138,8 @@ def get_ao3_user_subscription_urls(
     if max_count == 0:
         return set([])
 
-    api = AO3()
-    api.login(user, cookie, ao3_url=ao3_url)
+    api = AO3(ao3_url=ao3_url)
+    api.login(user, cookie)
     user_ids = api.user.user_subscription_ids(max_count)
 
     urls = []
@@ -159,8 +159,8 @@ def get_ao3_series_work_urls(
     if max_count == 0:
         return set([])
 
-    api = AO3()
-    api.login(user, cookie, ao3_url=ao3_url)
+    api = AO3(ao3_url=ao3_url)
+    api.login(user, cookie)
 
     urls = [
         _work_url_from_id(work_id, ao3_url)
@@ -176,8 +176,8 @@ def get_ao3_collection_work_urls(
     if max_count == 0:
         return set([])
 
-    api = AO3()
-    api.login(user, cookie, ao3_url=ao3_url)
+    api = AO3(ao3_url=ao3_url)
+    api.login(user, cookie)
 
     urls = [
         _work_url_from_id(work_id, ao3_url)
@@ -188,8 +188,8 @@ def get_ao3_collection_work_urls(
 
 
 def get_ao3_subscribed_users_work_counts(user, cookie, ao3_url=AO3_DEFAULT_URL):
-    api = AO3()
-    api.login(user, cookie, ao3_url=ao3_url)
+    api = AO3(ao3_url=ao3_url)
+    api.login(user, cookie)
     user_ids = api.user.user_subscription_ids()
 
     counts = {}
@@ -200,8 +200,8 @@ def get_ao3_subscribed_users_work_counts(user, cookie, ao3_url=AO3_DEFAULT_URL):
 
 
 def get_ao3_subscribed_series_work_stats(user, cookie, ao3_url=AO3_DEFAULT_URL):
-    api = AO3()
-    api.login(user, cookie, ao3_url=ao3_url)
+    api = AO3(ao3_url=ao3_url)
+    api.login(user, cookie)
     series_ids = api.user.series_subscription_ids()
 
     stats = {}
