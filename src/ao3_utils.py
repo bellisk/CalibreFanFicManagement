@@ -147,7 +147,7 @@ def get_ao3_user_subscription_urls(
         print(u)
         urls += [
             _work_url_from_id(work_id, ao3_url)
-            for work_id in api.author(u).works_count(max_count, oldest_date)
+            for work_id in api.author(u).work_ids(max_count, oldest_date)
         ]
 
     return set(urls)
