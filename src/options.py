@@ -3,6 +3,8 @@ import sys
 from argparse import ArgumentParser, ArgumentTypeError
 from configparser import ConfigParser
 
+from src.utils import AO3_DEFAULT_URL
+
 COMMANDS = ["download", "analyse"]
 
 SOURCES = "sources"
@@ -299,6 +301,25 @@ Useful when multithreading.""",
         help="""Json file storing dates of last successful update from various sources.
 Example: {"later": "01.01.2021", "bookmarks": "02.01.2021"}.
 Will be created if it doesn't exist. Default: 'last_update.json'.""",
+    )
+
+    arg_parser.add_argument(
+        "-M",
+        "--mirror",
+        action="store",
+        dest="mirror",
+        default=AO3_DEFAULT_URL,
+        help=f"""The AO3 mirror site to use, if any. This can be useful when the
+official AO3 site is having problems (e.g. Cloudflare errors).
+
+WARNING: Passing your username/password/cookie into an unofficial AO3 mirror is a
+security risk!!
+
+If using this option, use an official mirror such as
+- https://archive.transformativeworks.org/
+- https://archiveofourown.gay
+
+Default: '{AO3_DEFAULT_URL}'.""",
     )
 
     arg_parser.add_argument(

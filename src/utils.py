@@ -4,10 +4,13 @@ from os import listdir
 from os.path import isfile, join
 from subprocess import PIPE, STDOUT, check_output
 from time import localtime, strftime
+from urllib.parse import urlparse
 
 import browser_cookie3
 
 from src.exceptions import InvalidConfig
+
+AO3_DEFAULT_URL = "https://archiveofourown.org"
 
 logging.getLogger("fanficfare").setLevel(logging.ERROR)
 
@@ -61,7 +64,8 @@ def setup_login(options):
     # options.cookie and options.use_browser_cookie.
     if options.use_browser_cookie:
         found_cookie = False
-        cookie_jar = browser_cookie3.firefox(domain_name="archiveofourown.org")
+        ao3_domain = urlparse(options.mirror).netloc
+        cookie_jar = browser_cookie3.firefox(domain_name=ao3_domain)
         for cookie in cookie_jar:
             if cookie.name == "_otwarchive_session":
                 options.cookie = cookie.value
@@ -73,16 +77,16 @@ def setup_login(options):
             return
 
         log(
-            "Tried to get the _otwarchive_session cookie from your browser, "
-            "but couldn't find it. Are you logged in to AO3?"
+            f"Tried to get the _otwarchive_session cookie from your browser, "
+            f"but couldn't find it. Are you logged in to {options.mirror}?"
         )
         if options.cookie:
             log("Falling back to the cookie value you passed in")
             return
 
         raise InvalidConfig(
-            "Tried to get the _otwarchive_session cookie from your browser, "
-            "but couldn't find it. Are you logged in to AO3?"
+            f"Tried to get the _otwarchive_session cookie from your browser, "
+            f"but couldn't find it. Are you logged in to {options.mirror}?"
         )
 
     log("Using the cookie value you passed in")

@@ -21,17 +21,21 @@ from .calibre_utils import (
 )
 from .download import download
 from .options import INCOMPLETE, SOURCE_SERIES_SUBSCRIPTIONS, SOURCE_USER_SUBSCRIPTIONS
-from .utils import Bcolors, log, setup_login
+from .utils import AO3_DEFAULT_URL, Bcolors, log, setup_login
 
 
-def _compare_user_subscriptions(username, cookie, path, output_file):
+def _compare_user_subscriptions(
+    username, cookie, path, output_file, ao3_url=AO3_DEFAULT_URL
+):
     """Compares the number of fics downloaded for each user subscribed to with the
     number posted to AO3.
     :return:
     """
     log("Comparing user subscriptions on AO3 to Calibre library", Bcolors.HEADER)
 
-    ao3_user_work_counts = get_ao3_subscribed_users_work_counts(username, cookie)
+    ao3_user_work_counts = get_ao3_subscribed_users_work_counts(
+        username, cookie, ao3_url=ao3_url
+    )
     calibre_user_work_counts = {
         u: get_author_works_count(u, path) for u in ao3_user_work_counts.keys()
     }
@@ -68,14 +72,18 @@ def _compare_user_subscriptions(username, cookie, path, output_file):
     return users_missing_works
 
 
-def _compare_series_subscriptions(username, cookie, path, output_file):
+def _compare_series_subscriptions(
+    username, cookie, path, output_file, ao3_url=AO3_DEFAULT_URL
+):
     """Compares the number of fics downloaded for each series subscribed to with the
     number posted to AO3.
     :return:
     """
     log("Comparing series subscriptions on AO3 to Calibre library", Bcolors.HEADER)
 
-    ao3_series_work_stats = get_ao3_subscribed_series_work_stats(username, cookie)
+    ao3_series_work_stats = get_ao3_subscribed_series_work_stats(
+        username, cookie, ao3_url=ao3_url
+    )
     calibre_series_work_counts = {
         u["Title"]: get_series_works_count(u["Title"], path)
         for u in ao3_series_work_stats.values()
@@ -115,13 +123,20 @@ def _compare_series_subscriptions(username, cookie, path, output_file):
     return series_missing_works
 
 
-def _get_missing_work_urls_from_users(users_missing_works, username, cookie, path):
+def _get_missing_work_urls_from_users(
+    users_missing_works, username, cookie, path, ao3_url=AO3_DEFAULT_URL
+):
     log("Getting urls for works missing from subscribed users.")
     missing_work_urls = []
     for u in users_missing_works:
         log(u)
         ao3_urls = get_ao3_users_work_urls(
-            cookie, max_count=None, user=username, username=u, oldest_date=None
+            cookie,
+            max_count=None,
+            user=username,
+            username=u,
+            oldest_date=None,
+            ao3_url=ao3_url,
         )
         calibre_urls = get_author_work_urls(u, path)
         missing_work_urls.extend(set(ao3_urls) - set(calibre_urls))
@@ -130,13 +145,15 @@ def _get_missing_work_urls_from_users(users_missing_works, username, cookie, pat
     return missing_work_urls
 
 
-def _get_missing_work_urls_from_series(series_missing_works, username, cookie, path):
+def _get_missing_work_urls_from_series(
+    series_missing_works, username, cookie, path, ao3_url=AO3_DEFAULT_URL
+):
     log("Getting urls for works missing from subscribed series.")
     missing_work_urls = []
     for series_id, series_title in series_missing_works.items():
         log(series_title, series_id)
         ao3_urls = get_ao3_series_work_urls(
-            cookie, max_count=None, user=username, series_id=series_id
+            cookie, max_count=None, user=username, series_id=series_id, ao3_url=ao3_url
         )
         calibre_urls = get_series_work_urls(series_title, path)
         missing_work_urls.extend(set(ao3_urls) - set(calibre_urls))
@@ -180,20 +197,28 @@ def analyse(options):
 
             if analysis_type == SOURCE_USER_SUBSCRIPTIONS:
                 users_missing_works = _compare_user_subscriptions(
-                    options.user, options.cookie, path, output_file
+                    options.user, options.cookie, path, output_file, options.mirror
                 )
                 missing_works.extend(
                     _get_missing_work_urls_from_users(
-                        users_missing_works, options.user, options.cookie, path
+                        users_missing_works,
+                        options.user,
+                        options.cookie,
+                        path,
+                        options.mirror,
                     )
                 )
             elif analysis_type == SOURCE_SERIES_SUBSCRIPTIONS:
                 series_missing_works = _compare_series_subscriptions(
-                    options.user, options.cookie, path, output_file
+                    options.user, options.cookie, path, output_file, options.mirror
                 )
                 missing_works.extend(
                     _get_missing_work_urls_from_series(
-                        series_missing_works, options.user, options.cookie, path
+                        series_missing_works,
+                        options.user,
+                        options.cookie,
+                        path,
+                        options.mirror,
                     )
                 )
             elif analysis_type == INCOMPLETE:

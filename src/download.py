@@ -389,6 +389,7 @@ def get_urls(inout_file, options, oldest_dates):
                 options.max_count,
                 options.user,
                 oldest_dates[SOURCES][SOURCE_LATER],
+                ao3_url=options.mirror,
             )
             log(
                 f"{len(urls) - url_count} URLs from Marked for Later",
@@ -408,6 +409,7 @@ def get_urls(inout_file, options, oldest_dates):
                 options.user,
                 oldest_dates[SOURCES][SOURCE_BOOKMARKS],
                 sort_by_updated=False,
+                ao3_url=options.mirror,
             )
             # If we're getting bookmarks back to oldest_date, this should
             # include works that have been updated since that date, as well as
@@ -424,6 +426,7 @@ def get_urls(inout_file, options, oldest_dates):
                     options.user,
                     oldest_dates[SOURCES][SOURCE_BOOKMARKS],
                     sort_by_updated=True,
+                    ao3_url=options.mirror,
                 )
             log(f"{len(urls) - url_count} URLs from bookmarks", Bcolors.OKGREEN)
             url_count = len(urls)
@@ -436,6 +439,7 @@ def get_urls(inout_file, options, oldest_dates):
                 options.user,
                 options.user,
                 oldest_dates[SOURCES][SOURCE_WORKS],
+                ao3_url=options.mirror,
             )
             log(
                 f"{len(urls) - url_count} URLs from User's Works",
@@ -450,6 +454,7 @@ def get_urls(inout_file, options, oldest_dates):
                 options.max_count,
                 options.user,
                 oldest_dates[SOURCES][SOURCE_GIFTS],
+                ao3_url=options.mirror,
             )
             log(
                 f"{len(urls) - url_count} URLs from User's Gifts",
@@ -464,6 +469,7 @@ def get_urls(inout_file, options, oldest_dates):
                 options.max_count,
                 options.user,
                 oldest_dates[SOURCES][SOURCE_WORK_SUBSCRIPTIONS],
+                ao3_url=options.mirror,
             )
             log(
                 f"{len(urls) - url_count} URLs from work subscriptions",
@@ -478,6 +484,7 @@ def get_urls(inout_file, options, oldest_dates):
                 options.max_count,
                 options.user,
                 oldest_dates[SOURCES][SOURCE_SERIES_SUBSCRIPTIONS],
+                ao3_url=options.mirror,
             )
             log(
                 f"{len(urls) - url_count} URLs from series subscriptions",
@@ -492,6 +499,7 @@ def get_urls(inout_file, options, oldest_dates):
                 options.max_count,
                 options.user,
                 oldest_dates[SOURCES][SOURCE_USER_SUBSCRIPTIONS],
+                ao3_url=options.mirror,
             )
             log(
                 f"{len(urls) - url_count} URLs from user subscriptions",
@@ -511,6 +519,7 @@ def get_urls(inout_file, options, oldest_dates):
                     options.user,
                     u,
                     oldest_dates[SOURCE_USERNAMES][u],
+                    ao3_url=options.mirror,
                 )
             log(f"{len(urls) - url_count} URLs from usernames", Bcolors.OKGREEN)
             url_count = len(urls)
@@ -524,6 +533,7 @@ def get_urls(inout_file, options, oldest_dates):
                     options.user,
                     s,
                     oldest_dates[SOURCE_SERIES][s],
+                    ao3_url=options.mirror,
                 )
             log(f"{len(urls) - url_count} URLs from series", Bcolors.OKGREEN)
             url_count = len(urls)
@@ -540,6 +550,7 @@ def get_urls(inout_file, options, oldest_dates):
                     options.user,
                     c,
                     oldest_dates[SOURCE_COLLECTIONS][c],
+                    ao3_url=options.mirror,
                 )
             log(
                 f"{len(urls) - url_count} URLs from collections",
