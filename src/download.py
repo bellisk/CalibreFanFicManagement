@@ -56,7 +56,14 @@ from .options import (
     SOURCE_WORKS,
     SOURCES,
 )
-from .utils import Bcolors, check_subprocess_output, get_files, log, setup_login
+from .utils import (
+    Bcolors,
+    check_subprocess_output,
+    get_files,
+    log,
+    setup_login,
+    AO3_DEFAULT_URL,
+)
 
 LAST_UPDATE_KEYS = [SOURCES, SOURCE_USERNAMES, SOURCE_COLLECTIONS, SOURCE_SERIES]
 
@@ -569,6 +576,11 @@ def get_urls(inout_file, options, oldest_dates):
             for cur in urls:
                 fp.write(f"{cur}\n")
         raise UrlsCollectionException(e)
+
+    # Convert urls to use default AO3 url, even if we're using a mirror.
+    # This makes checking that they're correctly formed, and passing them to FanFicFare,
+    # easier.
+    urls = set(url.replace(options.mirror, AO3_DEFAULT_URL) for url in urls)
 
     return urls
 
