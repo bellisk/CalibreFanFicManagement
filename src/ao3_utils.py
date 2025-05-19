@@ -30,7 +30,7 @@ def get_ao3_users_work_urls(cookie, max_count, user, username, oldest_date):
     api.login(user, cookie)
     urls = [
         _work_url_from_id(work_id)
-        for work_id in api.users_work_ids(username, max_count, oldest_date)
+        for work_id in api.author(username).work_ids(max_count, oldest_date)
     ]
     return set(urls)
 
@@ -111,7 +111,7 @@ def get_ao3_series_subscription_urls(cookie, max_count, user, oldest_date=None):
     for s in series_ids:
         urls += [
             _work_url_from_id(work_id)
-            for work_id in api.series_work_ids(s, max_count, oldest_date)
+            for work_id in api.series(s).work_ids(max_count, oldest_date)
         ]
 
     return set(urls)
@@ -130,7 +130,7 @@ def get_ao3_user_subscription_urls(cookie, max_count, user, oldest_date=None):
         print(u)
         urls += [
             _work_url_from_id(work_id)
-            for work_id in api.users_work_ids(u, max_count, oldest_date)
+            for work_id in api.author(u).works_count(max_count, oldest_date)
         ]
 
     return set(urls)
@@ -145,7 +145,7 @@ def get_ao3_series_work_urls(cookie, max_count, user, series_id, oldest_date=Non
 
     urls = [
         _work_url_from_id(work_id)
-        for work_id in api.series_work_ids(series_id, max_count, oldest_date)
+        for work_id in api.series(series_id).work_ids(max_count, oldest_date)
     ]
 
     return set(urls)
@@ -162,7 +162,7 @@ def get_ao3_collection_work_urls(
 
     urls = [
         _work_url_from_id(work_id)
-        for work_id in api.collection_work_ids(collection_id, max_count, oldest_date)
+        for work_id in api.collection(collection_id).work_ids(max_count, oldest_date)
     ]
 
     return set(urls)
@@ -174,8 +174,8 @@ def get_ao3_subscribed_users_work_counts(user, cookie):
     user_ids = api.user.user_subscription_ids()
 
     counts = {}
-    for u in user_ids:
-        counts[u] = api.users_works_count(u)
+    for username in user_ids:
+        counts[username] = api.author(username).works_count()
 
     return counts
 
@@ -187,6 +187,6 @@ def get_ao3_subscribed_series_work_stats(user, cookie):
 
     stats = {}
     for s in series_ids:
-        stats[s] = api.series_info(s)
+        stats[s] = api.series(s).info()
 
     return stats
