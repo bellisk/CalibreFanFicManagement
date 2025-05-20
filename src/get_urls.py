@@ -328,12 +328,13 @@ def get_urls(options):
             url_count = len(urls)
 
         if SOURCE_IMAP in options.sources:
+            mark_read = not options.email_leave_unread
             imap_urls = get_urls_from_imap(
                 srv=options.email_server,
                 user=options.email_user,
                 passwd=options.email_password,
                 folder=options.email_folder,
-                markread=True,
+                markread=mark_read,
                 normalize_urls=True,
             )
             urls |= imap_urls

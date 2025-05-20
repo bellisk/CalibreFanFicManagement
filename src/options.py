@@ -70,13 +70,13 @@ def validate_sources(options):
         )
 
     options_dict = vars(options)
-    email_options = [
+    required_email_options = [
         options_dict.get("email_server"),
         options_dict.get("email_user"),
         options_dict.get("email_password"),
         options_dict.get("email_folder"),
     ]
-    if SOURCE_IMAP in options.sources and not all(email_options):
+    if SOURCE_IMAP in options.sources and not all(required_email_options):
         raise ArgumentTypeError(
             """The following options are required when source 'imap' is given:
     --email-server
@@ -345,6 +345,19 @@ password (https://support.google.com/accounts/answer/185833).""",
 --source imap.
 
 In Gmail, this is called a label, not a folder. Examples: INBOX, \"My AO3 Label\"""",
+    )
+
+    arg_parser.add_argument(
+        "--email-leave-unread",
+        action="store_true",
+        dest="email_leave_unread",
+        help="""When getting urls from an email account (with --source imap), don't mark
+emails that contained fic urls as read.
+
+The default behaviour is to mark emails as read after finding valid fic urls in them.
+Only unread emails are checked for fic urls, and they are only marked as read if valid
+fic urls are found in them. If you set this option, emails that contain fic urls will be
+left unread and will be checked again the next time this command is run.""",
     )
 
     arg_parser.add_argument(
