@@ -71,6 +71,10 @@ def validate_sources(options):
 
     options_dict = vars(options)
     email_options = [
+        hasattr(options, "email_server"),
+        hasattr(options, "email_user"),
+        hasattr(options, "email_password"),
+        hasattr(options, "email_folder"),
         options_dict.get("email_server"),
         options_dict.get("email_user"),
         options_dict.get("email_password"),

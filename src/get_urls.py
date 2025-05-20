@@ -1,4 +1,5 @@
 import json
+import os.path
 import sys
 from datetime import datetime
 from json import JSONDecodeError
@@ -61,12 +62,13 @@ def get_oldest_date(options):
     if options.since_last_update:
         last_updates = {}
         try:
-            with open(options.last_update_file, "r") as f:
-                last_updates_text = f.read()
-            if last_updates_text:
-                last_updates = json.loads(last_updates_text)
+            if os.path.isfile(options.last_update_file):
+                with open(options.last_update_file, "r") as f:
+                    last_updates_text = f.read()
+                if last_updates_text:
+                    last_updates = json.loads(last_updates_text)
         except JSONDecodeError:
-            raise InvalidConfig(f"{options.last_update_file} should be valid json")
+            raise InvalidConfig(f"{options.last_update_file} should contain valid json")
 
         for key in LAST_UPDATE_KEYS:
             oldest_date_per_source[key] = {
@@ -96,10 +98,13 @@ def get_oldest_date(options):
 def update_last_updated_file(options):
     all_sources = get_all_sources_for_last_updated_file(options)
     today = datetime.now().strftime(DATE_FORMAT)
+    last_updates = {}
 
-    with open(options.last_update_file, "r") as f:
-        last_updates_text = f.read()
-    last_updates = json.loads(last_updates_text) if last_updates_text else {}
+    if os.path.isfile(options.last_update_file):
+        with open(options.last_update_file, "r") as f:
+            last_updates_text = f.read()
+        if last_updates_text:
+            last_updates = json.loads(last_updates_text)
 
     for key, value in all_sources.items():
         if not last_updates.get(key):
