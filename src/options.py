@@ -230,7 +230,6 @@ Using this with sources=work_subscriptions is slow!""",
         "--since-last-update",
         action="store_true",
         dest="since_last_update",
-        default=False,
         help="""Only fetch work ids from AO3 for works that have been changed since the
 last update, as saved in the last_update_file. For bookmarked works, this fetches works
 that have been bookmarked or updated since the last update. For marked-for-later works,
@@ -245,7 +244,6 @@ any dates. This option overrides --since.""",
         "--expand-series",
         action="store_true",
         dest="expand_series",
-        default=False,
         help="Whether to get all works from a bookmarked series.",
     )
 
@@ -254,7 +252,6 @@ any dates. This option overrides --since.""",
         "--force",
         action="store_true",
         dest="force",
-        default=False,
         help="""Whether to force downloads of stories even when they have the same
 number of chapters locally as online.""",
     )
@@ -284,7 +281,6 @@ downloads stories into the current directory as epub files.""",
         "--dry-run",
         action="store_true",
         dest="dry_run",
-        default=False,
         help="""Dry run: only fetch bookmark links from AO3, don't download works or
 add them to Calibre""",
     )
