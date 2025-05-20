@@ -348,11 +348,9 @@ def download(options):
         log(str(e), Bcolors.FAIL)
         return
 
-    inout_file = options.input
-
     try:
         setup_login(options)
-        urls = get_urls(inout_file, options)
+        urls = get_urls(options)
     except InvalidConfig as e:
         log(e.message, Bcolors.FAIL)
         return
@@ -379,7 +377,7 @@ def download(options):
         try:
             downloader(
                 url,
-                inout_file,
+                options.input,
                 options.fanficfare_config,
                 path,
                 options.force,

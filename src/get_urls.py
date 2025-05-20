@@ -118,7 +118,7 @@ def update_last_updated_file(options):
         f.write(data)
 
 
-def get_urls(inout_file, options):
+def get_urls(options):
     oldest_dates_per_source = get_oldest_date(options)
 
     urls = set([])
@@ -126,13 +126,13 @@ def get_urls(inout_file, options):
 
     try:
         if SOURCE_FILE in options.sources:
-            with open(inout_file, "r") as fp:
+            with open(options.input, "r") as fp:
                 urls = set([x.replace("\n", "") for x in fp.readlines()])
 
             url_count = len(urls)
             log(f"{url_count} URLs from file", Bcolors.OKGREEN)
 
-            with open(inout_file, "w") as fp:
+            with open(options.input, "w") as fp:
                 fp.write("")
 
         if SOURCE_LATER in options.sources:
@@ -318,7 +318,7 @@ def get_urls(inout_file, options):
             urls |= stdin_urls
             log(f"{len(urls) - url_count} URLs from STDIN", Bcolors.OKGREEN)
     except Exception as e:
-        with open(inout_file, "w") as fp:
+        with open(options.input, "w") as fp:
             for cur in urls:
                 fp.write(f"{cur}\n")
         raise UrlsCollectionException(e)
