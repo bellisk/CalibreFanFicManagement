@@ -27,7 +27,7 @@ from .exceptions import (
     TooManyRequestsException,
     UrlsCollectionException,
 )
-from .get_urls import get_oldest_date, get_urls, update_last_updated_file
+from .get_urls import get_urls, update_last_updated_file
 from .utils import (
     Bcolors,
     check_subprocess_output,
@@ -352,13 +352,10 @@ def download(options):
     inout_file = options.input
 
     try:
-        oldest_dates_per_source = get_oldest_date(options)
+        urls = get_urls(inout_file, options)
     except InvalidConfig as e:
         log(e.message, Bcolors.FAIL)
         return
-
-    try:
-        urls = get_urls(inout_file, options, oldest_dates_per_source)
     except UrlsCollectionException as e:
         log(f"Error getting urls: {e}")
 
