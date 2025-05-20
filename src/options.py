@@ -14,6 +14,7 @@ SOURCE_WORKS = "works"
 SOURCE_GIFTS = "gifts"
 SOURCE_LATER = "later"
 SOURCE_STDIN = "stdin"
+SOURCE_IMAP = "imap"
 SOURCE_WORK_SUBSCRIPTIONS = "work_subscriptions"
 SOURCE_SERIES_SUBSCRIPTIONS = "series_subscriptions"
 SOURCE_USER_SUBSCRIPTIONS = "user_subscriptions"
@@ -37,6 +38,7 @@ VALID_INPUT_SOURCES = [
     SOURCE_GIFTS,
     SOURCE_LATER,
     SOURCE_STDIN,
+    SOURCE_IMAP,
     SOURCE_WORK_SUBSCRIPTIONS,
     SOURCE_SERIES_SUBSCRIPTIONS,
     SOURCE_USER_SUBSCRIPTIONS,
@@ -65,6 +67,22 @@ def validate_sources(options):
     if SOURCE_COLLECTIONS in options.sources and options.collections is None:
         raise ArgumentTypeError(
             "A list of collection ids is required when source 'collections' is given."
+        )
+
+    options_dict = vars(options)
+    email_options = [
+        options_dict.get("email_server"),
+        options_dict.get("email_user"),
+        options_dict.get("email_password"),
+        options_dict.get("email_folder"),
+    ]
+    if SOURCE_IMAP in options.sources and not all(email_options):
+        raise ArgumentTypeError(
+            """The following options are required when source 'imap' is given:
+    --email-server
+    --email-user
+    --email-password
+    --email-folder"""
         )
 
     if SOURCE_ALL_SUBSCRIPTIONS in options.sources:
@@ -151,6 +169,11 @@ If using 'file', --input is required.
 If using 'usernames' --usernames is required.
 If using 'series', --series is required.
 If using 'collections', --collections is required.
+If using 'imap', the following options are required:
+    --email-server
+    --email-user
+    --email-password
+    --email-folder
 
 Default: {DEFAULT_SOURCES}""",
     )
@@ -290,6 +313,51 @@ Do not put any quotation marks in the options.""",
         default=False,
         help="""Include this if you want all the output to be saved and posted live.
 Useful when multithreading.""",
+    )
+
+    arg_parser.add_argument(
+        "--email-server",
+        action="store",
+        dest="email_server",
+        default=None,
+        help="""An IMAP email server. Needed when using --source imap.
+
+Example if using Gmail: imap.gmail.com""",
+    )
+
+    arg_parser.add_argument(
+        "--email-user",
+        action="store",
+        dest="email_user",
+        default=None,
+        help="""An email user. Needed when using --source imap.
+
+Example if using Gmail: myuser, not myuser@gmail.com
+
+Consider using a dedicated email account for getting fic updates, rather than your usual
+account, for improved security.""",
+    )
+
+    arg_parser.add_argument(
+        "--email-password",
+        action="store",
+        dest="email_password",
+        default=None,
+        help="""The password for an email account. Needed when using --source imap.
+
+If you are using Gmail, consider using an app password instead of your usual email
+password (https://support.google.com/accounts/answer/185833).""",
+    )
+
+    arg_parser.add_argument(
+        "--email-folder",
+        action="store",
+        dest="email_folder",
+        default=None,
+        help="""The folder of an email account to check for fic urls. Needed when using
+--source imap.
+
+In Gmail, this is called a label, not a folder. Examples: INBOX, \"My AO3 Label\"""",
     )
 
     arg_parser.add_argument(

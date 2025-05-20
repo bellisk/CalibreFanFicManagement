@@ -15,6 +15,10 @@ since-last-update=
 usernames=
 series=
 collections=
+email-server=
+email-user=
+email-password=
+email-folder=
 
 [locations]
 library=
