@@ -1,6 +1,5 @@
 -e ao3/
 beautifulsoup4==4.13.4
-black==25.1.0
 Brotli==1.1.0
 browser-cookie3==0.20.1
 certifi==2025.4.26
