@@ -4,6 +4,8 @@ import sys
 from datetime import datetime
 from json import JSONDecodeError
 
+from fanficfare.geturls import get_urls_from_imap
+
 from src.ao3_utils import (
     get_ao3_bookmark_urls,
     get_ao3_collection_work_urls,
@@ -21,6 +23,7 @@ from src.options import (
     SOURCE_COLLECTIONS,
     SOURCE_FILE,
     SOURCE_GIFTS,
+    SOURCE_IMAP,
     SOURCE_LATER,
     SOURCE_SERIES,
     SOURCE_SERIES_SUBSCRIPTIONS,
@@ -322,6 +325,19 @@ def get_urls(options):
                 stdin_urls.add(line.rstrip())
             urls |= stdin_urls
             log(f"{len(urls) - url_count} URLs from STDIN", Bcolors.OKGREEN)
+            url_count = len(urls)
+
+        if SOURCE_IMAP in options.sources:
+            imap_urls = get_urls_from_imap(
+                srv=options.email_server,
+                user=options.email_user,
+                passwd=options.email_password,
+                folder=options.email_folder,
+                markread=True,
+                normalize_urls=True,
+            )
+            urls |= imap_urls
+            log(f"{len(urls) - url_count} URLs from IMAP", Bcolors.OKGREEN)
     except Exception as e:
         with open(options.input, "w") as fp:
             for cur in urls:
