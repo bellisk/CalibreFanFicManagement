@@ -41,7 +41,8 @@ def mock_check_output(command, *args, **kwargs):
     elif command.startswith("calibredb list --search author"):
         result = [
             {
-                "*identifier": f"https://archiveofourown.org/works/{randint(100, 100000)}",
+                "*identifier": f"https://archiveofourown.org/works/"
+                f"{randint(100, 100000)}",
                 "id": randint(0, 10000),
             }
             for i in range(10)
@@ -85,9 +86,12 @@ class TestAnalysisClass(object):
         captured = capsys.readouterr()
 
         # mock_check_output tells us that every author has 10 works in Calibre.
-        # MockAO3 tells us that user2 and user3 have 20 and 30 fics on AO3, so they should
-        # be reported here.
-        users_msg = "\x1b[1m04/13/2024 09:00:00\x1b[0m: \t \x1b[95mSubscribed users who have fewer works on Calibre than on AO3:"
+        # MockAO3 tells us that user2 and user3 have 20 and 30 fics on AO3, so they
+        # should be reported here.
+        users_msg = (
+            "\x1b[1m04/13/2024 09:00:00\x1b[0m: \t \x1b[95mSubscribed users "
+            "who have fewer works on Calibre than on AO3:"
+        )
 
         for username in ["user2", "user3"]:
             users_msg += (
@@ -109,9 +113,12 @@ class TestAnalysisClass(object):
         captured = capsys.readouterr()
 
         # mock_check_output tells us that every series has 2 works in Calibre.
-        # MockAO3 tells us that series 3, 4, and 5 have 3, 4, and 5 works on AO3, so they
-        # should be reported here.
-        series_msg = "\x1b[1m04/13/2024 09:00:00\x1b[0m: \t \x1b[95mSubscribed users who have fewer works on Calibre than on AO3:"
+        # MockAO3 tells us that series 3, 4, and 5 have 3, 4, and 5 works on AO3, so
+        # they should be reported here.
+        series_msg = (
+            "\x1b[1m04/13/2024 09:00:00\x1b[0m: \t \x1b[95mSubscribed users "
+            "who have fewer works on Calibre than on AO3:"
+        )
         for series_id in ["Series 3", "Series 4", "Series 5"]:
             series_msg += (
                 f"\x1b[0m\n\x1b[1m04/13/2024 09:00:00\x1b[0m: \t \x1b[94m\t{series_id}"

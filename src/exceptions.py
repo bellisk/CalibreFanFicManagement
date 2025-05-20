@@ -37,6 +37,14 @@ class TooManyRequestsException(Exception):
         super().__init__(self.message)
 
 
+class CloudflareWebsiteException(Exception):
+    def __init__(self):
+        self.message = (
+            "Got Cloudflare Error 525: this means a temporary error on AO3's side."
+        )
+        super().__init__(self.message)
+
+
 class InvalidConfig(Exception):
     def __init__(self, message):
         self.message = message

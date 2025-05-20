@@ -87,7 +87,9 @@ def test_get_files_fileteype_fullpath():
 
 
 def test_setup_login_cookie(capsys):
-    options = Namespace(cookie="testcookie", use_browser_cookie=False)
+    options = Namespace(
+        cookie="testcookie", use_browser_cookie=False, mirror=utils.AO3_DEFAULT_URL
+    )
     utils.setup_login(options)
 
     captured = capsys.readouterr()
@@ -96,9 +98,11 @@ def test_setup_login_cookie(capsys):
     assert options.cookie == "testcookie"
 
 
-@patch("src.utils.browser_cookie3.load", mock_load_cookie)
+@patch("src.utils.browser_cookie3.firefox", mock_load_cookie)
 def test_setup_login_use_browser_cookie(capsys):
-    options = Namespace(cookie=None, use_browser_cookie=True)
+    options = Namespace(
+        cookie=None, use_browser_cookie=True, mirror=utils.AO3_DEFAULT_URL
+    )
     utils.setup_login(options)
 
     captured = capsys.readouterr()
@@ -107,9 +111,11 @@ def test_setup_login_use_browser_cookie(capsys):
     assert options.cookie == "test_browser_cookie"
 
 
-@patch("src.utils.browser_cookie3.load", mock_load_cookie)
+@patch("src.utils.browser_cookie3.firefox", mock_load_cookie)
 def test_setup_login_cookie_and_use_browser_cookie(capsys):
-    options = Namespace(cookie="testcookie", use_browser_cookie=True)
+    options = Namespace(
+        cookie="testcookie", use_browser_cookie=True, mirror=utils.AO3_DEFAULT_URL
+    )
     utils.setup_login(options)
 
     captured = capsys.readouterr()
@@ -118,9 +124,11 @@ def test_setup_login_cookie_and_use_browser_cookie(capsys):
     assert options.cookie == "test_browser_cookie"
 
 
-@patch("src.utils.browser_cookie3.load", mock_load_no_cookie)
+@patch("src.utils.browser_cookie3.firefox", mock_load_no_cookie)
 def test_setup_login_use_browser_cookie_but_browser_cookie_not_found(capsys):
-    options = Namespace(cookie=None, use_browser_cookie=True)
+    options = Namespace(
+        cookie=None, use_browser_cookie=True, mirror=utils.AO3_DEFAULT_URL
+    )
 
     with pytest.raises(
         InvalidConfig, match="Tried to get the _otwarchive_session cookie"
@@ -128,9 +136,11 @@ def test_setup_login_use_browser_cookie_but_browser_cookie_not_found(capsys):
         utils.setup_login(options)
 
 
-@patch("src.utils.browser_cookie3.load", mock_load_no_cookie)
+@patch("src.utils.browser_cookie3.firefox", mock_load_no_cookie)
 def test_setup_login_cookie_and_use_browser_cookie_but_browser_cookie_not_found(capsys):
-    options = Namespace(cookie="testcookie", use_browser_cookie=True)
+    options = Namespace(
+        cookie="testcookie", use_browser_cookie=True, mirror=utils.AO3_DEFAULT_URL
+    )
     utils.setup_login(options)
 
     captured = capsys.readouterr()

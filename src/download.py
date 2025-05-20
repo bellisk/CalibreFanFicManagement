@@ -4,9 +4,9 @@
 import json
 import re
 import sys
+import time
 from datetime import datetime
 from json.decoder import JSONDecodeError
-from multiprocessing import Lock, Pool
 from os import rename
 from shutil import rmtree
 from subprocess import CalledProcessError
@@ -32,6 +32,7 @@ from .calibre_utils import (
 )
 from .exceptions import (
     BadDataException,
+    CloudflareWebsiteException,
     EmptyFanFicFareResponseException,
     InvalidConfig,
     MoreChaptersLocallyException,
@@ -55,7 +56,14 @@ from .options import (
     SOURCE_WORKS,
     SOURCES,
 )
-from .utils import Bcolors, check_subprocess_output, get_files, log, setup_login
+from .utils import (
+    AO3_DEFAULT_URL,
+    Bcolors,
+    check_subprocess_output,
+    get_files,
+    log,
+    setup_login,
+)
 
 LAST_UPDATE_KEYS = [SOURCES, SOURCE_USERNAMES, SOURCE_COLLECTIONS, SOURCE_SERIES]
 
@@ -63,6 +71,7 @@ DATE_FORMAT = "%d.%m.%Y"
 
 story_name = re.compile("(.*)-.*")
 story_url = re.compile(r"(https://archiveofourown.org/works/\d*).*")
+metadata = re.compile(r"\{.*}", flags=re.DOTALL)
 
 # Responses from fanficfare that mean we won't update the story (at least right now)
 bad_chapters = re.compile(
@@ -71,6 +80,7 @@ bad_chapters = re.compile(
 )
 no_url = re.compile("No story URL found in epub to update.")
 too_many_requests = re.compile("HTTP Error 429: Too Many Requests")
+cloudflare_error = re.compile("525 Server Error")
 chapter_difference = re.compile(r".* contains \d* chapters, more than source: \d*.")
 nonexistent_story = re.compile("Story does not exist: ")
 hidden_story = re.compile(
@@ -112,6 +122,8 @@ def check_fff_output(output, command=""):
         raise BadDataException("The story at this url has been hidden.")
     if too_many_requests.search(output):
         raise TooManyRequestsException()
+    if cloudflare_error.search(output):
+        raise CloudflareWebsiteException()
     if chapter_difference.search(output):
         raise MoreChaptersLocallyException()
     if updated_more_recently.search(output):
@@ -119,20 +131,16 @@ def check_fff_output(output, command=""):
 
 
 def get_metadata(output):
+    """Get a fic metadata dictionary from the output of an FFF command.
+    If the output doesn't contain a metadata dictionary, raise a RuntimeError: something
+    has gone wrong that we didn't catch before, by checking the output for errors that
+    we know about.
     """
-    When we download an epub and get the json metadata from fanficfare, we get all the
-    output from the command, including lines that are useless to us. Here we get rid of
-    those, so we can load the metadata as json.
-    """
-    output = output.split(b"\n")
-    n = 0
-    line = output[n]
-    while line != b"{":
-        n += 1
-        line = output[n]
-
-    output = b"\n".join(output[n:])
-    return json.loads(output)
+    output = output.decode("utf-8")
+    metadata_json = metadata.search(output)
+    if metadata_json:
+        return json.loads(metadata_json.group(0))
+    raise RuntimeError(f"Got unexpected response from FanFicFare: {output}")
 
 
 def get_url_without_chapter(url):
@@ -167,21 +175,18 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
 
         return
 
-    story_id = None
     cur = url
     try:
-        lock.acquire()
-        story_id = check_subprocess_output(
-            f'calibredb search "Identifiers:url:={url}" {path}'
+        result = check_subprocess_output(
+            f'calibredb search "Identifiers:url:={url}" "Format:=EPUB" {path}'
         )
-        lock.release()
+        story_id = result.decode("utf-8").replace("Initialized urlfixer\n", "")
     except CalledProcessError:
         # story is not in Calibre
-        lock.release()
+        story_id = None
 
     if story_id is not None:
         # Story is in Calibre
-        story_id = story_id.decode("utf-8").replace("Initialized urlfixer\n", "")
         output += log(
             f"\tStory is in Calibre with id {story_id}",
             Bcolors.OKBLUE,
@@ -194,30 +199,17 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
             Bcolors.OKBLUE,
             live,
         )
-        lock.acquire()
         check_subprocess_output(
             f"calibredb export {story_id} --dont-save-cover --dont-write-opf "
             f'--single-dir --to-dir "{loc}" {path}',
         )
-        lock.release()
 
-        try:
-            cur = get_files(loc, ".epub", True)[0]
-            output += log(
-                f'\tDownloading with fanficfare, updating file "{cur}"',
-                Bcolors.OKGREEN,
-                live,
-            )
-        except IndexError:
-            # Calibre doesn't have this story in epub format.
-            # The ebook-convert and ebook-meta CLIs can't save an epub with a source
-            # url in the way fanficfare expects, so we'll download a new copy as if we
-            # didn't have it at all
-            output += log(
-                f'\tNo epub for story id "{story_id}" in Calibre',
-                Bcolors.OKBLUE,
-                live,
-            )
+        cur = get_files(loc, ".epub", True)[0]
+        output += log(
+            f'\tDownloading with fanficfare, updating file "{cur}"',
+            Bcolors.OKGREEN,
+            live,
+        )
 
     check_subprocess_output(f'cp "{fanficfare_config}" {loc}/personal.ini')
 
@@ -249,8 +241,16 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
                     break
                 output += log(f"\t\t{str(line)}", Bcolors.WARNING, live)
             command += " --force"
-            print(command)
-            fff_update_result = check_subprocess_output(command)
+
+            output += log(
+                f"\tRunning: {command}",
+                Bcolors.OKBLUE,
+                live,
+            )
+            try:
+                fff_update_result = check_subprocess_output(command)
+            except CalledProcessError as e:
+                fff_update_result = e.output
             check_fff_output(fff_update_result, command)
         else:
             raise e
@@ -262,21 +262,16 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
 
     output += log(f"\tAdding {cur} to library", Bcolors.OKBLUE, live)
     try:
-        lock.acquire()
         check_subprocess_output(f'calibredb add -d {path} "{cur}" {series_options}')
-        lock.release()
-    except Exception as e:
-        lock.release()
+    except CalledProcessError as e:
         output += log(e)
         if not live:
             print(output.strip())
         raise
     try:
-        lock.acquire()
         calibre_search_result = check_subprocess_output(
             f'calibredb search "Identifiers:url:={url}" {path}'
         )
-        lock.release()
         new_story_id = get_new_story_id(calibre_search_result)
         output += log(
             f"\tAdded {cur} to library with id {new_story_id}",
@@ -284,7 +279,6 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
             live,
         )
     except CalledProcessError as e:
-        lock.release()
         output += log(
             "\tIt's been added to library, but not sure what the ID is.",
             Bcolors.WARNING,
@@ -301,13 +295,10 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
             live,
         )
         try:
-            lock.acquire()
             check_subprocess_output(
                 f"calibredb set_custom {path} words {new_story_id} '{word_count}'"
             )
-            lock.release()
         except CalledProcessError as e:
-            lock.release()
             output += log(
                 "\tError setting word count.",
                 Bcolors.WARNING,
@@ -318,7 +309,6 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
         extra_series_options = get_extra_series_options(metadata)
         tags_options = get_tags_options(metadata)
         try:
-            lock.acquire()
             output += log(
                 f"\tSetting custom fields on story {new_story_id}",
                 Bcolors.OKBLUE,
@@ -330,9 +320,7 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
             )
             output += log(update_command, Bcolors.OKBLUE, live)
             check_subprocess_output(update_command)
-            lock.release()
         except CalledProcessError as e:
-            lock.release()
             output += log(
                 "\tError setting custom data.",
                 Bcolors.WARNING,
@@ -343,11 +331,8 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
     if story_id:
         output += log(f"\tRemoving {story_id} from library", Bcolors.OKBLUE, live)
         try:
-            lock.acquire()
             check_subprocess_output(f"calibredb remove {path} {story_id}")
-            lock.release()
-        except BaseException:
-            lock.release()
+        except CalledProcessError:
             if not live:
                 print(output.strip())
             raise
@@ -357,8 +342,7 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
     rmtree(loc)
 
 
-def downloader(args):
-    url, inout_file, fanficfare_config, path, force, live = args
+def downloader(url, inout_file, fanficfare_config, path, force, live):
     output = ""
     output += log(f"Working with url {url}", Bcolors.HEADER, live)
 
@@ -371,7 +355,6 @@ def downloader(args):
         return
 
     loc = mkdtemp()
-    story_id = None
 
     try:
         do_download(path, loc, url, fanficfare_config, output, force, live)
@@ -385,6 +368,10 @@ def downloader(args):
         if not isinstance(e, StoryUpToDateException):
             with open(inout_file, "a") as fp:
                 fp.write(f"{url}\n")
+        if isinstance(e, CloudflareWebsiteException):
+            # Let the outer loop know that we need to pause before downloading the next
+            # fic
+            raise
 
 
 def get_urls(inout_file, options, oldest_dates):
@@ -409,6 +396,7 @@ def get_urls(inout_file, options, oldest_dates):
                 options.max_count,
                 options.user,
                 oldest_dates[SOURCES][SOURCE_LATER],
+                ao3_url=options.mirror,
             )
             log(
                 f"{len(urls) - url_count} URLs from Marked for Later",
@@ -428,6 +416,7 @@ def get_urls(inout_file, options, oldest_dates):
                 options.user,
                 oldest_dates[SOURCES][SOURCE_BOOKMARKS],
                 sort_by_updated=False,
+                ao3_url=options.mirror,
             )
             # If we're getting bookmarks back to oldest_date, this should
             # include works that have been updated since that date, as well as
@@ -444,6 +433,7 @@ def get_urls(inout_file, options, oldest_dates):
                     options.user,
                     oldest_dates[SOURCES][SOURCE_BOOKMARKS],
                     sort_by_updated=True,
+                    ao3_url=options.mirror,
                 )
             log(f"{len(urls) - url_count} URLs from bookmarks", Bcolors.OKGREEN)
             url_count = len(urls)
@@ -456,6 +446,7 @@ def get_urls(inout_file, options, oldest_dates):
                 options.user,
                 options.user,
                 oldest_dates[SOURCES][SOURCE_WORKS],
+                ao3_url=options.mirror,
             )
             log(
                 f"{len(urls) - url_count} URLs from User's Works",
@@ -470,6 +461,7 @@ def get_urls(inout_file, options, oldest_dates):
                 options.max_count,
                 options.user,
                 oldest_dates[SOURCES][SOURCE_GIFTS],
+                ao3_url=options.mirror,
             )
             log(
                 f"{len(urls) - url_count} URLs from User's Gifts",
@@ -484,6 +476,7 @@ def get_urls(inout_file, options, oldest_dates):
                 options.max_count,
                 options.user,
                 oldest_dates[SOURCES][SOURCE_WORK_SUBSCRIPTIONS],
+                ao3_url=options.mirror,
             )
             log(
                 f"{len(urls) - url_count} URLs from work subscriptions",
@@ -498,6 +491,7 @@ def get_urls(inout_file, options, oldest_dates):
                 options.max_count,
                 options.user,
                 oldest_dates[SOURCES][SOURCE_SERIES_SUBSCRIPTIONS],
+                ao3_url=options.mirror,
             )
             log(
                 f"{len(urls) - url_count} URLs from series subscriptions",
@@ -512,6 +506,7 @@ def get_urls(inout_file, options, oldest_dates):
                 options.max_count,
                 options.user,
                 oldest_dates[SOURCES][SOURCE_USER_SUBSCRIPTIONS],
+                ao3_url=options.mirror,
             )
             log(
                 f"{len(urls) - url_count} URLs from user subscriptions",
@@ -531,6 +526,7 @@ def get_urls(inout_file, options, oldest_dates):
                     options.user,
                     u,
                     oldest_dates[SOURCE_USERNAMES][u],
+                    ao3_url=options.mirror,
                 )
             log(f"{len(urls) - url_count} URLs from usernames", Bcolors.OKGREEN)
             url_count = len(urls)
@@ -544,6 +540,7 @@ def get_urls(inout_file, options, oldest_dates):
                     options.user,
                     s,
                     oldest_dates[SOURCE_SERIES][s],
+                    ao3_url=options.mirror,
                 )
             log(f"{len(urls) - url_count} URLs from series", Bcolors.OKGREEN)
             url_count = len(urls)
@@ -560,6 +557,7 @@ def get_urls(inout_file, options, oldest_dates):
                     options.user,
                     c,
                     oldest_dates[SOURCE_COLLECTIONS][c],
+                    ao3_url=options.mirror,
                 )
             log(
                 f"{len(urls) - url_count} URLs from collections",
@@ -578,6 +576,11 @@ def get_urls(inout_file, options, oldest_dates):
             for cur in urls:
                 fp.write(f"{cur}\n")
         raise UrlsCollectionException(e)
+
+    # Convert urls to use default AO3 url, even if we're using a mirror.
+    # This makes checking that they're correctly formed, and passing them to FanFicFare,
+    # easier.
+    urls = set(url.replace(options.mirror, AO3_DEFAULT_URL) for url in urls)
 
     return urls
 
@@ -663,14 +666,6 @@ def get_oldest_date(options):
     return oldest_date_per_source
 
 
-global lock
-
-
-def init(lo):
-    global lock
-    lock = lo
-
-
 def download(options):
     setup_login(options)
     try:
@@ -707,22 +702,24 @@ def download(options):
             Bcolors.HEADER,
         )
         return
-    else:
-        lo = Lock()
-        p = Pool(1, initializer=init, initargs=(lo,))
-        p.map(
-            downloader,
-            [
-                [
-                    url,
-                    inout_file,
-                    options.fanficfare_config,
-                    path,
-                    options.force,
-                    options.live,
-                ]
-                for url in urls
-            ],
-        )
+
+    for url in urls:
+        try:
+            downloader(
+                url,
+                inout_file,
+                options.fanficfare_config,
+                path,
+                options.force,
+                options.live,
+            )
+        except CloudflareWebsiteException:
+            pause = 30
+            log(
+                f"Waiting {pause} seconds to (hopefully) allow AO3 to recover from "
+                f"Cloudflare error",
+                Bcolors.WARNING,
+            )
+            time.sleep(pause)
 
     update_last_updated_file(options)
