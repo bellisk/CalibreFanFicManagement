@@ -342,7 +342,6 @@ def downloader(url, inout_file, fanficfare_config, path, force, live):
 
 
 def download(options):
-    setup_login(options)
     try:
         path = check_library_and_get_path(options.library)
     except RuntimeError as e:
@@ -352,6 +351,7 @@ def download(options):
     inout_file = options.input
 
     try:
+        setup_login(options)
         urls = get_urls(inout_file, options)
     except InvalidConfig as e:
         log(e.message, Bcolors.FAIL)
