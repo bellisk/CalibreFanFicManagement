@@ -30,6 +30,3 @@ analysis-dir=
 [analysis]
 analysis-type=
 fix=
-
-[output]
-live=

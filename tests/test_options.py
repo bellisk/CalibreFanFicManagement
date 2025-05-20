@@ -38,7 +38,6 @@ def test_get_config_file_arguments():
         "tests/fixtures/analysis",
         "--analysis-type",
         "incomplete_works",
-        "--live",
     ]
 
 
@@ -77,7 +76,6 @@ def test_set_up_options_from_config_file():
         "dry_run": False,
         "config": valid_config_path,
         "fanficfare_config": "tests/fixtures/personal.ini",
-        "live": True,
         "last_update_file": "tests/fixtures/last_update.json",
         "mirror": "https://archiveofourown.org",
         "analysis_dir": "tests/fixtures/analysis",
@@ -122,7 +120,6 @@ def test_set_up_options_from_cli():
         "dry_run": False,
         "config": None,
         "fanficfare_config": None,
-        "live": False,
         "last_update_file": "last_update.json",
         "mirror": "https://archiveofourown.org",
         "analysis_dir": "analysis",
@@ -175,7 +172,6 @@ def test_set_up_options_from_config_file_and_override_with_cli():
         "dry_run": False,
         "config": valid_config_path,
         "fanficfare_config": "tests/fixtures/personal.ini",
-        "live": True,
         "last_update_file": "tests/fixtures/last_update.json",
         "mirror": "https://archiveofourown.org",
         "analysis_dir": "tests/fixtures/analysis",

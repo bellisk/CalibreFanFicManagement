@@ -307,15 +307,6 @@ Do not put any quotation marks in the options.""",
     )
 
     arg_parser.add_argument(
-        "--live",
-        action="store_true",
-        dest="live",
-        default=False,
-        help="""Include this if you want all the output to be saved and posted live.
-Useful when multithreading.""",
-    )
-
-    arg_parser.add_argument(
         "--email-server",
         action="store",
         dest="email_server",
