@@ -1,5 +1,6 @@
 # encoding: utf-8
 from ao3 import AO3
+
 from .utils import AO3_DEFAULT_URL
 
 AO3_SERIES_KEYS = ["series00", "series01", "series02", "series03"]

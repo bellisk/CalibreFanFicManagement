@@ -57,12 +57,12 @@ from .options import (
     SOURCES,
 )
 from .utils import (
+    AO3_DEFAULT_URL,
     Bcolors,
     check_subprocess_output,
     get_files,
     log,
     setup_login,
-    AO3_DEFAULT_URL,
 )
 
 LAST_UPDATE_KEYS = [SOURCES, SOURCE_USERNAMES, SOURCE_COLLECTIONS, SOURCE_SERIES]
