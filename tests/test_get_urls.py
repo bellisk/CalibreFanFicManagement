@@ -1,10 +1,31 @@
 import datetime
+import json
+import os
+import shutil
 from argparse import Namespace
+from unittest.mock import patch
 
 import pytest
 
 from src.exceptions import InvalidConfig
-from src.get_urls import get_all_sources_for_last_updated_file, get_oldest_date
+from src.get_urls import (
+    get_all_sources_for_last_updated_file,
+    get_oldest_date,
+    update_last_updated_file,
+)
+
+
+def get_options():
+    # A default set of options that can be updated for testing
+    return Namespace(
+        sources=[],
+        usernames=[],
+        series=[],
+        collections=[],
+        since=None,
+        since_last_update=False,
+        last_update_file="tests/fixtures/last_update_nonexistent.json",
+    )
 
 
 def test_get_all_sources_for_last_updated_file():
@@ -26,7 +47,7 @@ def test_get_all_sources_for_last_updated_file():
 
 
 get_oldest_date_test_data = [
-    [
+    pytest.param(
         {"sources": []},
         {
             "sources": {},
@@ -34,8 +55,9 @@ get_oldest_date_test_data = [
             "collections": {},
             "series": {},
         },
-    ],
-    [
+        id="No sources, no since date",
+    ),
+    pytest.param(
         {"sources": ["bookmarks"]},
         {
             "sources": {"bookmarks": None},
@@ -43,8 +65,9 @@ get_oldest_date_test_data = [
             "collections": {},
             "series": {},
         },
-    ],
-    [
+        id="Single source, no since date",
+    ),
+    pytest.param(
         {
             "sources": ["bookmarks", "collections", "usernames", "series"],
             "since": "01.01.2025",
@@ -70,8 +93,9 @@ get_oldest_date_test_data = [
                 "testseries3": datetime.datetime(2025, 1, 1),
             },
         },
-    ],
-    [
+        id="Multiple sources, since date",
+    ),
+    pytest.param(
         {
             "sources": ["bookmarks", "collections", "usernames", "series"],
             "since_last_update": True,
@@ -98,8 +122,9 @@ get_oldest_date_test_data = [
                 "testseries3": datetime.datetime(2025, 3, 1),
             },
         },
-    ],
-    [
+        id="Multiple sources, no since date, since_last_update, valid last_update_file",
+    ),
+    pytest.param(
         {
             "sources": ["bookmarks", "collections", "usernames", "series", "file"],
             "since_last_update": True,
@@ -128,8 +153,9 @@ get_oldest_date_test_data = [
                 "testseries3": datetime.datetime(2025, 3, 1),
             },
         },
-    ],
-    [
+        id="Multiple sources, since date, since_last_update, valid last_update_file",
+    ),
+    pytest.param(
         {
             "sources": ["bookmarks", "file"],
             "since_last_update": True,
@@ -144,8 +170,9 @@ get_oldest_date_test_data = [
             },
             "usernames": {},
         },
-    ],
-    [
+        id="Multiple sources, no since date, since_last_update, empty last_update_file",
+    ),
+    pytest.param(
         {
             "sources": ["bookmarks", "file"],
             "since_last_update": True,
@@ -161,22 +188,15 @@ get_oldest_date_test_data = [
             },
             "usernames": {},
         },
-    ],
+        id="Multiple sources, since date, since_last_update, empty last_update_file",
+    ),
 ]
 
 
 @pytest.mark.parametrize("extra_options,expected", get_oldest_date_test_data)
 def test_get_oldest_date(extra_options, expected):
-    # We start with some default options and just add extra things to test.
-    options = Namespace(
-        sources=[],
-        usernames=[],
-        series=[],
-        collections=[],
-        since=None,
-        since_last_update=False,
-        last_update_file="tests/fixtures/last_update_nonexistent.json",
-    )
+    options = get_options()
+
     for o, v in extra_options.items():
         setattr(options, o, v)
 
@@ -184,7 +204,7 @@ def test_get_oldest_date(extra_options, expected):
 
 
 get_oldest_date_test_data_exceptions = [
-    [
+    pytest.param(
         {
             "sources": ["bookmarks", "file"],
             "since_last_update": True,
@@ -192,7 +212,9 @@ get_oldest_date_test_data_exceptions = [
         },
         InvalidConfig,
         "tests/fixtures/last_update_invalid.json should contain valid json",
-    ]
+        id="Multiple sources, no since date, since_last_update, "
+        "invalid last_update_file",
+    )
 ]
 
 
@@ -200,18 +222,61 @@ get_oldest_date_test_data_exceptions = [
     "extra_options,exception,message", get_oldest_date_test_data_exceptions
 )
 def test_get_oldest_date_expect_exceptions(extra_options, exception, message):
-    # We start with some default options and just add extra things to test.
-    options = Namespace(
-        sources=[],
-        usernames=[],
-        series=[],
-        collections=[],
-        since=None,
-        since_last_update=False,
-        last_update_file="tests/fixtures/last_update_nonexistent.json",
-    )
+    options = get_options()
+
     for o, v in extra_options.items():
         setattr(options, o, v)
 
     with pytest.raises(exception, match=message):
         get_oldest_date(options)
+
+
+update_last_updated_file_data = [
+    pytest.param(
+        {
+            "sources": ["bookmarks", "file"],
+            "last_update_file": "tests/fixtures/last_update_to_update.json",
+        },
+        {
+            "sources": {
+                "bookmarks": "01.05.2025",
+                "collections": "01.01.2025",
+                "usernames": "01.02.2025",
+                "series": "01.03.2025",
+                "file": "01.05.2025",
+            },
+            "usernames": {"testuser1": "01.01.2025", "testuser2": "01.02.2025"},
+            "collections": {"testcollection1": "01.01.2025"},
+            "series": {
+                "testseries1": "01.01.2025",
+                "testseries2": "01.02.2025",
+                "testseries3": "01.03.2025",
+            },
+        },
+        id="Write file with current date for sources bookmarks and file",
+    )
+]
+
+
+@pytest.mark.parametrize("extra_options,expected", update_last_updated_file_data)
+def test_update_last_updated_file(extra_options, expected):
+    shutil.copyfile(
+        "tests/fixtures/last_update_valid.json",
+        "tests/fixtures/last_update_to_update.json",
+    )
+
+    options = get_options()
+
+    for o, v in extra_options.items():
+        setattr(options, o, v)
+
+    with patch("src.get_urls.datetime") as mock_datetime:
+        mock_datetime.now.return_value = datetime.datetime(2025, 5, 1)
+        update_last_updated_file(options)
+
+    with open("tests/fixtures/last_update_to_update.json", "r") as f:
+        result = json.loads(f.read())
+
+    assert result == expected
+
+    os.remove("tests/fixtures/last_update_to_update.json")
