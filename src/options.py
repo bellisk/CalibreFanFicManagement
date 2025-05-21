@@ -377,7 +377,7 @@ left unread and will be checked again the next time this command is run.""",
         dest="last_update_file",
         default=DEFAULT_LAST_UPDATE_FILE,
         help=f"""Json file storing dates of last successful update from various sources.
-Example file content: {"later": "01.01.2021", "bookmarks": "02.01.2021"}.
+Example file content: {{"later": "01.01.2021", "bookmarks": "02.01.2021"}}.
 Will be created if it doesn't exist. Default: '{DEFAULT_LAST_UPDATE_FILE}'.""",
     )
 
