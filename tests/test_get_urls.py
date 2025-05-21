@@ -70,12 +70,40 @@ get_oldest_date_test_data = [
             },
         },
     ],
+    [
+        {
+            "sources": ["bookmarks", "collections", "usernames", "series"],
+            "since_last_update": True,
+            "last_update_file": "tests/fixtures/last_update_valid.json",
+            "collections": ["testcollection1"],
+            "usernames": ["testuser1", "testuser2"],
+            "series": ["testseries1", "testseries2", "testseries3"],
+        },
+        {
+            "sources": {
+                "bookmarks": datetime.datetime(2025, 2, 1),
+                "collections": datetime.datetime(2025, 1, 1),
+                "series": datetime.datetime(2025, 3, 1),
+                "usernames": datetime.datetime(2025, 2, 1),
+            },
+            "usernames": {
+                "testuser1": datetime.datetime(2025, 1, 1),
+                "testuser2": datetime.datetime(2025, 2, 1),
+            },
+            "collections": {"testcollection1": datetime.datetime(2025, 1, 1)},
+            "series": {
+                "testseries1": datetime.datetime(2025, 1, 1),
+                "testseries2": datetime.datetime(2025, 2, 1),
+                "testseries3": datetime.datetime(2025, 3, 1),
+            },
+        },
+    ],
 ]
 
 
 @pytest.mark.parametrize("extra_options,expected", get_oldest_date_test_data)
 def test_get_oldest_date(extra_options, expected):
-    # We start with the default options and just add extra things to test.
+    # We start with some default options and just add extra things to test.
     options = Namespace(
         sources=[],
         usernames=[],
@@ -83,6 +111,7 @@ def test_get_oldest_date(extra_options, expected):
         collections=[],
         since=None,
         since_last_update=False,
+        last_update_file="tests/fixtures/last_update_nonexistent.json",
     )
     for o, v in extra_options.items():
         setattr(options, o, v)
