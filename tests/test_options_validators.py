@@ -122,6 +122,29 @@ def test_validate_cookie_neither_option():
         options.validate_cookie(namespace)
 
 
+def test_validate_since_valid():
+    namespace = Namespace(since="01.01.2025")
+    options.validate_since(namespace)
+
+    assert namespace.since == "01.01.2025"
+
+
+def test_validate_since_invalid():
+    namespace = Namespace(since="yesterday")
+
+    with pytest.raises(
+        ArgumentTypeError, match="'since' option should have format DD.MM.YYYY"
+    ):
+        options.validate_since(namespace)
+
+
+def test_validate_since_none():
+    namespace = Namespace(since=None)
+    options.validate_since(namespace)
+
+    assert namespace.since is None
+
+
 def test_validate_analysis_types_valid():
     namespace = Namespace(analysis_type=["user_subscriptions", "incomplete_works"])
     options.validate_analysis_type(namespace)
