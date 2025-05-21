@@ -2,8 +2,9 @@
 import sys
 from argparse import ArgumentParser, ArgumentTypeError
 from configparser import ConfigParser
+from datetime import datetime
 
-from src.utils import AO3_DEFAULT_URL
+from src.utils import AO3_DEFAULT_URL, DATE_FORMAT
 
 COMMANDS = ["download", "analyse"]
 
@@ -23,6 +24,7 @@ SOURCE_USERNAMES = "usernames"
 SOURCE_SERIES = "series"
 SOURCE_COLLECTIONS = "collections"
 INCOMPLETE = "incomplete_works"
+DEFAULT_LAST_UPDATE_FILE = "last_update.json"
 
 ANALYSIS_TYPES = [SOURCE_USER_SUBSCRIPTIONS, SOURCE_SERIES_SUBSCRIPTIONS, INCOMPLETE]
 DEFAULT_SOURCES = [SOURCE_FILE, SOURCE_BOOKMARKS, SOURCE_LATER]
@@ -102,6 +104,14 @@ def validate_user(options):
         raise ArgumentTypeError("The argument user is required.")
 
 
+def validate_since(options):
+    if options.since:
+        try:
+            datetime.strptime(options.since, DATE_FORMAT)
+        except ValueError:
+            raise ArgumentTypeError("'since' option should have format DD.MM.YYYY")
+
+
 def validate_analysis_type(options):
     for t in options.analysis_type:
         if t not in ANALYSIS_TYPES:
@@ -164,7 +174,6 @@ passing it in with the -c option.""",
 
 Valid sources: {", ".join(VALID_INPUT_SOURCES)}
 
-Using '⁻s work_subscriptions' with --since or --since-last-update is slow!
 If using 'file', --input is required.
 If using 'usernames' --usernames is required.
 If using 'series', --series is required.
@@ -222,7 +231,10 @@ Default: {DEFAULT_SOURCES}""",
         dest="since",
         help="""DD.MM.YYYY. The date since which fics should be downloaded (date
 bookmarked or updated for bookmarks, date last visited for marked-for-later).
-Using this with sources=work_subscriptions is slow!""",
+Using this with --sources=work_subscriptions is slow!
+When getting urls from an email account with --sources=imap, this option is not
+respected: the script will check all unread emails in the specified folder for fic urls,
+no matter what date they have.""",
     )
 
     arg_parser.add_argument(
@@ -365,10 +377,10 @@ left unread and will be checked again the next time this command is run.""",
         "--last-update-file",
         action="store",
         dest="last_update_file",
-        default="last_update.json",
-        help="""Json file storing dates of last successful update from various sources.
-Example: {"later": "01.01.2021", "bookmarks": "02.01.2021"}.
-Will be created if it doesn't exist. Default: 'last_update.json'.""",
+        default=DEFAULT_LAST_UPDATE_FILE,
+        help=f"""Json file storing dates of last successful update from various sources.
+Example file content: {{"later": "01.01.2021", "bookmarks": "02.01.2021"}}.
+Will be created if it doesn't exist. Default: '{DEFAULT_LAST_UPDATE_FILE}'.""",
     )
 
     arg_parser.add_argument(
@@ -438,6 +450,7 @@ Default: all.""",
     validate_user(parsed_args)
     validate_cookie(parsed_args)
     validate_sources(parsed_args)
+    validate_since(parsed_args)
     validate_analysis_type(parsed_args)
 
     return parsed_args.command, parsed_args

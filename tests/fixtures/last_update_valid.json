@@ -1,0 +1,20 @@
+{
+  "sources": {
+    "bookmarks": "01.02.2025",
+    "collections": "01.01.2025",
+    "usernames": "01.02.2025",
+    "series": "01.03.2025"
+  },
+  "usernames": {
+    "testuser1": "01.01.2025",
+    "testuser2": "01.02.2025"
+  },
+  "collections": {
+    "testcollection1": "01.01.2025"
+  },
+  "series": {
+    "testseries1": "01.01.2025",
+    "testseries2": "01.02.2025",
+    "testseries3": "01.03.2025"
+  }
+}

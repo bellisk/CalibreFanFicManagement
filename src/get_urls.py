@@ -34,11 +34,9 @@ from src.options import (
     SOURCE_WORKS,
     SOURCES,
 )
-from src.utils import AO3_DEFAULT_URL, Bcolors, log
+from src.utils import AO3_DEFAULT_URL, DATE_FORMAT, Bcolors, log
 
 LAST_UPDATE_KEYS = [SOURCES, SOURCE_USERNAMES, SOURCE_COLLECTIONS, SOURCE_SERIES]
-
-DATE_FORMAT = "%d.%m.%Y"
 
 
 def get_all_sources_for_last_updated_file(options):
@@ -82,10 +80,7 @@ def get_oldest_date(options):
 
     since = None
     if options.since:
-        try:
-            since = datetime.strptime(options.since, DATE_FORMAT)
-        except ValueError:
-            raise InvalidConfig("'since' option should have format 'DD.MM.YYYY'")
+        since = datetime.strptime(options.since, DATE_FORMAT)
 
     for key in LAST_UPDATE_KEYS:
         for s in all_sources[key]:
