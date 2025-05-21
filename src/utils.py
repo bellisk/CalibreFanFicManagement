@@ -12,7 +12,9 @@ from src.exceptions import InvalidConfig
 
 AO3_DEFAULT_URL = "https://archiveofourown.org"
 
+# Set threshold levels for fanficfare's loggers, so we don't get spammed with logs
 logging.getLogger("fanficfare").setLevel(logging.ERROR)
+logging.getLogger("fanficfare.configurable").setLevel(logging.ERROR)
 
 
 class Bcolors:
