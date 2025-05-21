@@ -24,6 +24,7 @@ SOURCE_USERNAMES = "usernames"
 SOURCE_SERIES = "series"
 SOURCE_COLLECTIONS = "collections"
 INCOMPLETE = "incomplete_works"
+DEFAULT_LAST_UPDATE_FILE = "last_update.json"
 
 ANALYSIS_TYPES = [SOURCE_USER_SUBSCRIPTIONS, SOURCE_SERIES_SUBSCRIPTIONS, INCOMPLETE]
 DEFAULT_SOURCES = [SOURCE_FILE, SOURCE_BOOKMARKS, SOURCE_LATER]
@@ -374,10 +375,10 @@ left unread and will be checked again the next time this command is run.""",
         "--last-update-file",
         action="store",
         dest="last_update_file",
-        default="last_update.json",
-        help="""Json file storing dates of last successful update from various sources.
-Example: {"later": "01.01.2021", "bookmarks": "02.01.2021"}.
-Will be created if it doesn't exist. Default: 'last_update.json'.""",
+        default=DEFAULT_LAST_UPDATE_FILE,
+        help=f"""Json file storing dates of last successful update from various sources.
+Example file content: {"later": "01.01.2021", "bookmarks": "02.01.2021"}.
+Will be created if it doesn't exist. Default: '{DEFAULT_LAST_UPDATE_FILE}'.""",
     )
 
     arg_parser.add_argument(
