@@ -3,26 +3,12 @@
 
 import json
 import re
-import sys
 import time
-from datetime import datetime
-from json.decoder import JSONDecodeError
 from os import rename
 from shutil import rmtree
 from subprocess import CalledProcessError
 from tempfile import mkdtemp
 
-from .ao3_utils import (
-    get_ao3_bookmark_urls,
-    get_ao3_collection_work_urls,
-    get_ao3_gift_urls,
-    get_ao3_marked_for_later_urls,
-    get_ao3_series_subscription_urls,
-    get_ao3_series_work_urls,
-    get_ao3_user_subscription_urls,
-    get_ao3_users_work_urls,
-    get_ao3_work_subscription_urls,
-)
 from .calibre_utils import (
     check_library_and_get_path,
     get_extra_series_options,
@@ -41,33 +27,14 @@ from .exceptions import (
     TooManyRequestsException,
     UrlsCollectionException,
 )
-from .options import (
-    SOURCE_BOOKMARKS,
-    SOURCE_COLLECTIONS,
-    SOURCE_FILE,
-    SOURCE_GIFTS,
-    SOURCE_LATER,
-    SOURCE_SERIES,
-    SOURCE_SERIES_SUBSCRIPTIONS,
-    SOURCE_STDIN,
-    SOURCE_USER_SUBSCRIPTIONS,
-    SOURCE_USERNAMES,
-    SOURCE_WORK_SUBSCRIPTIONS,
-    SOURCE_WORKS,
-    SOURCES,
-)
+from .get_urls import get_urls, update_last_updated_file
 from .utils import (
-    AO3_DEFAULT_URL,
     Bcolors,
     check_subprocess_output,
     get_files,
     log,
     setup_login,
 )
-
-LAST_UPDATE_KEYS = [SOURCES, SOURCE_USERNAMES, SOURCE_COLLECTIONS, SOURCE_SERIES]
-
-DATE_FORMAT = "%d.%m.%Y"
 
 story_name = re.compile("(.*)-.*")
 story_url = re.compile(r"(https://archiveofourown.org/works/\d*).*")
@@ -158,7 +125,7 @@ def get_new_story_id(bytestring):
     )
 
 
-def do_download(path, loc, url, fanficfare_config, output, force, live):
+def do_download(path, loc, url, fanficfare_config, output, force):
     if not path:
         # We have no path to a Calibre library, so just download the story.
         command = f'cd "{loc}" && fanficfare -u "{url}" --update-cover'
@@ -170,7 +137,6 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
         output += log(
             f"\tDownloaded story {story_name.search(name).group(1)} to {name}",
             Bcolors.OKGREEN,
-            live,
         )
 
         return
@@ -190,14 +156,12 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
         output += log(
             f"\tStory is in Calibre with id {story_id}",
             Bcolors.OKBLUE,
-            live,
         )
-        output += log("\tExporting file", Bcolors.OKBLUE, live)
+        output += log("\tExporting file", Bcolors.OKBLUE)
         output += log(
             f"\tcalibredb export {story_id} --dont-save-cover --dont-write-opf "
             f'--single-dir --to-dir "{loc}" {path}',
             Bcolors.OKBLUE,
-            live,
         )
         check_subprocess_output(
             f"calibredb export {story_id} --dont-save-cover --dont-write-opf "
@@ -208,7 +172,6 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
         output += log(
             f'\tDownloading with fanficfare, updating file "{cur}"',
             Bcolors.OKGREEN,
-            live,
         )
 
     check_subprocess_output(f'cp "{fanficfare_config}" {loc}/personal.ini')
@@ -217,7 +180,6 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
     output += log(
         f"\tRunning: {command}",
         Bcolors.OKBLUE,
-        live,
     )
     try:
         fff_update_result = check_subprocess_output(command)
@@ -234,18 +196,16 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
             output += log(
                 "\tForcing download update. FanFicFare error message:",
                 Bcolors.WARNING,
-                live,
             )
             for line in fff_update_result.split(b"\n"):
                 if line == b"{":
                     break
-                output += log(f"\t\t{str(line)}", Bcolors.WARNING, live)
+                output += log(f"\t\t{str(line)}", Bcolors.WARNING)
             command += " --force"
 
             output += log(
                 f"\tRunning: {command}",
                 Bcolors.OKBLUE,
-                live,
             )
             try:
                 fff_update_result = check_subprocess_output(command)
@@ -260,13 +220,11 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
     word_count = get_word_count(metadata)
     cur = get_files(loc, ".epub", True)[0]
 
-    output += log(f"\tAdding {cur} to library", Bcolors.OKBLUE, live)
+    output += log(f"\tAdding {cur} to library", Bcolors.OKBLUE)
     try:
         check_subprocess_output(f'calibredb add -d {path} "{cur}" {series_options}')
     except CalledProcessError as e:
         output += log(e)
-        if not live:
-            print(output.strip())
         raise
     try:
         calibre_search_result = check_subprocess_output(
@@ -276,15 +234,13 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
         output += log(
             f"\tAdded {cur} to library with id {new_story_id}",
             Bcolors.OKGREEN,
-            live,
         )
     except CalledProcessError as e:
         output += log(
             "\tIt's been added to library, but not sure what the ID is.",
             Bcolors.WARNING,
-            live,
         )
-        output += log("\tAdded /Story-file to library with id 0", Bcolors.OKGREEN, live)
+        output += log("\tAdded /Story-file to library with id 0", Bcolors.OKGREEN)
         output += log(f"\t{e.output}")
         raise
 
@@ -292,7 +248,6 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
         output += log(
             f"\tSetting word count of {word_count} on story {new_story_id}",
             Bcolors.OKBLUE,
-            live,
         )
         try:
             check_subprocess_output(
@@ -302,7 +257,6 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
             output += log(
                 "\tError setting word count.",
                 Bcolors.WARNING,
-                live,
             )
             output += log(f"\t{e.output}")
 
@@ -312,58 +266,48 @@ def do_download(path, loc, url, fanficfare_config, output, force, live):
             output += log(
                 f"\tSetting custom fields on story {new_story_id}",
                 Bcolors.OKBLUE,
-                live,
             )
             update_command = (
                 f"calibredb set_metadata {str(new_story_id)} "
                 f"{path} {tags_options} {extra_series_options}"
             )
-            output += log(update_command, Bcolors.OKBLUE, live)
+            output += log(update_command, Bcolors.OKBLUE)
             check_subprocess_output(update_command)
         except CalledProcessError as e:
             output += log(
                 "\tError setting custom data.",
                 Bcolors.WARNING,
-                live,
             )
             output += log(f"\t{e.output}")
 
     if story_id:
-        output += log(f"\tRemoving {story_id} from library", Bcolors.OKBLUE, live)
+        output += log(f"\tRemoving {story_id} from library", Bcolors.OKBLUE)
         try:
             check_subprocess_output(f"calibredb remove {path} {story_id}")
         except CalledProcessError:
-            if not live:
-                print(output.strip())
             raise
 
-    if not live:
-        print(output.strip())
     rmtree(loc)
 
 
-def downloader(url, inout_file, fanficfare_config, path, force, live):
+def downloader(url, inout_file, fanficfare_config, path, force):
     output = ""
-    output += log(f"Working with url {url}", Bcolors.HEADER, live)
+    output += log(f"Working with url {url}", Bcolors.HEADER)
 
     try:
         url = get_url_without_chapter(url)
     except BadDataException as e:
-        output += log(f"\tException: {e}", Bcolors.FAIL, live)
-        if not live:
-            print(output.strip())
+        output += log(f"\tException: {e}", Bcolors.FAIL)
         return
 
     loc = mkdtemp()
 
     try:
-        do_download(path, loc, url, fanficfare_config, output, force, live)
+        do_download(path, loc, url, fanficfare_config, output, force)
     except Exception as e:
-        output += log(f"\tException: {e}", Bcolors.FAIL, live)
+        output += log(f"\tException: {e}", Bcolors.FAIL)
         if isinstance(e, CalledProcessError):
-            output += log(f"\t{e.output.decode('utf-8')}", Bcolors.FAIL, live)
-        if not live:
-            print(output.strip())
+            output += log(f"\t{e.output.decode('utf-8')}", Bcolors.FAIL)
         rmtree(loc, ignore_errors=True)
         if not isinstance(e, StoryUpToDateException):
             with open(inout_file, "a") as fp:
@@ -374,316 +318,19 @@ def downloader(url, inout_file, fanficfare_config, path, force, live):
             raise
 
 
-def get_urls(inout_file, options, oldest_dates):
-    urls = set([])
-    url_count = 0
-
-    try:
-        if SOURCE_FILE in options.sources:
-            with open(inout_file, "r") as fp:
-                urls = set([x.replace("\n", "") for x in fp.readlines()])
-
-            url_count = len(urls)
-            log(f"{url_count} URLs from file", Bcolors.OKGREEN)
-
-            with open(inout_file, "w") as fp:
-                fp.write("")
-
-        if SOURCE_LATER in options.sources:
-            log("Getting URLs from Marked for Later", Bcolors.HEADER)
-            urls |= get_ao3_marked_for_later_urls(
-                options.cookie,
-                options.max_count,
-                options.user,
-                oldest_dates[SOURCES][SOURCE_LATER],
-                ao3_url=options.mirror,
-            )
-            log(
-                f"{len(urls) - url_count} URLs from Marked for Later",
-                Bcolors.OKGREEN,
-            )
-            url_count = len(urls)
-
-        if SOURCE_BOOKMARKS in options.sources:
-            log(
-                "Getting URLs from Bookmarks (sorted by bookmarking date)",
-                Bcolors.HEADER,
-            )
-            urls |= get_ao3_bookmark_urls(
-                options.cookie,
-                options.expand_series,
-                options.max_count,
-                options.user,
-                oldest_dates[SOURCES][SOURCE_BOOKMARKS],
-                sort_by_updated=False,
-                ao3_url=options.mirror,
-            )
-            # If we're getting bookmarks back to oldest_date, this should
-            # include works that have been updated since that date, as well as
-            # works bookmarked since that date.
-            if oldest_dates[SOURCES][SOURCE_BOOKMARKS]:
-                log(
-                    "Getting URLs from Bookmarks (sorted by updated date)",
-                    Bcolors.HEADER,
-                )
-                urls |= get_ao3_bookmark_urls(
-                    options.cookie,
-                    options.expand_series,
-                    options.max_count,
-                    options.user,
-                    oldest_dates[SOURCES][SOURCE_BOOKMARKS],
-                    sort_by_updated=True,
-                    ao3_url=options.mirror,
-                )
-            log(f"{len(urls) - url_count} URLs from bookmarks", Bcolors.OKGREEN)
-            url_count = len(urls)
-
-        if SOURCE_WORKS in options.sources:
-            log("Getting URLs from User's Works", Bcolors.HEADER)
-            urls |= get_ao3_users_work_urls(
-                options.cookie,
-                options.max_count,
-                options.user,
-                options.user,
-                oldest_dates[SOURCES][SOURCE_WORKS],
-                ao3_url=options.mirror,
-            )
-            log(
-                f"{len(urls) - url_count} URLs from User's Works",
-                Bcolors.OKGREEN,
-            )
-            url_count = len(urls)
-
-        if SOURCE_GIFTS in options.sources:
-            log("Getting URLs from User's Gifts", Bcolors.HEADER)
-            urls |= get_ao3_gift_urls(
-                options.cookie,
-                options.max_count,
-                options.user,
-                oldest_dates[SOURCES][SOURCE_GIFTS],
-                ao3_url=options.mirror,
-            )
-            log(
-                f"{len(urls) - url_count} URLs from User's Gifts",
-                Bcolors.OKGREEN,
-            )
-            url_count = len(urls)
-
-        if SOURCE_WORK_SUBSCRIPTIONS in options.sources:
-            log("Getting URLs from Subscribed Works", Bcolors.HEADER)
-            urls |= get_ao3_work_subscription_urls(
-                options.cookie,
-                options.max_count,
-                options.user,
-                oldest_dates[SOURCES][SOURCE_WORK_SUBSCRIPTIONS],
-                ao3_url=options.mirror,
-            )
-            log(
-                f"{len(urls) - url_count} URLs from work subscriptions",
-                Bcolors.OKGREEN,
-            )
-            url_count = len(urls)
-
-        if SOURCE_SERIES_SUBSCRIPTIONS in options.sources:
-            log("Getting URLs from Subscribed Series", Bcolors.HEADER)
-            urls |= get_ao3_series_subscription_urls(
-                options.cookie,
-                options.max_count,
-                options.user,
-                oldest_dates[SOURCES][SOURCE_SERIES_SUBSCRIPTIONS],
-                ao3_url=options.mirror,
-            )
-            log(
-                f"{len(urls) - url_count} URLs from series subscriptions",
-                Bcolors.OKGREEN,
-            )
-            url_count = len(urls)
-
-        if SOURCE_USER_SUBSCRIPTIONS in options.sources:
-            log("Getting URLs from Subscribed Users", Bcolors.HEADER)
-            urls |= get_ao3_user_subscription_urls(
-                options.cookie,
-                options.max_count,
-                options.user,
-                oldest_dates[SOURCES][SOURCE_USER_SUBSCRIPTIONS],
-                ao3_url=options.mirror,
-            )
-            log(
-                f"{len(urls) - url_count} URLs from user subscriptions",
-                Bcolors.OKGREEN,
-            )
-            url_count = len(urls)
-
-        if SOURCE_USERNAMES in options.sources:
-            log(
-                f"Getting URLs from following users' works: "
-                f"{','.join(options.usernames)}"
-            )
-            for u in options.usernames:
-                urls |= get_ao3_users_work_urls(
-                    options.cookie,
-                    options.max_count,
-                    options.user,
-                    u,
-                    oldest_dates[SOURCE_USERNAMES][u],
-                    ao3_url=options.mirror,
-                )
-            log(f"{len(urls) - url_count} URLs from usernames", Bcolors.OKGREEN)
-            url_count = len(urls)
-
-        if SOURCE_SERIES in options.sources:
-            log(f"Getting URLs from following series: {','.join(options.series)}")
-            for s in options.series:
-                urls |= get_ao3_series_work_urls(
-                    options.cookie,
-                    options.max_count,
-                    options.user,
-                    s,
-                    oldest_dates[SOURCE_SERIES][s],
-                    ao3_url=options.mirror,
-                )
-            log(f"{len(urls) - url_count} URLs from series", Bcolors.OKGREEN)
-            url_count = len(urls)
-
-        if SOURCE_COLLECTIONS in options.sources:
-            log(
-                f"Getting URLs from following collections: "
-                f"{','.join(options.collections)}"
-            )
-            for c in options.collections:
-                urls |= get_ao3_collection_work_urls(
-                    options.cookie,
-                    options.max_count,
-                    options.user,
-                    c,
-                    oldest_dates[SOURCE_COLLECTIONS][c],
-                    ao3_url=options.mirror,
-                )
-            log(
-                f"{len(urls) - url_count} URLs from collections",
-                Bcolors.OKGREEN,
-            )
-            url_count = len(urls)
-
-        if SOURCE_STDIN in options.sources:
-            stdin_urls = set()
-            for line in sys.stdin:
-                stdin_urls.add(line.rstrip())
-            urls |= stdin_urls
-            log(f"{len(urls) - url_count} URLs from STDIN", Bcolors.OKGREEN)
-    except Exception as e:
-        with open(inout_file, "w") as fp:
-            for cur in urls:
-                fp.write(f"{cur}\n")
-        raise UrlsCollectionException(e)
-
-    # Convert urls to use default AO3 url, even if we're using a mirror.
-    # This makes checking that they're correctly formed, and passing them to FanFicFare,
-    # easier.
-    urls = set(url.replace(options.mirror, AO3_DEFAULT_URL) for url in urls)
-
-    return urls
-
-
-def get_all_sources_for_last_updated_file(options):
-    return {
-        SOURCES: options.sources,
-        SOURCE_USERNAMES: options.usernames,
-        SOURCE_SERIES: options.series,
-        SOURCE_COLLECTIONS: options.collections,
-    }
-
-
-def update_last_updated_file(options):
-    all_sources = get_all_sources_for_last_updated_file(options)
-    today = datetime.now().strftime(DATE_FORMAT)
-
-    with open(options.last_update_file, "r") as f:
-        last_updates_text = f.read()
-    last_updates = json.loads(last_updates_text) if last_updates_text else {}
-
-    for key, value in all_sources.items():
-        if not last_updates.get(key):
-            last_updates[key] = {}
-        for s in value:
-            last_updates[key][s] = today
-
-    data = json.dumps(last_updates)
-
-    log(
-        f"Updating file {options.last_update_file} with dates {data}",
-        Bcolors.OKBLUE,
-    )
-
-    with open(options.last_update_file, "w") as f:
-        f.write(data)
-
-
-def get_oldest_date(options):
-    all_sources = get_all_sources_for_last_updated_file(options)
-    if not (options.since or options.since_last_update):
-        dates = {}
-        for key in LAST_UPDATE_KEYS:
-            dates[key] = {}
-            for s in all_sources[key]:
-                dates[key][s] = None
-        return dates
-
-    oldest_date_per_source = {key: {} for key in LAST_UPDATE_KEYS}
-
-    if options.since_last_update:
-        last_updates = {}
-        try:
-            with open(options.last_update_file, "r") as f:
-                last_updates_text = f.read()
-            if last_updates_text:
-                last_updates = json.loads(last_updates_text)
-        except JSONDecodeError:
-            raise InvalidConfig(f"{options.last_update_file} should be valid json")
-
-        for key in LAST_UPDATE_KEYS:
-            oldest_date_per_source[key] = {
-                s: datetime.strptime(last_updates[key].get(s), DATE_FORMAT)
-                for s in all_sources[key]
-                if last_updates.get(key, {}).get(s)
-            }
-
-    since = None
-    if options.since:
-        try:
-            since = datetime.strptime(options.since, DATE_FORMAT)
-        except ValueError:
-            raise InvalidConfig("'since' option should have format 'DD.MM.YYYY'")
-
-    for key in LAST_UPDATE_KEYS:
-        for s in all_sources[key]:
-            if not oldest_date_per_source[key].get(s):
-                oldest_date_per_source[key][s] = since
-
-    log("Dates of last update per source:", Bcolors.OKBLUE)
-    log(oldest_date_per_source, Bcolors.OKBLUE)
-
-    return oldest_date_per_source
-
-
 def download(options):
-    setup_login(options)
     try:
         path = check_library_and_get_path(options.library)
     except RuntimeError as e:
         log(str(e), Bcolors.FAIL)
         return
 
-    inout_file = options.input
-
     try:
-        oldest_dates_per_source = get_oldest_date(options)
+        setup_login(options)
+        urls = get_urls(options)
     except InvalidConfig as e:
         log(e.message, Bcolors.FAIL)
         return
-
-    try:
-        urls = get_urls(inout_file, options, oldest_dates_per_source)
     except UrlsCollectionException as e:
         log(f"Error getting urls: {e}")
 
@@ -707,11 +354,10 @@ def download(options):
         try:
             downloader(
                 url,
-                inout_file,
+                options.input,
                 options.fanficfare_config,
                 path,
                 options.force,
-                options.live,
             )
         except CloudflareWebsiteException:
             pause = 30
