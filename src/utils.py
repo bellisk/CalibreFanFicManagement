@@ -11,6 +11,7 @@ import browser_cookie3
 from src.exceptions import InvalidConfig
 
 AO3_DEFAULT_URL = "https://archiveofourown.org"
+DATE_FORMAT = "%d.%m.%Y"
 
 # Set threshold levels for fanficfare's loggers, so we don't get spammed with logs
 logging.getLogger("fanficfare").setLevel(logging.ERROR)

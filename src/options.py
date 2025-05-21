@@ -2,8 +2,9 @@
 import sys
 from argparse import ArgumentParser, ArgumentTypeError
 from configparser import ConfigParser
+from datetime import datetime
 
-from src.utils import AO3_DEFAULT_URL
+from src.utils import AO3_DEFAULT_URL, DATE_FORMAT
 
 COMMANDS = ["download", "analyse"]
 
@@ -100,6 +101,14 @@ def validate_cookie(options):
 def validate_user(options):
     if not options.user:
         raise ArgumentTypeError("The argument user is required.")
+
+
+def validate_since(options):
+    if options.since:
+        try:
+            datetime.strptime(options.since, DATE_FORMAT)
+        except ValueError:
+            raise ArgumentTypeError("'since' option should have format DD.MM.YYYY")
 
 
 def validate_analysis_type(options):
@@ -438,6 +447,7 @@ Default: all.""",
     validate_user(parsed_args)
     validate_cookie(parsed_args)
     validate_sources(parsed_args)
+    validate_since(parsed_args)
     validate_analysis_type(parsed_args)
 
     return parsed_args.command, parsed_args
