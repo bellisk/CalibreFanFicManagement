@@ -98,6 +98,36 @@ get_oldest_date_test_data = [
             },
         },
     ],
+    [
+        {
+            "sources": ["bookmarks", "collections", "usernames", "series", "file"],
+            "since_last_update": True,
+            "last_update_file": "tests/fixtures/last_update_valid.json",
+            "since": "01.04.2025",
+            "collections": ["testcollection1"],
+            "usernames": ["testuser1", "testuser2"],
+            "series": ["testseries1", "testseries2", "testseries3"],
+        },
+        {
+            "sources": {
+                "bookmarks": datetime.datetime(2025, 2, 1),
+                "collections": datetime.datetime(2025, 1, 1),
+                "file": datetime.datetime(2025, 4, 1),
+                "series": datetime.datetime(2025, 3, 1),
+                "usernames": datetime.datetime(2025, 2, 1),
+            },
+            "usernames": {
+                "testuser1": datetime.datetime(2025, 1, 1),
+                "testuser2": datetime.datetime(2025, 2, 1),
+            },
+            "collections": {"testcollection1": datetime.datetime(2025, 1, 1)},
+            "series": {
+                "testseries1": datetime.datetime(2025, 1, 1),
+                "testseries2": datetime.datetime(2025, 2, 1),
+                "testseries3": datetime.datetime(2025, 3, 1),
+            },
+        },
+    ],
 ]
 
 
