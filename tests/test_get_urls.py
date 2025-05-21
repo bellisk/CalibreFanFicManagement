@@ -3,6 +3,7 @@ from argparse import Namespace
 
 import pytest
 
+from src.exceptions import InvalidConfig
 from src.get_urls import get_all_sources_for_last_updated_file, get_oldest_date
 
 
@@ -128,6 +129,39 @@ get_oldest_date_test_data = [
             },
         },
     ],
+    [
+        {
+            "sources": ["bookmarks", "file"],
+            "since_last_update": True,
+            "last_update_file": "tests/fixtures/last_update_empty.json",
+        },
+        {
+            "collections": {},
+            "series": {},
+            "sources": {
+                "bookmarks": None,
+                "file": None,
+            },
+            "usernames": {},
+        },
+    ],
+    [
+        {
+            "sources": ["bookmarks", "file"],
+            "since_last_update": True,
+            "last_update_file": "tests/fixtures/last_update_empty.json",
+            "since": "01.04.2025",
+        },
+        {
+            "collections": {},
+            "series": {},
+            "sources": {
+                "bookmarks": datetime.datetime(2025, 4, 1),
+                "file": datetime.datetime(2025, 4, 1),
+            },
+            "usernames": {},
+        },
+    ],
 ]
 
 
@@ -147,3 +181,37 @@ def test_get_oldest_date(extra_options, expected):
         setattr(options, o, v)
 
     assert get_oldest_date(options) == expected
+
+
+get_oldest_date_test_data_exceptions = [
+    [
+        {
+            "sources": ["bookmarks", "file"],
+            "since_last_update": True,
+            "last_update_file": "tests/fixtures/last_update_invalid.json",
+        },
+        InvalidConfig,
+        "tests/fixtures/last_update_invalid.json should contain valid json",
+    ]
+]
+
+
+@pytest.mark.parametrize(
+    "extra_options,exception,message", get_oldest_date_test_data_exceptions
+)
+def test_get_oldest_date_expect_exceptions(extra_options, exception, message):
+    # We start with some default options and just add extra things to test.
+    options = Namespace(
+        sources=[],
+        usernames=[],
+        series=[],
+        collections=[],
+        since=None,
+        since_last_update=False,
+        last_update_file="tests/fixtures/last_update_nonexistent.json",
+    )
+    for o, v in extra_options.items():
+        setattr(options, o, v)
+
+    with pytest.raises(exception, match=message):
+        get_oldest_date(options)
