@@ -174,7 +174,6 @@ passing it in with the -c option.""",
 
 Valid sources: {", ".join(VALID_INPUT_SOURCES)}
 
-Using '⁻s work_subscriptions' with --since or --since-last-update is slow!
 If using 'file', --input is required.
 If using 'usernames' --usernames is required.
 If using 'series', --series is required.
@@ -232,7 +231,10 @@ Default: {DEFAULT_SOURCES}""",
         dest="since",
         help="""DD.MM.YYYY. The date since which fics should be downloaded (date
 bookmarked or updated for bookmarks, date last visited for marked-for-later).
-Using this with sources=work_subscriptions is slow!""",
+Using this with --sources=work_subscriptions is slow!
+When getting urls from an email account with --sources=imap, this option is not
+respected: the script will check all unread emails in the specified folder for fic urls,
+no matter what date they have.""",
     )
 
     arg_parser.add_argument(
