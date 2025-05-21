@@ -1,6 +1,9 @@
+import datetime
 from argparse import Namespace
 
-from src.get_urls import get_all_sources_for_last_updated_file
+import pytest
+
+from src.get_urls import get_all_sources_for_last_updated_file, get_oldest_date
 
 
 def test_get_all_sources_for_last_updated_file():
@@ -19,3 +22,69 @@ def test_get_all_sources_for_last_updated_file():
         "series": ["series1", "series2", "series3"],
         "collections": ["collection1"],
     }
+
+
+get_oldest_date_test_data = [
+    [
+        {"sources": []},
+        {
+            "sources": {},
+            "usernames": {},
+            "collections": {},
+            "series": {},
+        },
+    ],
+    [
+        {"sources": ["bookmarks"]},
+        {
+            "sources": {"bookmarks": None},
+            "usernames": {},
+            "collections": {},
+            "series": {},
+        },
+    ],
+    [
+        {
+            "sources": ["bookmarks", "collections", "usernames", "series"],
+            "since": "01.01.2025",
+            "collections": ["testcollection1"],
+            "usernames": ["testuser1", "testuser2"],
+            "series": ["testseries1", "testseries2", "testseries3"],
+        },
+        {
+            "sources": {
+                "bookmarks": datetime.datetime(2025, 1, 1),
+                "collections": datetime.datetime(2025, 1, 1),
+                "series": datetime.datetime(2025, 1, 1),
+                "usernames": datetime.datetime(2025, 1, 1),
+            },
+            "usernames": {
+                "testuser1": datetime.datetime(2025, 1, 1),
+                "testuser2": datetime.datetime(2025, 1, 1),
+            },
+            "collections": {"testcollection1": datetime.datetime(2025, 1, 1)},
+            "series": {
+                "testseries1": datetime.datetime(2025, 1, 1),
+                "testseries2": datetime.datetime(2025, 1, 1),
+                "testseries3": datetime.datetime(2025, 1, 1),
+            },
+        },
+    ],
+]
+
+
+@pytest.mark.parametrize("extra_options,expected", get_oldest_date_test_data)
+def test_get_oldest_date(extra_options, expected):
+    # We start with the default options and just add extra things to test.
+    options = Namespace(
+        sources=[],
+        usernames=[],
+        series=[],
+        collections=[],
+        since=None,
+        since_last_update=False,
+    )
+    for o, v in extra_options.items():
+        setattr(options, o, v)
+
+    assert get_oldest_date(options) == expected
