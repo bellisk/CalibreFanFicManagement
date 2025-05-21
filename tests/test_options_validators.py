@@ -50,6 +50,35 @@ def test_validate_sources_expand_subscriptions():
     ]
 
 
+def test_validate_sources_imap_valid():
+    namespace = Namespace(
+        sources=["imap"],
+        email_server="imap.gmail.com",
+        email_user="test_email_user",
+        email_password="coolpassword",
+        email_folder="My AO3 Label",
+    )
+    options.validate_sources(namespace)
+
+    assert namespace.sources == ["imap"]
+    assert namespace.email_server == "imap.gmail.com"
+    assert namespace.email_user == "test_email_user"
+    assert namespace.email_password == "coolpassword"
+    assert namespace.email_folder == "My AO3 Label"
+
+
+def test_validate_sources_imap_missing_email_options():
+    namespace = Namespace(
+        sources=["imap"],
+    )
+
+    with pytest.raises(
+        ArgumentTypeError,
+        match="The following options are required when source 'imap' is given",
+    ):
+        options.validate_sources(namespace)
+
+
 def test_validate_user():
     namespace = Namespace(user="testuser")
     options.validate_user(namespace)
