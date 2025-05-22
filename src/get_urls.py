@@ -141,9 +141,9 @@ def get_urls(options):
         if SOURCE_LATER in options.sources:
             log("Getting URLs from Marked for Later", Bcolors.HEADER)
             urls |= get_ao3_marked_for_later_urls(
+                options.user,
                 options.cookie,
                 options.max_count,
-                options.user,
                 oldest_dates_per_source[SOURCES][SOURCE_LATER],
                 ao3_url=options.mirror,
             )
@@ -159,10 +159,10 @@ def get_urls(options):
                 Bcolors.HEADER,
             )
             urls |= get_ao3_bookmark_urls(
+                options.user,
                 options.cookie,
                 options.expand_series,
                 options.max_count,
-                options.user,
                 oldest_dates_per_source[SOURCES][SOURCE_BOOKMARKS],
                 sort_by_updated=False,
                 ao3_url=options.mirror,
@@ -176,10 +176,10 @@ def get_urls(options):
                     Bcolors.HEADER,
                 )
                 urls |= get_ao3_bookmark_urls(
+                    options.user,
                     options.cookie,
                     options.expand_series,
                     options.max_count,
-                    options.user,
                     oldest_dates_per_source[SOURCES][SOURCE_BOOKMARKS],
                     sort_by_updated=True,
                     ao3_url=options.mirror,
@@ -190,10 +190,10 @@ def get_urls(options):
         if SOURCE_WORKS in options.sources:
             log("Getting URLs from User's Works", Bcolors.HEADER)
             urls |= get_ao3_users_work_urls(
+                options.user,
                 options.cookie,
+                options.user,
                 options.max_count,
-                options.user,
-                options.user,
                 oldest_dates_per_source[SOURCES][SOURCE_WORKS],
                 ao3_url=options.mirror,
             )
@@ -206,9 +206,9 @@ def get_urls(options):
         if SOURCE_GIFTS in options.sources:
             log("Getting URLs from User's Gifts", Bcolors.HEADER)
             urls |= get_ao3_gift_urls(
+                options.user,
                 options.cookie,
                 options.max_count,
-                options.user,
                 oldest_dates_per_source[SOURCES][SOURCE_GIFTS],
                 ao3_url=options.mirror,
             )
@@ -221,9 +221,9 @@ def get_urls(options):
         if SOURCE_WORK_SUBSCRIPTIONS in options.sources:
             log("Getting URLs from Subscribed Works", Bcolors.HEADER)
             urls |= get_ao3_work_subscription_urls(
+                options.user,
                 options.cookie,
                 options.max_count,
-                options.user,
                 oldest_dates_per_source[SOURCES][SOURCE_WORK_SUBSCRIPTIONS],
                 ao3_url=options.mirror,
             )
@@ -236,9 +236,9 @@ def get_urls(options):
         if SOURCE_SERIES_SUBSCRIPTIONS in options.sources:
             log("Getting URLs from Subscribed Series", Bcolors.HEADER)
             urls |= get_ao3_series_subscription_urls(
+                options.user,
                 options.cookie,
                 options.max_count,
-                options.user,
                 oldest_dates_per_source[SOURCES][SOURCE_SERIES_SUBSCRIPTIONS],
                 ao3_url=options.mirror,
             )
@@ -251,9 +251,9 @@ def get_urls(options):
         if SOURCE_USER_SUBSCRIPTIONS in options.sources:
             log("Getting URLs from Subscribed Users", Bcolors.HEADER)
             urls |= get_ao3_user_subscription_urls(
+                options.user,
                 options.cookie,
                 options.max_count,
-                options.user,
                 oldest_dates_per_source[SOURCES][SOURCE_USER_SUBSCRIPTIONS],
                 ao3_url=options.mirror,
             )
@@ -270,10 +270,10 @@ def get_urls(options):
             )
             for u in options.usernames:
                 urls |= get_ao3_users_work_urls(
-                    options.cookie,
-                    options.max_count,
                     options.user,
+                    options.cookie,
                     u,
+                    options.max_count,
                     oldest_dates_per_source[SOURCE_USERNAMES][u],
                     ao3_url=options.mirror,
                 )
@@ -284,9 +284,9 @@ def get_urls(options):
             log(f"Getting URLs from following series: {','.join(options.series)}")
             for s in options.series:
                 urls |= get_ao3_series_work_urls(
+                    options.user,
                     options.cookie,
                     options.max_count,
-                    options.user,
                     s,
                     oldest_dates_per_source[SOURCE_SERIES][s],
                     ao3_url=options.mirror,
@@ -301,9 +301,9 @@ def get_urls(options):
             )
             for c in options.collections:
                 urls |= get_ao3_collection_work_urls(
+                    options.user,
                     options.cookie,
                     options.max_count,
-                    options.user,
                     c,
                     oldest_dates_per_source[SOURCE_COLLECTIONS][c],
                     ao3_url=options.mirror,
