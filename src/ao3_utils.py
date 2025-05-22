@@ -7,10 +7,10 @@ AO3_SERIES_KEYS = ["series00", "series01", "series02", "series03"]
 
 
 def get_ao3_bookmark_urls(
+    user,
     cookie,
     expand_series,
     max_count,
-    user,
     oldest_date,
     sort_by_updated,
     ao3_url=AO3_DEFAULT_URL,
@@ -30,7 +30,7 @@ def get_ao3_bookmark_urls(
 
 
 def get_ao3_users_work_urls(
-    cookie, max_count, user, username, oldest_date, ao3_url=AO3_DEFAULT_URL
+    user, cookie, username, max_count, oldest_date, ao3_url=AO3_DEFAULT_URL
 ):
     # user is the user to sign in as; username is the author to get work urls for.
     if max_count == 0:
@@ -45,7 +45,7 @@ def get_ao3_users_work_urls(
     return set(urls)
 
 
-def get_ao3_gift_urls(cookie, max_count, user, oldest_date, ao3_url=AO3_DEFAULT_URL):
+def get_ao3_gift_urls(user, cookie, max_count, oldest_date, ao3_url=AO3_DEFAULT_URL):
     if max_count == 0:
         return set([])
 
@@ -59,7 +59,7 @@ def get_ao3_gift_urls(cookie, max_count, user, oldest_date, ao3_url=AO3_DEFAULT_
 
 
 def get_ao3_marked_for_later_urls(
-    cookie, max_count, user, oldest_date, ao3_url=AO3_DEFAULT_URL
+    user, cookie, max_count, oldest_date, ao3_url=AO3_DEFAULT_URL
 ):
     if max_count == 0:
         return set([])
@@ -74,7 +74,7 @@ def get_ao3_marked_for_later_urls(
 
 
 def get_ao3_work_subscription_urls(
-    cookie, max_count, user, oldest_date=None, ao3_url=AO3_DEFAULT_URL
+    user, cookie, max_count, oldest_date=None, ao3_url=AO3_DEFAULT_URL
 ):
     """Get urls of works that the user is subscribed to.
 
@@ -114,7 +114,7 @@ def _work_url_from_id(work_id, ao3_url=AO3_DEFAULT_URL):
 
 
 def get_ao3_series_subscription_urls(
-    cookie, max_count, user, oldest_date=None, ao3_url=AO3_DEFAULT_URL
+    user, cookie, max_count, oldest_date=None, ao3_url=AO3_DEFAULT_URL
 ):
     if max_count == 0:
         return set([])
@@ -134,7 +134,7 @@ def get_ao3_series_subscription_urls(
 
 
 def get_ao3_user_subscription_urls(
-    cookie, max_count, user, oldest_date=None, ao3_url=AO3_DEFAULT_URL
+    user, cookie, max_count, oldest_date=None, ao3_url=AO3_DEFAULT_URL
 ):
     if max_count == 0:
         return set([])
@@ -155,7 +155,7 @@ def get_ao3_user_subscription_urls(
 
 
 def get_ao3_series_work_urls(
-    cookie, max_count, user, series_id, oldest_date=None, ao3_url=AO3_DEFAULT_URL
+    user, cookie, max_count, series_id, oldest_date=None, ao3_url=AO3_DEFAULT_URL
 ):
     if max_count == 0:
         return set([])
@@ -172,7 +172,7 @@ def get_ao3_series_work_urls(
 
 
 def get_ao3_collection_work_urls(
-    cookie, max_count, user, collection_id, oldest_date=None, ao3_url=AO3_DEFAULT_URL
+    user, cookie, max_count, collection_id, oldest_date=None, ao3_url=AO3_DEFAULT_URL
 ):
     if max_count == 0:
         return set([])

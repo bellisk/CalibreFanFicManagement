@@ -11,10 +11,10 @@ oldest_date = datetime.strptime("01.01.2020", "%d.%m.%Y")
 @patch("src.ao3_utils.AO3", MockAO3)
 def test_get_ao3_bookmark_urls():
     urls = ao3_utils.get_ao3_bookmark_urls(
+        user="testuser",
         cookie="cookie",
         expand_series=True,
         max_count=3,
-        user="testuser",
         oldest_date=oldest_date,
         sort_by_updated=True,
     )
@@ -28,10 +28,10 @@ def test_get_ao3_bookmark_urls():
 
 def test_get_ao3_bookmark_urls_max_count_zero():
     urls = ao3_utils.get_ao3_bookmark_urls(
+        user="testuser",
         cookie="cookie",
         expand_series=True,
         max_count=0,
-        user="testuser",
         oldest_date=oldest_date,
         sort_by_updated=True,
     )
@@ -42,10 +42,10 @@ def test_get_ao3_bookmark_urls_max_count_zero():
 @patch("src.ao3_utils.AO3", MockAO3)
 def test_get_ao3_users_work_urls():
     urls = ao3_utils.get_ao3_users_work_urls(
-        cookie="cookie",
-        max_count=3,
         user="testuser",
+        cookie="cookie",
         username="testuser2",
+        max_count=3,
         oldest_date=oldest_date,
     )
 
@@ -60,10 +60,10 @@ def test_get_ao3_users_work_urls():
 
 def test_get_ao3_users_work_urls_max_count_zero():
     urls = ao3_utils.get_ao3_users_work_urls(
-        cookie="cookie",
-        max_count=0,
         user="testuser",
+        cookie="cookie",
         username="testuser2",
+        max_count=0,
         oldest_date=oldest_date,
     )
 
@@ -73,10 +73,7 @@ def test_get_ao3_users_work_urls_max_count_zero():
 @patch("src.ao3_utils.AO3", MockAO3)
 def test_get_ao3_gift_urls():
     urls = ao3_utils.get_ao3_gift_urls(
-        cookie="cookie",
-        max_count=3,
-        user="testuser",
-        oldest_date=oldest_date,
+        user="testuser", cookie="cookie", max_count=3, oldest_date=oldest_date
     )
 
     assert urls == {
@@ -88,10 +85,7 @@ def test_get_ao3_gift_urls():
 
 def test_get_ao3_gift_urls_max_count_zero():
     urls = ao3_utils.get_ao3_gift_urls(
-        cookie="cookie",
-        max_count=0,
-        user="testuser",
-        oldest_date=oldest_date,
+        user="testuser", cookie="cookie", max_count=0, oldest_date=oldest_date
     )
 
     assert urls == set([])
@@ -100,10 +94,7 @@ def test_get_ao3_gift_urls_max_count_zero():
 @patch("src.ao3_utils.AO3", MockAO3)
 def test_get_ao3_marked_for_later_urls():
     urls = ao3_utils.get_ao3_marked_for_later_urls(
-        cookie="cookie",
-        max_count=3,
-        user="testuser",
-        oldest_date=oldest_date,
+        user="testuser", cookie="cookie", max_count=3, oldest_date=oldest_date
     )
 
     assert urls == {
@@ -115,10 +106,7 @@ def test_get_ao3_marked_for_later_urls():
 
 def test_get_ao3_marked_for_later_urls_max_count_zero():
     urls = ao3_utils.get_ao3_marked_for_later_urls(
-        cookie="cookie",
-        max_count=0,
-        user="testuser",
-        oldest_date=oldest_date,
+        user="testuser", cookie="cookie", max_count=0, oldest_date=oldest_date
     )
 
     assert urls == set([])
@@ -127,10 +115,7 @@ def test_get_ao3_marked_for_later_urls_max_count_zero():
 @patch("src.ao3_utils.AO3", MockAO3)
 def test_get_ao3_work_subscription_urls_no_oldest_date():
     urls = ao3_utils.get_ao3_work_subscription_urls(
-        cookie="testcookie",
-        max_count=5,
-        user="testuser",
-        oldest_date=None,
+        user="testuser", cookie="testcookie", max_count=5, oldest_date=None
     )
 
     assert urls == {
@@ -144,10 +129,7 @@ def test_get_ao3_work_subscription_urls_no_oldest_date():
 
 def test_get_ao3_work_subscription_urls_no_oldest_date_max_count_zero():
     urls = ao3_utils.get_ao3_work_subscription_urls(
-        cookie="testcookie",
-        max_count=0,
-        user="testuser",
-        oldest_date=None,
+        user="testuser", cookie="testcookie", max_count=0, oldest_date=None
     )
 
     assert urls == set([])
@@ -159,10 +141,7 @@ def test_get_ao3_work_subscription_urls_with_oldest_date():
     oldest_work_date = datetime.strptime("01.01.2023", "%d.%m.%Y")
 
     urls = ao3_utils.get_ao3_work_subscription_urls(
-        cookie="testcookie",
-        max_count=5,
-        user="testuser",
-        oldest_date=oldest_work_date,
+        user="testuser", cookie="testcookie", max_count=5, oldest_date=oldest_work_date
     )
 
     assert urls == {
@@ -173,10 +152,7 @@ def test_get_ao3_work_subscription_urls_with_oldest_date():
 
 def test_get_ao3_work_subscription_urls_with_oldest_date_max_count_zero():
     urls = ao3_utils.get_ao3_work_subscription_urls(
-        cookie="testcookie",
-        max_count=0,
-        user="testuser",
-        oldest_date=oldest_date,
+        user="testuser", cookie="testcookie", max_count=0, oldest_date=oldest_date
     )
 
     assert urls == set([])
@@ -185,10 +161,7 @@ def test_get_ao3_work_subscription_urls_with_oldest_date_max_count_zero():
 @patch("src.ao3_utils.AO3", MockAO3)
 def test_get_ao3_series_subscription_urls():
     urls = ao3_utils.get_ao3_series_subscription_urls(
-        cookie="cookie",
-        max_count=3,
-        user="testuser",
-        oldest_date=oldest_date,
+        user="testuser", cookie="cookie", max_count=3, oldest_date=oldest_date
     )
 
     assert urls == {
@@ -203,10 +176,7 @@ def test_get_ao3_series_subscription_urls():
 
 def test_get_ao3_series_subscription_urls_max_count_zero():
     urls = ao3_utils.get_ao3_series_subscription_urls(
-        cookie="cookie",
-        max_count=0,
-        user="testuser",
-        oldest_date=oldest_date,
+        user="testuser", cookie="cookie", max_count=0, oldest_date=oldest_date
     )
 
     assert urls == set([])
@@ -215,10 +185,7 @@ def test_get_ao3_series_subscription_urls_max_count_zero():
 @patch("src.ao3_utils.AO3", MockAO3)
 def test_get_ao3_user_subscription_urls():
     urls = ao3_utils.get_ao3_user_subscription_urls(
-        cookie="cookie",
-        max_count=3,
-        user="testuser",
-        oldest_date=oldest_date,
+        user="testuser", cookie="cookie", max_count=3, oldest_date=oldest_date
     )
 
     assert urls == {
@@ -236,10 +203,7 @@ def test_get_ao3_user_subscription_urls():
 
 def test_get_ao3_user_subscription_urls_max_count_zero():
     urls = ao3_utils.get_ao3_user_subscription_urls(
-        cookie="cookie",
-        max_count=0,
-        user="testuser",
-        oldest_date=oldest_date,
+        user="testuser", cookie="cookie", max_count=0, oldest_date=oldest_date
     )
 
     assert urls == set([])
@@ -248,9 +212,9 @@ def test_get_ao3_user_subscription_urls_max_count_zero():
 @patch("src.ao3_utils.AO3", MockAO3)
 def test_get_ao3_series_work_urls():
     urls = ao3_utils.get_ao3_series_work_urls(
+        user="testuser",
         cookie="cookie",
         max_count=3,
-        user="testuser",
         series_id="3",
         oldest_date=oldest_date,
     )
@@ -264,9 +228,9 @@ def test_get_ao3_series_work_urls():
 
 def test_get_ao3_series_work_urls_max_count_zero():
     urls = ao3_utils.get_ao3_series_work_urls(
+        user="testuser",
         cookie="cookie",
         max_count=0,
-        user="testuser",
         series_id="123",
         oldest_date=oldest_date,
     )
@@ -277,9 +241,9 @@ def test_get_ao3_series_work_urls_max_count_zero():
 @patch("src.ao3_utils.AO3", MockAO3)
 def test_get_ao3_collection_work_urls():
     urls = ao3_utils.get_ao3_collection_work_urls(
+        user="testuser",
         cookie="cookie",
         max_count=10,
-        user="testuser",
         collection_id="123",
         oldest_date=oldest_date,
     )
@@ -293,9 +257,9 @@ def test_get_ao3_collection_work_urls():
 
 def test_get_ao3_collection_work_urls_max_count_zero():
     urls = ao3_utils.get_ao3_collection_work_urls(
+        user="testuser",
         cookie="cookie",
         max_count=0,
-        user="testuser",
         collection_id="123",
         oldest_date=oldest_date,
     )

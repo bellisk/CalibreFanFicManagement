@@ -131,10 +131,10 @@ def _get_missing_work_urls_from_users(
     for u in users_missing_works:
         log(u)
         ao3_urls = get_ao3_users_work_urls(
-            cookie,
-            max_count=None,
             user=username,
+            cookie=cookie,
             username=u,
+            max_count=None,
             oldest_date=None,
             ao3_url=ao3_url,
         )
@@ -153,7 +153,11 @@ def _get_missing_work_urls_from_series(
     for series_id, series_title in series_missing_works.items():
         log(series_title, series_id)
         ao3_urls = get_ao3_series_work_urls(
-            cookie, max_count=None, user=username, series_id=series_id, ao3_url=ao3_url
+            user=username,
+            cookie=cookie,
+            max_count=None,
+            series_id=series_id,
+            ao3_url=ao3_url,
         )
         calibre_urls = get_series_work_urls(series_title, path)
         missing_work_urls.extend(set(ao3_urls) - set(calibre_urls))
