@@ -99,7 +99,7 @@ def setup_login(options):
 
 
 def check_subprocess_output(command):
-    return check_output(command, shell=True, stderr=STDOUT, stdin=PIPE)
+    return check_output(command, shell=True, stderr=STDOUT, stdin=PIPE, text=True)
 
 
 def get_options_for_display(options):

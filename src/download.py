@@ -70,8 +70,6 @@ updated_more_recently = re.compile(
 
 
 def check_fff_output(output, command=""):
-    if isinstance(output, bytes):
-        output = output.decode("utf-8")
     if len(output) == 0:
         raise EmptyFanFicFareResponseException(command)
     if equal_chapters.search(output):
@@ -119,11 +117,9 @@ def get_url_without_chapter(url):
     raise BadDataException(f"Malformed url: '{url}'")
 
 
-def get_new_story_id(bytestring):
-    # We get something like b'123,124,125' and want the last id as a string
-    return (
-        bytestring.decode("utf-8").replace("Initialized urlfixer\n", "").split(",")[-1]
-    )
+def get_new_story_id(output):
+    # We get something like '123,124,125' and want the last id as a string
+    return output.replace("Initialized urlfixer\n", "").split(",")[-1]
 
 
 def do_download(path, loc, url, fanficfare_config, output, force):
@@ -147,7 +143,7 @@ def do_download(path, loc, url, fanficfare_config, output, force):
         result = check_subprocess_output(
             f'calibredb search "Identifiers:url:={url}" "Format:=EPUB" {path}'
         )
-        story_id = result.decode("utf-8").replace("Initialized urlfixer\n", "")
+        story_id = result.replace("Initialized urlfixer\n", "")
     except CalledProcessError:
         # story is not in Calibre
         story_id = None

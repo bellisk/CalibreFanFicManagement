@@ -254,7 +254,7 @@ def get_author_works_count(author, path):
         )
     except CalledProcessError:
         return 0
-    return len(str(result).split(","))
+    return len(result.split(","))
 
 
 def get_author_work_urls(author, path):
@@ -262,7 +262,7 @@ def get_author_work_urls(author, path):
         f'calibredb list --search author:"={author} or \\({author}\\)" {path} '
         f"--fields *identifier --for-machine",
     )
-    result_json = json.loads(result.decode("utf-8"))
+    result_json = json.loads(result)
     return [r["*identifier"].replace("url:", "") for r in result_json]
 
 
@@ -275,7 +275,7 @@ def get_series_works_count(series_title, path):
         )
     except CalledProcessError:
         return 0
-    return len(str(result).split(","))
+    return len(result.split(","))
 
 
 def get_series_work_urls(series_title, path):
@@ -285,7 +285,7 @@ def get_series_work_urls(series_title, path):
         f'calibredb list --search allseries:"=\\"{series_title}\\"" {path} '
         f"--fields *identifier --for-machine",
     )
-    result_json = json.loads(result.decode("utf-8"))
+    result_json = json.loads(result)
     return [r["*identifier"].replace("url:", "") for r in result_json]
 
 
@@ -294,7 +294,7 @@ def get_incomplete_work_data(path):
         f'calibredb list --search "#status:=In-Progress" {path} '
         f"--fields title,*identifier --for-machine",
     )
-    result_json = json.loads(result.decode("utf-8"))
+    result_json = json.loads(result)
     return [
         {"title": r["title"], "url": r["*identifier"].replace("url:", "")}
         for r in result_json
