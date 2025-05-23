@@ -277,21 +277,17 @@ def get_series_options(metadata):
         return {}
 
     m = series_pattern.match(metadata["series"])
-    return {"series": m.group(1), "series-index": m.group(2)}
+    return {"series": m.group(1), "series-index": f'"{m.group(2)}"'}
 
 
 def get_extra_series_options(metadata):
-    # The command to set custom column data is:
-    # 'calibredb set_custom [options] column id value'
-    # Here we return a list of (column, value) tuples for each additional series
-    # field that contains data, plus its index.
     existing_series = metadata["series"]
     series_keys = ["series00", "series01", "series02", "series03"]
-    opts = ""
+    opts = {}
     for key in series_keys:
         if len(metadata[key]) > 0 and metadata[key] != existing_series:
             m = series_pattern.match(metadata[key])
-            opts += f'--field=#{key}:"{m.group(0)}" '
+            opts[f"#{key}"] = f'"{m.group(0)}"'
 
     return opts
 
@@ -299,7 +295,7 @@ def get_extra_series_options(metadata):
 def get_tags_options(metadata):
     # FFF will save all fic tags to the tags column, but we want to separate them out,
     # so remove them from there.
-    opts = "--field=tags:'' "
+    opts = {"tags": ""}
     for tag_type in TAG_TYPES:
         if len(metadata[tag_type]) > 0:
             tags = metadata[tag_type].split(", ")
@@ -313,7 +309,7 @@ def get_tags_options(metadata):
                 + '"'
                 for tag in tags
             ]
-            opts += f"--field=#{tag_type}:{','.join(tags)} "
+            opts[f"#{tag_type}"] = f"{','.join(tags)}"
 
     return opts
 
