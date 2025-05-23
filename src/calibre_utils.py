@@ -208,21 +208,32 @@ class CalibreHelper(object):
 
         return len(result)
 
+    def export(self, book_id, location):
+        command = (
+            f'calibredb export {book_id} --to-dir "{location}"'
+            f"--dont-save-cover --dont-write-opf --single-dir "
+            f"{self.library_access_string}"
+        )
 
-def export():
-    pass
+        try:
+            check_and_clean_output(command)
+        except CalledProcessError as e:
+            raise CalibreException(e.output)
 
+    def list_urls(self):
+        pass
 
-def add():
-    pass
+    def add(self):
+        pass
 
+    def remove(self):
+        pass
 
-def set_custom():
-    pass
+    def set_custom(self):
+        pass
 
-
-def set_metadata():
-    pass
+    def set_metadata(self):
+        pass
 
 
 def get_series_options(metadata):

@@ -151,15 +151,7 @@ def do_download(loc, url, fanficfare_config, calibre, force):
             Bcolors.OKBLUE,
         )
         log("\tExporting file", Bcolors.OKBLUE)
-        log(
-            f"\tcalibredb export {story_id} --dont-save-cover --dont-write-opf "
-            f'--single-dir --to-dir "{loc}" {calibre}',
-            Bcolors.OKBLUE,
-        )
-        check_subprocess_output(
-            f"calibredb export {story_id} --dont-save-cover --dont-write-opf "
-            f'--single-dir --to-dir "{loc}" {calibre}',
-        )
+        calibre.export(book_id=story_id, location=loc)
 
         cur = get_files(loc, ".epub", True)[0]
         log(
@@ -317,7 +309,7 @@ def download(options):
         calibre = CalibreHelper(
             library_path=options.library,
             user=options.calibre_user,
-            password=options.calibre_password
+            password=options.calibre_password,
         )
         try:
             calibre.check_library()
