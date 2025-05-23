@@ -67,7 +67,10 @@ def collate_search_terms(authors=None, book_formats=None, series=None, urls=None
             " OR ".join([f"Identifiers:url:={url}" for url in urls])
         )
     if series:
-        search_term_sets.append(" OR ".join(f'allseries:"=\\"{s}\\""' for s in series))
+        # Calibre seems to escape only the character & in series titles
+        search_term_sets.append(
+            " OR ".join(f'allseries:"=\\"{s.replace("&", "&amp;")}\\""' for s in series)
+        )
     if book_formats:
         search_term_sets.append(
             " OR ".join(
@@ -377,26 +380,6 @@ def get_all_metadata_options(metadata):
     options.update(get_tags_options(metadata))
 
     return options
-
-
-def get_author_work_urls(author, path):
-    result = check_and_clean_output(
-        f'calibredb list --search author:"={author} or \\({author}\\)" {path} '
-        f"--fields *identifier --for-machine",
-    )
-    result_json = json.loads(result)
-    return [r["*identifier"].replace("url:", "") for r in result_json]
-
-
-def get_series_work_urls(series_title, path):
-    # Calibre seems to escape only this character in series titles
-    series_title = series_title.replace("&", "&amp;")
-    result = check_and_clean_output(
-        f'calibredb list --search allseries:"=\\"{series_title}\\"" {path} '
-        f"--fields *identifier --for-machine",
-    )
-    result_json = json.loads(result)
-    return [r["*identifier"].replace("url:", "") for r in result_json]
 
 
 def get_incomplete_work_data(path):

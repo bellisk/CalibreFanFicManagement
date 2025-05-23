@@ -14,7 +14,6 @@ from .ao3_utils import (
 from .calibre_utils import (
     CalibreException,
     CalibreHelper,
-    get_author_work_urls,
     get_incomplete_work_data,
     get_series_work_urls,
 )
@@ -123,7 +122,7 @@ def _compare_series_subscriptions(
 
 
 def _get_missing_work_urls_from_users(
-    users_missing_works, username, cookie, path, ao3_url=AO3_DEFAULT_URL
+    users_missing_works, username, cookie, calibre, ao3_url=AO3_DEFAULT_URL
 ):
     log("Getting urls for works missing from subscribed users.")
     missing_work_urls = []
@@ -137,7 +136,9 @@ def _get_missing_work_urls_from_users(
             oldest_date=None,
             ao3_url=ao3_url,
         )
-        calibre_urls = get_author_work_urls(u, path)
+        calibre_urls = [
+            work["url"] for work in calibre.list_titles_and_urls(authors=[u])
+        ]
         missing_work_urls.extend(set(ao3_urls) - set(calibre_urls))
 
     log(f"Found {len(missing_work_urls)} urls to import")
@@ -145,7 +146,7 @@ def _get_missing_work_urls_from_users(
 
 
 def _get_missing_work_urls_from_series(
-    series_missing_works, username, cookie, path, ao3_url=AO3_DEFAULT_URL
+    series_missing_works, username, cookie, calibre, ao3_url=AO3_DEFAULT_URL
 ):
     log("Getting urls for works missing from subscribed series.")
     missing_work_urls = []
@@ -158,7 +159,9 @@ def _get_missing_work_urls_from_series(
             series_id=series_id,
             ao3_url=ao3_url,
         )
-        calibre_urls = get_series_work_urls(series_title, path)
+        calibre_urls = [
+            work["url"] for work in calibre.list_titles_and_urls(series=[series_title])
+        ]
         missing_work_urls.extend(set(ao3_urls) - set(calibre_urls))
 
     log(f"Found {len(missing_work_urls)} urls to import.")
@@ -224,7 +227,7 @@ Examples: \"/home/myuser/Calibre Library\", \"http://localhost:8080/#calibre-lib
                         users_missing_works,
                         options.user,
                         options.cookie,
-                        path,
+                        calibre,
                         options.mirror,
                     )
                 )
