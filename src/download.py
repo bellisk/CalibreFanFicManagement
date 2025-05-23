@@ -169,8 +169,8 @@ def do_download(loc, url, fanficfare_config, calibre, force):
             force and isinstance(e, StoryUpToDateException)
         ):
             log("\tForcing download update. FanFicFare error message:", Bcolors.WARNING)
-            for line in fff_update_result.split(b"\n"):
-                if line == b"{":
+            for line in fff_update_result.split("\n"):
+                if line == "{":
                     break
                 log(f"\t\t{str(line)}", Bcolors.WARNING)
             command += " --force"
@@ -235,7 +235,7 @@ def downloader(url, inout_file, fanficfare_config, calibre, force):
     except Exception as e:
         log(f"\tException: {e}", Bcolors.FAIL)
         if isinstance(e, CalledProcessError):
-            log(f"\t{e.output.decode('utf-8')}", Bcolors.FAIL)
+            log(f"\t{e.output}", Bcolors.FAIL)
         rmtree(loc, ignore_errors=True)
         if not isinstance(e, StoryUpToDateException):
             with open(inout_file, "a") as fp:
