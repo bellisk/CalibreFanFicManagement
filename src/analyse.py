@@ -181,7 +181,6 @@ def _collect_incomplete_works(path, output_file):
 
 
 def analyse(options):
-    setup_login(options)
     if not options.library:
         log(
             """To analyse the contents of a Calibre library, a path or url to the
@@ -203,6 +202,8 @@ Examples: \"/home/myuser/Calibre Library\", \"http://localhost:8080/#calibre-lib
     except CalibreException as e:
         log(str(e), Bcolors.FAIL)
         return
+
+    setup_login(options)
 
     if not isdir(options.analysis_dir):
         mkdir(options.analysis_dir)

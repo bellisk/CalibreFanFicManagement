@@ -8,10 +8,10 @@ from os import rename
 from shutil import rmtree
 from subprocess import CalledProcessError
 from tempfile import mkdtemp
-from test import calibre
 
 from .calibre_utils import (
     CalibreException,
+    CalibreHelper,
     get_extra_series_options,
     get_series_options,
     get_tags_options,
@@ -122,8 +122,8 @@ def get_new_story_id(output):
     return output.replace("Initialized urlfixer\n", "").split(",")[-1]
 
 
-def do_download(path, loc, url, fanficfare_config, force):
-    if not path:
+def do_download(loc, url, fanficfare_config, calibre, force):
+    if not calibre:
         # We have no path to a Calibre library, so just download the story.
         command = f'cd "{loc}" && fanficfare -u "{url}" --update-cover'
         fff_update_result = check_subprocess_output(command)
@@ -141,7 +141,7 @@ def do_download(path, loc, url, fanficfare_config, force):
     cur = url
     try:
         result = check_subprocess_output(
-            f'calibredb search "Identifiers:url:={url}" "Format:=EPUB" {path}'
+            f'calibredb search "Identifiers:url:={url}" "Format:=EPUB" {calibre}'
         )
         story_id = result.replace("Initialized urlfixer\n", "")
     except CalledProcessError:
@@ -157,12 +157,12 @@ def do_download(path, loc, url, fanficfare_config, force):
         log("\tExporting file", Bcolors.OKBLUE)
         log(
             f"\tcalibredb export {story_id} --dont-save-cover --dont-write-opf "
-            f'--single-dir --to-dir "{loc}" {path}',
+            f'--single-dir --to-dir "{loc}" {calibre}',
             Bcolors.OKBLUE,
         )
         check_subprocess_output(
             f"calibredb export {story_id} --dont-save-cover --dont-write-opf "
-            f'--single-dir --to-dir "{loc}" {path}',
+            f'--single-dir --to-dir "{loc}" {calibre}',
         )
 
         cur = get_files(loc, ".epub", True)[0]
@@ -219,13 +219,13 @@ def do_download(path, loc, url, fanficfare_config, force):
 
     log(f"\tAdding {cur} to library", Bcolors.OKBLUE)
     try:
-        check_subprocess_output(f'calibredb add -d {path} "{cur}" {series_options}')
+        check_subprocess_output(f'calibredb add -d {calibre} "{cur}" {series_options}')
     except CalledProcessError as e:
         log(e)
         raise
     try:
         calibre_search_result = check_subprocess_output(
-            f'calibredb search "Identifiers:url:={url}" {path}'
+            f'calibredb search "Identifiers:url:={url}" {calibre}'
         )
         new_story_id = get_new_story_id(calibre_search_result)
         log(
@@ -248,7 +248,7 @@ def do_download(path, loc, url, fanficfare_config, force):
         )
         try:
             check_subprocess_output(
-                f"calibredb set_custom {path} words {new_story_id} '{word_count}'"
+                f"calibredb set_custom {calibre} words {new_story_id} '{word_count}'"
             )
         except CalledProcessError as e:
             log(
@@ -266,7 +266,7 @@ def do_download(path, loc, url, fanficfare_config, force):
             )
             update_command = (
                 f"calibredb set_metadata {str(new_story_id)} "
-                f"{path} {tags_options} {extra_series_options}"
+                f"{calibre} {tags_options} {extra_series_options}"
             )
             log(update_command, Bcolors.OKBLUE)
             check_subprocess_output(update_command)
@@ -280,14 +280,14 @@ def do_download(path, loc, url, fanficfare_config, force):
     if story_id:
         log(f"\tRemoving {story_id} from library", Bcolors.OKBLUE)
         try:
-            check_subprocess_output(f"calibredb remove {path} {story_id}")
+            check_subprocess_output(f"calibredb remove {calibre} {story_id}")
         except CalledProcessError:
             raise
 
     rmtree(loc)
 
 
-def downloader(url, inout_file, fanficfare_config, path, force):
+def downloader(url, inout_file, fanficfare_config, calibre, force):
     output = ""
     log(f"Working with url {url}", Bcolors.HEADER)
 
@@ -300,7 +300,7 @@ def downloader(url, inout_file, fanficfare_config, path, force):
     loc = mkdtemp()
 
     try:
-        do_download(path, loc, url, fanficfare_config, force)
+        do_download(loc, url, fanficfare_config, calibre, force)
     except Exception as e:
         log(f"\tException: {e}", Bcolors.FAIL)
         if isinstance(e, CalledProcessError):
@@ -316,11 +316,18 @@ def downloader(url, inout_file, fanficfare_config, path, force):
 
 
 def download(options):
-    try:
-        calibre.check_library()
-    except CalibreException as e:
-        log(str(e), Bcolors.FAIL)
-        return
+    calibre = None
+    if options.library:
+        calibre = CalibreHelper(
+            library_path=options.library,
+            user=options.calibre_user,
+            password=options.calibre_password
+        )
+        try:
+            calibre.check_library()
+        except CalibreException as e:
+            log(str(e), Bcolors.FAIL)
+            return
 
     try:
         setup_login(options)
@@ -353,7 +360,7 @@ def download(options):
                 url,
                 options.input,
                 options.fanficfare_config,
-                path,
+                calibre,
                 options.force,
             )
         except CloudflareWebsiteException:
