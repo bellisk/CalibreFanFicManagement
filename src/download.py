@@ -142,10 +142,7 @@ def do_download(loc, url, fanficfare_config, calibre, force):
 
     if story_id is not None:
         # Story is in Calibre
-        log(
-            f"\tStory is in Calibre with id {story_id}",
-            Bcolors.OKBLUE,
-        )
+        log(f"\tStory is in Calibre with id {story_id}", Bcolors.OKBLUE)
         log("\tExporting file", Bcolors.OKBLUE)
         calibre.export(book_id=story_id, location=loc)
 
@@ -158,10 +155,7 @@ def do_download(loc, url, fanficfare_config, calibre, force):
     check_subprocess_output(f'cp "{fanficfare_config}" {loc}/personal.ini')
 
     command = f'cd "{loc}" && fanficfare -j -u "{cur}" --update-cover'
-    log(
-        f"\tRunning: {command}",
-        Bcolors.OKBLUE,
-    )
+    log(f"\tRunning: {command}", Bcolors.OKBLUE)
     try:
         fff_update_result = check_subprocess_output(command)
     except CalledProcessError as e:
@@ -174,20 +168,14 @@ def do_download(loc, url, fanficfare_config, calibre, force):
         if isinstance(e, TempFileUpdatedMoreRecentlyException) or (
             force and isinstance(e, StoryUpToDateException)
         ):
-            log(
-                "\tForcing download update. FanFicFare error message:",
-                Bcolors.WARNING,
-            )
+            log("\tForcing download update. FanFicFare error message:", Bcolors.WARNING)
             for line in fff_update_result.split(b"\n"):
                 if line == b"{":
                     break
                 log(f"\t\t{str(line)}", Bcolors.WARNING)
             command += " --force"
 
-            log(
-                f"\tRunning: {command}",
-                Bcolors.OKBLUE,
-            )
+            log(f"\tRunning: {command}", Bcolors.OKBLUE)
             try:
                 fff_update_result = check_subprocess_output(command)
             except CalledProcessError as e:
@@ -309,8 +297,7 @@ def download(options):
         except CloudflareWebsiteException:
             pause = 30
             log(
-                f"Waiting {pause} seconds to (hopefully) allow AO3 to recover from "
-                f"Cloudflare error",
+                f"Waiting {pause} seconds to (hopefully) allow AO3 to recover from Cloudflare error",
                 Bcolors.WARNING,
             )
             time.sleep(pause)
