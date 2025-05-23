@@ -273,20 +273,6 @@ def get_word_count(metadata):
     return locale.atoi(metadata.get("numWords", 0))
 
 
-def get_author_works_count(author, path):
-    # author:"=author or \(author\)"
-    # This catches both exact use of the author name, or use of a pseud,
-    # e.g. "MyPseud (MyUsername)"
-    log(f"getting work count for {author} in calibre")
-    try:
-        result = check_and_clean_output(
-            f'calibredb search author:"={author} or \\({author}\\)" {path}',
-        )
-    except CalledProcessError:
-        return 0
-    return len(result.split(","))
-
-
 def get_author_work_urls(author, path):
     result = check_and_clean_output(
         f'calibredb list --search author:"={author} or \\({author}\\)" {path} '

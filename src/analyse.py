@@ -15,7 +15,6 @@ from .calibre_utils import (
     CalibreException,
     CalibreHelper,
     get_author_work_urls,
-    get_author_works_count,
     get_incomplete_work_data,
     get_series_work_urls,
     get_series_works_count,
@@ -26,7 +25,7 @@ from .utils import AO3_DEFAULT_URL, Bcolors, log, setup_login
 
 
 def _compare_user_subscriptions(
-    username, cookie, path, output_file, ao3_url=AO3_DEFAULT_URL
+    username, cookie, calibre_helper, output_file, ao3_url=AO3_DEFAULT_URL
 ):
     """Compares the number of fics downloaded for each user subscribed to with the
     number posted to AO3.
@@ -38,7 +37,7 @@ def _compare_user_subscriptions(
         username, cookie, ao3_url=ao3_url
     )
     calibre_user_work_counts = {
-        u: get_author_works_count(u, path) for u in ao3_user_work_counts.keys()
+        u: calibre_helper.get_author_works_count(u) for u in ao3_user_work_counts.keys()
     }
 
     users_missing_works = []
@@ -204,7 +203,7 @@ def analyse(options):
 
             if analysis_type == SOURCE_USER_SUBSCRIPTIONS:
                 users_missing_works = _compare_user_subscriptions(
-                    options.user, options.cookie, path, output_file, options.mirror
+                    options.user, options.cookie, calibre, output_file, options.mirror
                 )
                 missing_works.extend(
                     _get_missing_work_urls_from_users(
