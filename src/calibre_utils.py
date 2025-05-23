@@ -158,28 +158,40 @@ class CalibreHelper(object):
     def search(self, authors=None, urls=None, series=None, book_formats=None):
         """Accepts lists of authors/urls/series/formats to search calibredb for.
 
+        All search terms of the same kind are joined with OR; each set of search terms
+        is joined with AND. This is because this matches the current use cases I have
+        for this method, and may well come back to bite me.
+
         Returns a list of book ids that match the search.
         """
-        search_terms = []
+        search_term_sets = []
 
         if authors:
             # author:"=author or \(author\)"
             # This catches both exact use of the author name, or use of a pseud,
             # e.g. "MyPseud (MyUsername)"
-            search_terms.extend(
-                [f'author:"={author} or \\({author}\\)"' for author in authors]
+            search_term_sets.append(
+                " OR ".join(
+                    [f'author:"={author} or \\({author}\\)"' for author in authors]
+                )
             )
         if urls:
-            search_terms.extend([f"Identifiers:url:={url}" for url in urls])
+            search_term_sets.append(
+                " OR ".join([f"Identifiers:url:={url}" for url in urls])
+            )
         if series:
-            search_terms.extend([f'allseries:"=\\"{s}\\""' for s in series])
+            search_term_sets.append(
+                " OR ".join(f'allseries:"=\\"{s}\\""' for s in series)
+            )
         if book_formats:
-            search_terms.extend(
-                [f"Format:={book_format.upper()}" for book_format in book_formats]
+            search_term_sets.append(
+                " OR ".join(
+                    [f"Format:={book_format.upper()}" for book_format in book_formats]
+                )
             )
 
         command = (
-            f"calibredb search {' or '. join(search_terms)} "
+            f"calibredb search {' AND '. join(search_term_sets)} "
             f"{self.library_access_string}"
         )
         log(command)
