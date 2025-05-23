@@ -155,22 +155,50 @@ class CalibreHelper(object):
                     f"{tag} {tag} text --is-multiple"
                 )
 
-    def search(self, author=None, urls=None, series=None, book_format=None):
-        if urls is None:
-            urls = []
-        command = "calibredb search "
+    def search(self, authors=None, urls=None, series=None, book_formats=None):
+        """Accepts lists of authors/urls/series/formats to search calibredb for.
 
-        if author:
-            command += f'author:"={author} or \\({author}\\)" '
+        Returns a list of book ids that match the search.
+        """
+        search_terms = []
+
+        if authors:
+            # author:"=author or \(author\)"
+            # This catches both exact use of the author name, or use of a pseud,
+            # e.g. "MyPseud (MyUsername)"
+            search_terms.extend(
+                [f'author:"={author} or \\({author}\\)"' for author in authors]
+            )
         if urls:
-            command += " or ".join([f"Identifiers:url:={url}" for url in urls]) + " "
+            search_terms.extend([f"Identifiers:url:={url}" for url in urls])
         if series:
-            command += f'allseries:"=\\"{series}\\"" '
-        if book_format:
-            command += f"Format:={book_format.upper()} "
+            search_terms.extend([f'allseries:"=\\"{s}\\""' for s in series])
+        if book_formats:
+            search_terms.extend(
+                [f"Format:={book_format.upper()}" for book_format in book_formats]
+            )
 
-        command += self.library_access_string
+        command = (
+            f"calibredb search {' or '. join(search_terms)} "
+            f"{self.library_access_string}"
+        )
         log(command)
+
+        try:
+            result = check_and_clean_output(command)
+
+            return result.split(",")
+        except CalledProcessError as e:
+            if "No books matching the search expression" in e.output:
+                return []
+            else:
+                raise
+
+    def get_author_works_count(self, author):
+        log(f"Getting work count for {author} in calibre")
+        result = self.search(authors=[author])
+
+        return len(result)
 
 
 def export():
