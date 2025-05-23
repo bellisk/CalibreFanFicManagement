@@ -47,6 +47,37 @@ def check_and_clean_output(command):
     return clean_output(check_subprocess_output(command))
 
 
+def collate_search_terms(authors=None, book_formats=None, series=None, urls=None):
+    """Turn lists of search terms of different kinds into a search query for calibredb.
+
+    All search terms of the same kind are joined with OR; each set of search terms
+    is joined with AND. This is because this matches the current use cases I have
+    for this method, and may well come back to bite me.
+    """
+    search_term_sets = []
+    if authors:
+        # author:"=author or \(author\)"
+        # This catches both exact use of the author name and use of a pseud,
+        # e.g. "MyPseud (MyUsername)"
+        search_term_sets.append(
+            " OR ".join([f'author:"={author} or \\({author}\\)"' for author in authors])
+        )
+    if urls:
+        search_term_sets.append(
+            " OR ".join([f"Identifiers:url:={url}" for url in urls])
+        )
+    if series:
+        search_term_sets.append(" OR ".join(f'allseries:"=\\"{s}\\""' for s in series))
+    if book_formats:
+        search_term_sets.append(
+            " OR ".join(
+                [f"Format:={book_format.upper()}" for book_format in book_formats]
+            )
+        )
+
+    return " AND ".join(search_term_sets)
+
+
 class CalibreHelper(object):
     """Calls calibredb CLI commands."""
 
@@ -164,36 +195,9 @@ class CalibreHelper(object):
 
         Returns a list of book ids that match the search.
         """
-        search_term_sets = []
+        search_terms = collate_search_terms(authors, book_formats, series, urls)
 
-        if authors:
-            # author:"=author or \(author\)"
-            # This catches both exact use of the author name, or use of a pseud,
-            # e.g. "MyPseud (MyUsername)"
-            search_term_sets.append(
-                " OR ".join(
-                    [f'author:"={author} or \\({author}\\)"' for author in authors]
-                )
-            )
-        if urls:
-            search_term_sets.append(
-                " OR ".join([f"Identifiers:url:={url}" for url in urls])
-            )
-        if series:
-            search_term_sets.append(
-                " OR ".join(f'allseries:"=\\"{s}\\""' for s in series)
-            )
-        if book_formats:
-            search_term_sets.append(
-                " OR ".join(
-                    [f"Format:={book_format.upper()}" for book_format in book_formats]
-                )
-            )
-
-        command = (
-            f"calibredb search {' AND '. join(search_term_sets)} "
-            f"{self.library_access_string}"
-        )
+        command = f"calibredb search {search_terms} {self.library_access_string}"
         log(command)
 
         try:
@@ -232,8 +236,31 @@ class CalibreHelper(object):
         except CalledProcessError as e:
             raise CalibreException(e.output)
 
-    def list_urls(self):
-        pass
+    def list_titles_and_urls(
+        self, authors=None, urls=None, series=None, book_formats=None
+    ):
+        search_terms = collate_search_terms(authors, book_formats, series, urls)
+
+        command = (
+            f"calibredb list --search {search_terms} {self.library_access_string} "
+            f"--fields title,*identifier --for-machine"
+        )
+        log(command)
+
+        try:
+            result = check_and_clean_output(command)
+
+            result_json = json.loads(result)
+        except CalledProcessError as e:
+            if "No books matching the search expression" in e.output:
+                return []
+            else:
+                raise
+
+        return [
+            {"title": r["title"], "url": r["*identifier"].replace("url:", "")}
+            for r in result_json
+        ]
 
     def add(self, book_filepath, options):
         """Add a book to the Calibre library.
