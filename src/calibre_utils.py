@@ -241,7 +241,7 @@ class CalibreHelper(object):
         options is a dictionary of option_name: option_value, which will be converted to
         CLI options.
         """
-        options_strings = [f"--{k}={v}" for k, v in options.items()]
+        options_strings = [f'--{k}="{v}"' for k, v in options.items()]
 
         command = (
             f'calibredb add -d "{book_filepath}" {" ".join(options_strings)} '
@@ -271,12 +271,13 @@ class CalibreHelper(object):
             "#characters": '"Jane Grey","Captain Scarlet"'
         }
         """
-        options_strings = [f"--field={k}:{v}" for k, v in options.items()]
+        options_strings = [f'--field={k}:"{v}"' for k, v in options.items()]
 
         command = (
             f"calibredb set_metadata {book_id} {' '.join(options_strings)}"
             f"{self.library_access_string}"
         )
+        log(command)
 
         try:
             check_and_clean_output(command)
