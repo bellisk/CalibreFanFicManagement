@@ -17,7 +17,6 @@ from .calibre_utils import (
     get_author_work_urls,
     get_incomplete_work_data,
     get_series_work_urls,
-    get_series_works_count,
 )
 from .download import download
 from .options import INCOMPLETE, SOURCE_SERIES_SUBSCRIPTIONS, SOURCE_USER_SUBSCRIPTIONS
@@ -73,7 +72,7 @@ def _compare_user_subscriptions(
 
 
 def _compare_series_subscriptions(
-    username, cookie, path, output_file, ao3_url=AO3_DEFAULT_URL
+    username, cookie, calibre, output_file, ao3_url=AO3_DEFAULT_URL
 ):
     """Compares the number of fics downloaded for each series subscribed to with the
     number posted to AO3.
@@ -85,7 +84,7 @@ def _compare_series_subscriptions(
         username, cookie, ao3_url=ao3_url
     )
     calibre_series_work_counts = {
-        u["Title"]: get_series_works_count(u["Title"], path)
+        u["Title"]: calibre.get_series_works_count(u["Title"])
         for u in ao3_series_work_stats.values()
     }
 
@@ -216,7 +215,7 @@ def analyse(options):
                 )
             elif analysis_type == SOURCE_SERIES_SUBSCRIPTIONS:
                 series_missing_works = _compare_series_subscriptions(
-                    options.user, options.cookie, path, output_file, options.mirror
+                    options.user, options.cookie, calibre, output_file, options.mirror
                 )
                 missing_works.extend(
                     _get_missing_work_urls_from_series(

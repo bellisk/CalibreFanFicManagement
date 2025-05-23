@@ -200,6 +200,14 @@ class CalibreHelper(object):
 
         return len(result)
 
+    def get_series_works_count(self, series_title):
+        log(f"Getting work count for {series_title} in calibre")
+        # Calibre seems to escape only this character in series titles
+        series_title = series_title.replace("&", "&amp;")
+        result = self.search(series=[series_title])
+
+        return len(result)
+
 
 def export():
     pass
@@ -280,18 +288,6 @@ def get_author_work_urls(author, path):
     )
     result_json = json.loads(result)
     return [r["*identifier"].replace("url:", "") for r in result_json]
-
-
-def get_series_works_count(series_title, path):
-    # Calibre seems to escape only this character in series titles
-    series_title = series_title.replace("&", "&amp;")
-    try:
-        result = check_and_clean_output(
-            f'calibredb search allseries:"=\\"{series_title}\\"" {path}',
-        )
-    except CalledProcessError:
-        return 0
-    return len(result.split(","))
 
 
 def get_series_work_urls(series_title, path):
