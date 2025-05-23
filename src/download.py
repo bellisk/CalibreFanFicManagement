@@ -208,11 +208,8 @@ def do_download(loc, url, fanficfare_config, calibre, force):
         log(f"\tRemoving {story_id} from library", Bcolors.OKBLUE)
         calibre.remove(story_id)
 
-    rmtree(loc)
-
 
 def downloader(url, inout_file, fanficfare_config, calibre, force):
-    output = ""
     log(f"Working with url {url}", Bcolors.HEADER)
 
     try:
@@ -229,7 +226,6 @@ def downloader(url, inout_file, fanficfare_config, calibre, force):
         log(f"\tException: {e}", Bcolors.FAIL)
         if isinstance(e, CalledProcessError):
             log(f"\t{e.output}", Bcolors.FAIL)
-        rmtree(loc, ignore_errors=True)
         if not isinstance(e, StoryUpToDateException):
             with open(inout_file, "a") as fp:
                 fp.write(f"{url}\n")
@@ -237,6 +233,8 @@ def downloader(url, inout_file, fanficfare_config, calibre, force):
             # Let the outer loop know that we need to pause before downloading the next
             # fic
             raise
+    finally:
+        rmtree(loc, ignore_errors=True)
 
 
 def download(options):
