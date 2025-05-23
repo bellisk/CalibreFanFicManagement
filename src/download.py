@@ -122,7 +122,7 @@ def get_new_story_id(output):
     return output.replace("Initialized urlfixer\n", "").split(",")[-1]
 
 
-def do_download(path, loc, url, fanficfare_config, output, force):
+def do_download(path, loc, url, fanficfare_config, force):
     if not path:
         # We have no path to a Calibre library, so just download the story.
         command = f'cd "{loc}" && fanficfare -u "{url}" --update-cover'
@@ -131,7 +131,7 @@ def do_download(path, loc, url, fanficfare_config, output, force):
         cur = get_files(loc, ".epub", True)[0]
         name = get_files(loc, ".epub", False)[0]
         rename(cur, name)
-        output += log(
+        log(
             f"\tDownloaded story {story_name.search(name).group(1)} to {name}",
             Bcolors.OKGREEN,
         )
@@ -150,12 +150,12 @@ def do_download(path, loc, url, fanficfare_config, output, force):
 
     if story_id is not None:
         # Story is in Calibre
-        output += log(
+        log(
             f"\tStory is in Calibre with id {story_id}",
             Bcolors.OKBLUE,
         )
-        output += log("\tExporting file", Bcolors.OKBLUE)
-        output += log(
+        log("\tExporting file", Bcolors.OKBLUE)
+        log(
             f"\tcalibredb export {story_id} --dont-save-cover --dont-write-opf "
             f'--single-dir --to-dir "{loc}" {path}',
             Bcolors.OKBLUE,
@@ -166,7 +166,7 @@ def do_download(path, loc, url, fanficfare_config, output, force):
         )
 
         cur = get_files(loc, ".epub", True)[0]
-        output += log(
+        log(
             f'\tDownloading with fanficfare, updating file "{cur}"',
             Bcolors.OKGREEN,
         )
@@ -174,7 +174,7 @@ def do_download(path, loc, url, fanficfare_config, output, force):
     check_subprocess_output(f'cp "{fanficfare_config}" {loc}/personal.ini')
 
     command = f'cd "{loc}" && fanficfare -j -u "{cur}" --update-cover'
-    output += log(
+    log(
         f"\tRunning: {command}",
         Bcolors.OKBLUE,
     )
@@ -190,17 +190,17 @@ def do_download(path, loc, url, fanficfare_config, output, force):
         if isinstance(e, TempFileUpdatedMoreRecentlyException) or (
             force and isinstance(e, StoryUpToDateException)
         ):
-            output += log(
+            log(
                 "\tForcing download update. FanFicFare error message:",
                 Bcolors.WARNING,
             )
             for line in fff_update_result.split(b"\n"):
                 if line == b"{":
                     break
-                output += log(f"\t\t{str(line)}", Bcolors.WARNING)
+                log(f"\t\t{str(line)}", Bcolors.WARNING)
             command += " --force"
 
-            output += log(
+            log(
                 f"\tRunning: {command}",
                 Bcolors.OKBLUE,
             )
@@ -217,32 +217,32 @@ def do_download(path, loc, url, fanficfare_config, output, force):
     word_count = get_word_count(metadata)
     cur = get_files(loc, ".epub", True)[0]
 
-    output += log(f"\tAdding {cur} to library", Bcolors.OKBLUE)
+    log(f"\tAdding {cur} to library", Bcolors.OKBLUE)
     try:
         check_subprocess_output(f'calibredb add -d {path} "{cur}" {series_options}')
     except CalledProcessError as e:
-        output += log(e)
+        log(e)
         raise
     try:
         calibre_search_result = check_subprocess_output(
             f'calibredb search "Identifiers:url:={url}" {path}'
         )
         new_story_id = get_new_story_id(calibre_search_result)
-        output += log(
+        log(
             f"\tAdded {cur} to library with id {new_story_id}",
             Bcolors.OKGREEN,
         )
     except CalledProcessError as e:
-        output += log(
+        log(
             "\tIt's been added to library, but not sure what the ID is.",
             Bcolors.WARNING,
         )
-        output += log("\tAdded /Story-file to library with id 0", Bcolors.OKGREEN)
-        output += log(f"\t{e.output}")
+        log("\tAdded /Story-file to library with id 0", Bcolors.OKGREEN)
+        log(f"\t{e.output}")
         raise
 
     if new_story_id:
-        output += log(
+        log(
             f"\tSetting word count of {word_count} on story {new_story_id}",
             Bcolors.OKBLUE,
         )
@@ -251,16 +251,16 @@ def do_download(path, loc, url, fanficfare_config, output, force):
                 f"calibredb set_custom {path} words {new_story_id} '{word_count}'"
             )
         except CalledProcessError as e:
-            output += log(
+            log(
                 "\tError setting word count.",
                 Bcolors.WARNING,
             )
-            output += log(f"\t{e.output}")
+            log(f"\t{e.output}")
 
         extra_series_options = get_extra_series_options(metadata)
         tags_options = get_tags_options(metadata)
         try:
-            output += log(
+            log(
                 f"\tSetting custom fields on story {new_story_id}",
                 Bcolors.OKBLUE,
             )
@@ -268,17 +268,17 @@ def do_download(path, loc, url, fanficfare_config, output, force):
                 f"calibredb set_metadata {str(new_story_id)} "
                 f"{path} {tags_options} {extra_series_options}"
             )
-            output += log(update_command, Bcolors.OKBLUE)
+            log(update_command, Bcolors.OKBLUE)
             check_subprocess_output(update_command)
         except CalledProcessError as e:
-            output += log(
+            log(
                 "\tError setting custom data.",
                 Bcolors.WARNING,
             )
-            output += log(f"\t{e.output}")
+            log(f"\t{e.output}")
 
     if story_id:
-        output += log(f"\tRemoving {story_id} from library", Bcolors.OKBLUE)
+        log(f"\tRemoving {story_id} from library", Bcolors.OKBLUE)
         try:
             check_subprocess_output(f"calibredb remove {path} {story_id}")
         except CalledProcessError:
@@ -289,22 +289,22 @@ def do_download(path, loc, url, fanficfare_config, output, force):
 
 def downloader(url, inout_file, fanficfare_config, path, force):
     output = ""
-    output += log(f"Working with url {url}", Bcolors.HEADER)
+    log(f"Working with url {url}", Bcolors.HEADER)
 
     try:
         url = get_url_without_chapter(url)
     except BadDataException as e:
-        output += log(f"\tException: {e}", Bcolors.FAIL)
+        log(f"\tException: {e}", Bcolors.FAIL)
         return
 
     loc = mkdtemp()
 
     try:
-        do_download(path, loc, url, fanficfare_config, output, force)
+        do_download(path, loc, url, fanficfare_config, force)
     except Exception as e:
-        output += log(f"\tException: {e}", Bcolors.FAIL)
+        log(f"\tException: {e}", Bcolors.FAIL)
         if isinstance(e, CalledProcessError):
-            output += log(f"\t{e.output.decode('utf-8')}", Bcolors.FAIL)
+            log(f"\t{e.output.decode('utf-8')}", Bcolors.FAIL)
         rmtree(loc, ignore_errors=True)
         if not isinstance(e, StoryUpToDateException):
             with open(inout_file, "a") as fp:
