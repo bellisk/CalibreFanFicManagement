@@ -223,8 +223,23 @@ class CalibreHelper(object):
     def list_urls(self):
         pass
 
-    def add(self):
-        pass
+    def add(self, book_filepath, options):
+        """Add a book to the Calibre library.
+
+        options is a dictionary of option_name: option_value, which will be converted to
+        CLI options.
+        """
+        options_strings = [f"--{k}={v}" for k, v in options.items()]
+
+        command = (
+            f'calibredb add -d "{book_filepath}" {" ".join(options_strings)} '
+            f"{self.library_access_string}"
+        )
+
+        try:
+            check_and_clean_output(command)
+        except CalledProcessError as e:
+            raise CalibreException(e.output)
 
     def remove(self):
         pass
@@ -237,10 +252,11 @@ class CalibreHelper(object):
 
 
 def get_series_options(metadata):
-    if len(metadata["series"]) > 0:
-        m = series_pattern.match(metadata["series"])
-        return f'--series="{m.group(1)}" --series-index={m.group(2)} '
-    return ""
+    if len(metadata["series"]) == 0:
+        return {}
+
+    m = series_pattern.match(metadata["series"])
+    return {"series": m.group(1), "series-index": m.group(2)}
 
 
 def get_extra_series_options(metadata):

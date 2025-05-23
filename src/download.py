@@ -207,63 +207,54 @@ def do_download(loc, url, fanficfare_config, calibre, force):
 
     log(f"\tAdding {cur} to library", Bcolors.OKBLUE)
     try:
-        check_subprocess_output(f'calibredb add -d {calibre} "{cur}" {series_options}')
-    except CalledProcessError as e:
+        calibre.add(book_filepath=cur, options=series_options)
+    except CalibreException as e:
         log(e)
         raise
+
+    # The search returns a list of story ids in numerical order. The story we just
+    # added has the highest id number and is at the end of the list.
+    result = calibre.search(urls=[url])
+    new_story_id = result[-1]
+    log(
+        f"\tAdded {cur} to library with id {new_story_id}",
+        Bcolors.OKGREEN,
+    )
+
+    log(
+        f"\tSetting word count of {word_count} on story {new_story_id}",
+        Bcolors.OKBLUE,
+    )
     try:
-        # The search returns a list of story ids in numerical order. The story we just
-        # added has the highest id number and is at the end of the list.
-        result = calibre.search(urls=[url])
-        new_story_id = result[-1]
-        log(
-            f"\tAdded {cur} to library with id {new_story_id}",
-            Bcolors.OKGREEN,
+        check_subprocess_output(
+            f"calibredb set_custom {calibre} words {new_story_id} '{word_count}'"
         )
     except CalledProcessError as e:
         log(
-            "\tIt's been added to library, but not sure what the ID is.",
+            "\tError setting word count.",
             Bcolors.WARNING,
         )
-        log("\tAdded /Story-file to library with id 0", Bcolors.OKGREEN)
         log(f"\t{e.output}")
-        raise
 
-    if new_story_id:
+    extra_series_options = get_extra_series_options(metadata)
+    tags_options = get_tags_options(metadata)
+    try:
         log(
-            f"\tSetting word count of {word_count} on story {new_story_id}",
+            f"\tSetting custom fields on story {new_story_id}",
             Bcolors.OKBLUE,
         )
-        try:
-            check_subprocess_output(
-                f"calibredb set_custom {calibre} words {new_story_id} '{word_count}'"
-            )
-        except CalledProcessError as e:
-            log(
-                "\tError setting word count.",
-                Bcolors.WARNING,
-            )
-            log(f"\t{e.output}")
-
-        extra_series_options = get_extra_series_options(metadata)
-        tags_options = get_tags_options(metadata)
-        try:
-            log(
-                f"\tSetting custom fields on story {new_story_id}",
-                Bcolors.OKBLUE,
-            )
-            update_command = (
-                f"calibredb set_metadata {str(new_story_id)} "
-                f"{calibre} {tags_options} {extra_series_options}"
-            )
-            log(update_command, Bcolors.OKBLUE)
-            check_subprocess_output(update_command)
-        except CalledProcessError as e:
-            log(
-                "\tError setting custom data.",
-                Bcolors.WARNING,
-            )
-            log(f"\t{e.output}")
+        update_command = (
+            f"calibredb set_metadata {str(new_story_id)} "
+            f"{calibre} {tags_options} {extra_series_options}"
+        )
+        log(update_command, Bcolors.OKBLUE)
+        check_subprocess_output(update_command)
+    except CalledProcessError as e:
+        log(
+            "\tError setting custom data.",
+            Bcolors.WARNING,
+        )
+        log(f"\t{e.output}")
 
     if story_id:
         log(f"\tRemoving {story_id} from library", Bcolors.OKBLUE)
