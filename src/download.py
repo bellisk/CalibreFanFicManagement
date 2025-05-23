@@ -124,7 +124,7 @@ def get_new_story_id(output):
 
 def do_download(loc, url, fanficfare_config, calibre, force):
     if not calibre:
-        # We have no path to a Calibre library, so just download the story.
+        # We have no Calibre library, so just download the story.
         command = f'cd "{loc}" && fanficfare -u "{url}" --update-cover'
         fff_update_result = check_subprocess_output(command)
         check_fff_output(fff_update_result, command)
@@ -139,14 +139,10 @@ def do_download(loc, url, fanficfare_config, calibre, force):
         return
 
     cur = url
-    try:
-        result = check_subprocess_output(
-            f'calibredb search "Identifiers:url:={url}" "Format:=EPUB" {calibre}'
-        )
-        story_id = result.replace("Initialized urlfixer\n", "")
-    except CalledProcessError:
-        # story is not in Calibre
-        story_id = None
+    story_id = None
+    result = calibre.search(urls=[url], book_formats=["EPUB"])
+    if len(result) > 0:
+        story_id = result[0]
 
     if story_id is not None:
         # Story is in Calibre
@@ -224,10 +220,10 @@ def do_download(loc, url, fanficfare_config, calibre, force):
         log(e)
         raise
     try:
-        calibre_search_result = check_subprocess_output(
-            f'calibredb search "Identifiers:url:={url}" {calibre}'
-        )
-        new_story_id = get_new_story_id(calibre_search_result)
+        # The search returns a list of story ids in numerical order. The story we just
+        # added has the highest id number and is at the end of the list.
+        result = calibre.search(urls=[url])
+        new_story_id = result[-1]
         log(
             f"\tAdded {cur} to library with id {new_story_id}",
             Bcolors.OKGREEN,
