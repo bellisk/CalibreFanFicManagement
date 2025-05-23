@@ -187,11 +187,7 @@ def do_download(loc, url, fanficfare_config, calibre, force):
     cur = get_files(loc, ".epub", True)[0]
 
     log(f"\tAdding {cur} to library", Bcolors.OKBLUE)
-    try:
-        calibre.add(book_filepath=cur)
-    except CalibreException as e:
-        log(e)
-        raise
+    calibre.add(book_filepath=cur)
 
     # The search returns a list of story ids in numerical order. The story we just
     # added has the highest id number and is at the end of the list.
