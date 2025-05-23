@@ -14,8 +14,6 @@ from .ao3_utils import (
 from .calibre_utils import (
     CalibreException,
     CalibreHelper,
-    get_incomplete_work_data,
-    get_series_work_urls,
 )
 from .download import download
 from .options import INCOMPLETE, SOURCE_SERIES_SUBSCRIPTIONS, SOURCE_USER_SUBSCRIPTIONS

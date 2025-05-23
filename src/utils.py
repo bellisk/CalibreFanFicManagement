@@ -1,7 +1,6 @@
 # encoding: utf-8
 import copy
 import logging
-import re
 from os import listdir
 from os.path import isfile, join
 from pprint import pformat
