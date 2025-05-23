@@ -20,8 +20,12 @@ email-user=
 email-password=
 email-folder=
 
-[locations]
+[calibre]
 library=
+calibre-user=
+calibre-password=
+
+[locations]
 input=
 fanficfare-config=
 last-update-file=

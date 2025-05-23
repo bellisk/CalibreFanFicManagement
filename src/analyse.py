@@ -182,7 +182,21 @@ def _collect_incomplete_works(path, output_file):
 
 def analyse(options):
     setup_login(options)
-    calibre = CalibreHelper(library_path=options.path, user=None, password=None)
+    if not options.library:
+        log(
+            """To analyse the contents of a Calibre library, a path or url to the
+library is required.
+
+Examples: \"/home/myuser/Calibre Library\", \"http://localhost:8080/#calibre-library\"""",
+            Bcolors.FAIL,
+        )
+        return
+
+    calibre = CalibreHelper(
+        library_path=options.library,
+        user=options.calibre_user,
+        password=options.calibre_password,
+    )
 
     try:
         calibre.check_library()
