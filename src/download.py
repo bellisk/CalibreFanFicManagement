@@ -36,7 +36,7 @@ from .utils import (
 
 story_name = re.compile("(.*)-.*")
 story_url = re.compile(r"(https://archiveofourown.org/works/\d*).*")
-metadata = re.compile(r"\{.*}", flags=re.DOTALL)
+metadata_dict = re.compile(r"\{.*}", flags=re.DOTALL)
 
 # Responses from fanficfare that mean we won't update the story (at least right now)
 bad_chapters = re.compile(
@@ -99,8 +99,7 @@ def get_metadata(output):
     has gone wrong that we didn't catch before, by checking the output for errors that
     we know about.
     """
-    output = output.decode("utf-8")
-    metadata_json = metadata.search(output)
+    metadata_json = metadata_dict.search(output)
     if metadata_json:
         return json.loads(metadata_json.group(0))
     raise RuntimeError(f"Got unexpected response from FanFicFare: {output}")
