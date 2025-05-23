@@ -244,11 +244,32 @@ class CalibreHelper(object):
     def remove(self):
         pass
 
-    def set_custom(self):
-        pass
+    def set_metadata(self, book_id, options):
+        """Set metadata fields on an existing book in the Calibre library.
 
-    def set_metadata(self):
-        pass
+        options is a dictionary of field: value, which will be converted to CLI options.
+        NB: custom fields must be prefaced with a '#' character for Calibre to
+        recognise them.
+        NB: values with spaces in them must include quotation marks in the string.
+
+        Example: {
+            "series": '"My Series"',
+            "#series00": '"My Other Series"',
+            "tags": "tag1,tag2",
+            "#characters": '"Jane Grey","Captain Scarlet"'
+        }
+        """
+        options_strings = [f"--field={k}:{v}" for k, v in options.items()]
+
+        command = (
+            f"calibredb set_metadata {book_id} {' '.join(options_strings)}"
+            f"{self.library_access_string}"
+        )
+
+        try:
+            check_and_clean_output(command)
+        except CalledProcessError as e:
+            raise CalibreException(e.output)
 
 
 def get_series_options(metadata):
