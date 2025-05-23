@@ -35,7 +35,7 @@ def mocked_localtime():
     return time.struct_time((2024, 4, 13, 9, 0, 0, 5, 104, 1))
 
 
-def mock_check_output(command, *args, **kwargs):
+def mock_check_subprocess_output(command, *args, **kwargs):
     if command.startswith("calibredb search author"):
         return "1,2,3,4,5,6,7,8,9,10"
     elif command.startswith("calibredb list --search author"):
@@ -66,7 +66,7 @@ def mock_check_output(command, *args, **kwargs):
     print(command)
 
 
-@patch("src.calibre_utils.check_output", mock_check_output)
+@patch("src.calibre_utils.check_subprocess_output", mock_check_subprocess_output)
 @patch("src.ao3_utils.AO3", MockAO3)
 @patch("src.analyse.check_library_and_get_path", mock_check_library)
 class TestAnalysisClass(object):

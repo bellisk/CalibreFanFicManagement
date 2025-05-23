@@ -5,11 +5,11 @@ import os.path
 import re
 from errno import ENOENT
 from os import devnull
-from subprocess import PIPE, STDOUT, CalledProcessError, call, check_output
+from subprocess import CalledProcessError, call
 from urllib.parse import urlparse
 
 from .ao3_utils import AO3_SERIES_KEYS
-from .utils import Bcolors, log
+from .utils import Bcolors, check_subprocess_output, log
 
 TAG_TYPES = [
     "ao3categories",
@@ -37,35 +37,18 @@ class CalibreException(Exception):
 
 
 def check_or_create_words_column(path):
-    res = check_output(
-        f"calibredb custom_columns {path}",
-        shell=True,
-        stderr=STDOUT,
-        stdin=PIPE,
-        text=True,
-    )
+    res = check_subprocess_output(f"calibredb custom_columns {path}")
     columns = res.split("\n")
     for c in columns:
         if c.startswith("words ("):
             return
 
     log("Adding custom column 'words' to Calibre library")
-    check_output(
-        f"calibredb add_custom_column {path} words Words int",
-        shell=True,
-        stderr=STDOUT,
-        stdin=PIPE,
-    )
+    check_subprocess_output(f"calibredb add_custom_column {path} words Words int")
 
 
 def check_or_create_extra_columns(path):
-    res = check_output(
-        f"calibredb custom_columns {path}",
-        shell=True,
-        stderr=STDOUT,
-        stdin=PIPE,
-        text=True,
-    )
+    res = check_subprocess_output(f"calibredb custom_columns {path}")
     # Get rid of the number after each column name, e.g. "columnname (1)"
     columns = [c.split(" ")[0] for c in res.split("\n")]
     if set(columns).intersection(AO3_SERIES_KEYS) == set(AO3_SERIES_KEYS):
@@ -73,11 +56,8 @@ def check_or_create_extra_columns(path):
     else:
         log("Adding custom AO3 series columns to Calibre library")
         for c in AO3_SERIES_KEYS:
-            check_output(
-                f"calibredb add_custom_column {path} {c} {c} series",
-                shell=True,
-                stderr=STDOUT,
-                stdin=PIPE,
+            check_subprocess_output(
+                f"calibredb add_custom_column {path} {c} {c} series"
             )
 
         log("Adding grouped search term 'allseries' to Calibre Library")
@@ -88,11 +68,8 @@ def check_or_create_extra_columns(path):
     else:
         log("Adding AO3 tag types as columns in Calibre library")
         for tag in TAG_TYPES:
-            check_output(
-                f"calibredb add_custom_column {path} {tag} {tag} text --is-multiple",
-                shell=True,
-                stderr=STDOUT,
-                stdin=PIPE,
+            check_subprocess_output(
+                f"calibredb add_custom_column {path} {tag} {tag} text --is-multiple"
             )
 
 
@@ -104,11 +81,8 @@ def _add_grouped_search_terms(path):
     # Add a new grouped search term "allseries" so that Calibre can search across all
     # the series columns.
     script = ADD_GROUPED_SEARCH_SCRIPT % just_library_path
-    res = check_output(
+    res = check_subprocess_output(
         f"calibre-debug -c '{script}'",
-        shell=True,
-        stderr=STDOUT,
-        stdin=PIPE,
     )
     log(res)
 
@@ -275,11 +249,8 @@ def get_author_works_count(author, path):
     # e.g. "MyPseud (MyUsername)"
     log(f"getting work count for {author} in calibre")
     try:
-        result = check_output(
+        result = check_subprocess_output(
             f'calibredb search author:"={author} or \\({author}\\)" {path}',
-            shell=True,
-            stderr=STDOUT,
-            stdin=PIPE,
         )
     except CalledProcessError:
         return 0
@@ -287,12 +258,9 @@ def get_author_works_count(author, path):
 
 
 def get_author_work_urls(author, path):
-    result = check_output(
+    result = check_subprocess_output(
         f'calibredb list --search author:"={author} or \\({author}\\)" {path} '
         f"--fields *identifier --for-machine",
-        shell=True,
-        stderr=STDOUT,
-        stdin=PIPE,
     )
     result_json = json.loads(result.decode("utf-8"))
     return [r["*identifier"].replace("url:", "") for r in result_json]
@@ -302,11 +270,8 @@ def get_series_works_count(series_title, path):
     # Calibre seems to escape only this character in series titles
     series_title = series_title.replace("&", "&amp;")
     try:
-        result = check_output(
+        result = check_subprocess_output(
             f'calibredb search allseries:"=\\"{series_title}\\"" {path}',
-            shell=True,
-            stderr=STDOUT,
-            stdin=PIPE,
         )
     except CalledProcessError:
         return 0
@@ -316,24 +281,18 @@ def get_series_works_count(series_title, path):
 def get_series_work_urls(series_title, path):
     # Calibre seems to escape only this character in series titles
     series_title = series_title.replace("&", "&amp;")
-    result = check_output(
+    result = check_subprocess_output(
         f'calibredb list --search allseries:"=\\"{series_title}\\"" {path} '
         f"--fields *identifier --for-machine",
-        shell=True,
-        stderr=STDOUT,
-        stdin=PIPE,
     )
     result_json = json.loads(result.decode("utf-8"))
     return [r["*identifier"].replace("url:", "") for r in result_json]
 
 
 def get_incomplete_work_data(path):
-    result = check_output(
+    result = check_subprocess_output(
         f'calibredb list --search "#status:=In-Progress" {path} '
         f"--fields title,*identifier --for-machine",
-        shell=True,
-        stderr=STDOUT,
-        stdin=PIPE,
     )
     result_json = json.loads(result.decode("utf-8"))
     return [
