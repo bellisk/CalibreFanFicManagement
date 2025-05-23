@@ -36,57 +36,6 @@ class CalibreException(Exception):
         super().__init__(self.message)
 
 
-def check_or_create_words_column(path):
-    res = check_subprocess_output(f"calibredb custom_columns {path}")
-    columns = res.split("\n")
-    for c in columns:
-        if c.startswith("words ("):
-            return
-
-    log("Adding custom column 'words' to Calibre library")
-    check_subprocess_output(f"calibredb add_custom_column {path} words Words int")
-
-
-def check_or_create_extra_columns(path):
-    res = check_subprocess_output(f"calibredb custom_columns {path}")
-    # Get rid of the number after each column name, e.g. "columnname (1)"
-    columns = [c.split(" ")[0] for c in res.split("\n")]
-    if set(columns).intersection(AO3_SERIES_KEYS) == set(AO3_SERIES_KEYS):
-        log("Custom AO3 series columns are in Calibre Library")
-    else:
-        log("Adding custom AO3 series columns to Calibre library")
-        for c in AO3_SERIES_KEYS:
-            check_subprocess_output(
-                f"calibredb add_custom_column {path} {c} {c} series"
-            )
-
-        log("Adding grouped search term 'allseries' to Calibre Library")
-        _add_grouped_search_terms(path)
-
-    if set(columns).intersection(TAG_TYPES) == set(TAG_TYPES):
-        log("Custom AO3 tag-type columns are in Calibre Library")
-    else:
-        log("Adding AO3 tag types as columns in Calibre library")
-        for tag in TAG_TYPES:
-            check_subprocess_output(
-                f"calibredb add_custom_column {path} {tag} {tag} text --is-multiple"
-            )
-
-
-def _add_grouped_search_terms(path):
-    # The path that we usually use is constructed out of several parts,
-    # including '--with-path' option and potentially username and password.
-    # Here we just want the path to the library.
-    just_library_path = path.split('"')[1]
-    # Add a new grouped search term "allseries" so that Calibre can search across all
-    # the series columns.
-    script = ADD_GROUPED_SEARCH_SCRIPT % just_library_path
-    res = check_subprocess_output(
-        f"calibre-debug -c '{script}'",
-    )
-    log(res)
-
-
 def clean_output(process_output):
     return process_output.replace("Initialized urlfixer\n", "")
 
@@ -130,8 +79,8 @@ class CalibreHelper(object):
 
         try:
             # Check that our custom columns are set up, and set them up if not.
-            check_or_create_words_column(self.library_access_string)
-            check_or_create_extra_columns(self.library_access_string)
+            self.check_or_create_words_column()
+            self.check_or_create_extra_columns()
         except CalledProcessError as e:
             output = clean_output(e.output)
 
@@ -152,6 +101,52 @@ class CalibreHelper(object):
                 f"Error while making sure custom columns exist in Calibre library: "
                 f"{message}",
             )
+
+    def check_or_create_words_column(self):
+        res = check_subprocess_output(
+            f"calibredb custom_columns {self.library_access_string}"
+        )
+        columns = res.split("\n")
+        for c in columns:
+            if c.startswith("words ("):
+                return
+
+        log("Adding custom column 'words' to Calibre library")
+        check_subprocess_output(
+            f"calibredb add_custom_column {self.library_access_string} words Words int"
+        )
+
+    def check_or_create_extra_columns(self):
+        res = check_subprocess_output(
+            f"calibredb custom_columns {self.library_access_string}"
+        )
+        # Get rid of the number after each column name, e.g. "columnname (1)"
+        columns = [c.split(" ")[0] for c in res.split("\n")]
+        if set(columns).intersection(AO3_SERIES_KEYS) == set(AO3_SERIES_KEYS):
+            log("Custom AO3 series columns are in Calibre Library")
+        else:
+            log("Adding custom AO3 series columns to Calibre library")
+            for c in AO3_SERIES_KEYS:
+                check_subprocess_output(
+                    f"calibredb add_custom_column {self.library_access_string} "
+                    f"{c} {c} series"
+                )
+
+            log("Adding grouped search term 'allseries' to Calibre Library")
+            script = ADD_GROUPED_SEARCH_SCRIPT % self.path
+            check_subprocess_output(
+                f"calibre-debug -c '{script}'",
+            )
+
+        if set(columns).intersection(TAG_TYPES) == set(TAG_TYPES):
+            log("Custom AO3 tag-type columns are in Calibre Library")
+        else:
+            log("Adding AO3 tag types as columns in Calibre library")
+            for tag in TAG_TYPES:
+                check_subprocess_output(
+                    f"calibredb add_custom_column {self.library_access_string} "
+                    f"{tag} {tag} text --is-multiple"
+                )
 
     def search(self, author=None, urls=None, series=None, book_format=None):
         if urls is None:
