@@ -222,7 +222,7 @@ class CalibreHelper(object):
 
     def export(self, book_id, location):
         command = (
-            f'calibredb export {book_id} --to-dir "{location}"'
+            f'calibredb export {book_id} --to-dir "{location}" '
             f"--dont-save-cover --dont-write-opf --single-dir "
             f"{self.library_access_string}"
         )
