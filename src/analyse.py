@@ -10,13 +10,19 @@ from .ao3_utils import (
     get_ao3_subscribed_series_work_stats,
     get_ao3_subscribed_users_work_counts,
     get_ao3_users_work_urls,
+    get_ao3_work_subscription_urls,
 )
 from .calibre import (
     CalibreException,
     CalibreHelper,
 )
 from .download import download
-from .options import INCOMPLETE, SOURCE_SERIES_SUBSCRIPTIONS, SOURCE_USER_SUBSCRIPTIONS
+from .options import (
+    INCOMPLETE,
+    SOURCE_SERIES_SUBSCRIPTIONS,
+    SOURCE_USER_SUBSCRIPTIONS,
+    SOURCE_WORK_SUBSCRIPTIONS,
+)
 from .utils import AO3_DEFAULT_URL, Bcolors, log, setup_login
 
 
@@ -117,6 +123,16 @@ def _compare_series_subscriptions(
         )
 
     return series_missing_works
+
+
+def _compare_work_subscriptions(
+    user, cookie, path, output_file, ao3_url=AO3_DEFAULT_URL
+):
+    log("Comparing work subscriptions on AO3 to Calibre library", Bcolors.HEADER)
+
+    ao3_subscribed_work_count = get_ao3_work_subscription_urls(
+        user, cookie, max_count=None, oldest_date=None, ao3_url=ao3_url
+    )
 
 
 def _get_missing_work_urls_from_users(
@@ -242,6 +258,11 @@ Examples: \"/home/myuser/Calibre Library\", \"http://localhost:8080/#calibre-lib
                         options.mirror,
                     )
                 )
+            elif analysis_type == SOURCE_WORK_SUBSCRIPTIONS:
+                subscribed_missing_works = _compare_work_subscriptions(
+                    options.user, options.cookie, path, output_file, options.mirror
+                )
+                missing_works.extend(subscribed_missing_works)
             elif analysis_type == INCOMPLETE:
                 missing_works.extend(_collect_incomplete_works(calibre, output_file))
     except Exception as e:
