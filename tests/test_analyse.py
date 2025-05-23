@@ -66,7 +66,7 @@ def mock_check_subprocess_output(command, *args, **kwargs):
     print(command)
 
 
-@patch("src.calibred.check_subprocess_output", mock_check_subprocess_output)
+@patch("src.calibre.check_subprocess_output", mock_check_subprocess_output)
 @patch("src.ao3_utils.AO3", MockAO3)
 @patch("src.analyse.check_library_and_get_path", mock_check_library)
 class TestAnalysisClass(object):
