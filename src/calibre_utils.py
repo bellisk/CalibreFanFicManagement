@@ -338,6 +338,15 @@ def get_word_count(metadata):
     return locale.atoi(metadata.get("numWords", 0))
 
 
+def get_all_metadata_options(metadata):
+    options = {"#words": get_word_count(metadata)}
+    options.update(get_series_options(metadata))
+    options.update(get_extra_series_options(metadata))
+    options.update(get_tags_options(metadata))
+
+    return options
+
+
 def get_author_work_urls(author, path):
     result = check_and_clean_output(
         f'calibredb list --search author:"={author} or \\({author}\\)" {path} '

@@ -12,10 +12,7 @@ from tempfile import mkdtemp
 from .calibre_utils import (
     CalibreException,
     CalibreHelper,
-    get_extra_series_options,
-    get_series_options,
-    get_tags_options,
-    get_word_count,
+    get_all_metadata_options,
 )
 from .exceptions import (
     BadDataException,
@@ -200,14 +197,11 @@ def do_download(loc, url, fanficfare_config, calibre, force):
         else:
             raise e
 
-    metadata = get_metadata(fff_update_result)
-    series_options = get_series_options(metadata)
-    word_count = get_word_count(metadata)
     cur = get_files(loc, ".epub", True)[0]
 
     log(f"\tAdding {cur} to library", Bcolors.OKBLUE)
     try:
-        calibre.add(book_filepath=cur, options=series_options)
+        calibre.add(book_filepath=cur)
     except CalibreException as e:
         log(e)
         raise
@@ -216,45 +210,16 @@ def do_download(loc, url, fanficfare_config, calibre, force):
     # added has the highest id number and is at the end of the list.
     result = calibre.search(urls=[url])
     new_story_id = result[-1]
-    log(
-        f"\tAdded {cur} to library with id {new_story_id}",
-        Bcolors.OKGREEN,
-    )
+    log(f"\tAdded {cur} to library with id {new_story_id}", Bcolors.OKGREEN)
 
-    log(
-        f"\tSetting word count of {word_count} on story {new_story_id}",
-        Bcolors.OKBLUE,
-    )
+    metadata = get_metadata(fff_update_result)
+    options = get_all_metadata_options(metadata)
+    log(f"\tSetting custom fields on story {new_story_id}", Bcolors.OKBLUE)
     try:
-        check_subprocess_output(
-            f"calibredb set_custom {calibre} words {new_story_id} '{word_count}'"
-        )
-    except CalledProcessError as e:
-        log(
-            "\tError setting word count.",
-            Bcolors.WARNING,
-        )
-        log(f"\t{e.output}")
-
-    extra_series_options = get_extra_series_options(metadata)
-    tags_options = get_tags_options(metadata)
-    try:
-        log(
-            f"\tSetting custom fields on story {new_story_id}",
-            Bcolors.OKBLUE,
-        )
-        update_command = (
-            f"calibredb set_metadata {str(new_story_id)} "
-            f"{calibre} {tags_options} {extra_series_options}"
-        )
-        log(update_command, Bcolors.OKBLUE)
-        check_subprocess_output(update_command)
-    except CalledProcessError as e:
-        log(
-            "\tError setting custom data.",
-            Bcolors.WARNING,
-        )
-        log(f"\t{e.output}")
+        calibre.set_metadata(book_id=new_story_id, options=options)
+    except CalibreException as e:
+        log("\tError setting custom data.", Bcolors.WARNING)
+        log(f"\t{e.message}", Bcolors.WARNING)
 
     if story_id:
         log(f"\tRemoving {story_id} from library", Bcolors.OKBLUE)
