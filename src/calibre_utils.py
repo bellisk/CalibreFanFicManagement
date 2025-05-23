@@ -40,6 +40,13 @@ def clean_output(process_output):
     return process_output.replace("Initialized urlfixer\n", "")
 
 
+def check_and_clean_output(command):
+    """Runs a command as a subprocess, raising CalledProcessError if necessary,
+    and removes the cruft calibredb adds to the output.
+    """
+    return clean_output(check_subprocess_output(command))
+
+
 class CalibreHelper(object):
     """Calls calibredb CLI commands."""
 
@@ -103,7 +110,7 @@ class CalibreHelper(object):
             )
 
     def check_or_create_words_column(self):
-        res = check_subprocess_output(
+        res = check_and_clean_output(
             f"calibredb custom_columns {self.library_access_string}"
         )
         columns = res.split("\n")
@@ -112,12 +119,12 @@ class CalibreHelper(object):
                 return
 
         log("Adding custom column 'words' to Calibre library")
-        check_subprocess_output(
+        check_and_clean_output(
             f"calibredb add_custom_column {self.library_access_string} words Words int"
         )
 
     def check_or_create_extra_columns(self):
-        res = check_subprocess_output(
+        res = check_and_clean_output(
             f"calibredb custom_columns {self.library_access_string}"
         )
         # Get rid of the number after each column name, e.g. "columnname (1)"
@@ -127,14 +134,14 @@ class CalibreHelper(object):
         else:
             log("Adding custom AO3 series columns to Calibre library")
             for c in AO3_SERIES_KEYS:
-                check_subprocess_output(
+                check_and_clean_output(
                     f"calibredb add_custom_column {self.library_access_string} "
                     f"{c} {c} series"
                 )
 
             log("Adding grouped search term 'allseries' to Calibre Library")
             script = ADD_GROUPED_SEARCH_SCRIPT % self.path
-            check_subprocess_output(
+            check_and_clean_output(
                 f"calibre-debug -c '{script}'",
             )
 
@@ -143,7 +150,7 @@ class CalibreHelper(object):
         else:
             log("Adding AO3 tag types as columns in Calibre library")
             for tag in TAG_TYPES:
-                check_subprocess_output(
+                check_and_clean_output(
                     f"calibredb add_custom_column {self.library_access_string} "
                     f"{tag} {tag} text --is-multiple"
                 )
@@ -244,7 +251,7 @@ def get_author_works_count(author, path):
     # e.g. "MyPseud (MyUsername)"
     log(f"getting work count for {author} in calibre")
     try:
-        result = check_subprocess_output(
+        result = check_and_clean_output(
             f'calibredb search author:"={author} or \\({author}\\)" {path}',
         )
     except CalledProcessError:
@@ -253,7 +260,7 @@ def get_author_works_count(author, path):
 
 
 def get_author_work_urls(author, path):
-    result = check_subprocess_output(
+    result = check_and_clean_output(
         f'calibredb list --search author:"={author} or \\({author}\\)" {path} '
         f"--fields *identifier --for-machine",
     )
@@ -265,7 +272,7 @@ def get_series_works_count(series_title, path):
     # Calibre seems to escape only this character in series titles
     series_title = series_title.replace("&", "&amp;")
     try:
-        result = check_subprocess_output(
+        result = check_and_clean_output(
             f'calibredb search allseries:"=\\"{series_title}\\"" {path}',
         )
     except CalledProcessError:
@@ -276,7 +283,7 @@ def get_series_works_count(series_title, path):
 def get_series_work_urls(series_title, path):
     # Calibre seems to escape only this character in series titles
     series_title = series_title.replace("&", "&amp;")
-    result = check_subprocess_output(
+    result = check_and_clean_output(
         f'calibredb list --search allseries:"=\\"{series_title}\\"" {path} '
         f"--fields *identifier --for-machine",
     )
@@ -285,7 +292,7 @@ def get_series_work_urls(series_title, path):
 
 
 def get_incomplete_work_data(path):
-    result = check_subprocess_output(
+    result = check_and_clean_output(
         f'calibredb list --search "#status:=In-Progress" {path} '
         f"--fields title,*identifier --for-machine",
     )
