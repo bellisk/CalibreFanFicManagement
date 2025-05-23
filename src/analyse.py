@@ -168,9 +168,9 @@ def _get_missing_work_urls_from_series(
     return missing_work_urls
 
 
-def _collect_incomplete_works(path, output_file):
+def _collect_incomplete_works(calibre, output_file):
     log("Getting urls for all works in Calibre library that are marked In Progress.")
-    results = get_incomplete_work_data(path)
+    results = calibre.list_titles_and_urls(incomplete=True)
 
     with open(output_file, "a") as f:
         writer = DictWriter(f, ["title", "url"])
@@ -240,12 +240,12 @@ Examples: \"/home/myuser/Calibre Library\", \"http://localhost:8080/#calibre-lib
                         series_missing_works,
                         options.user,
                         options.cookie,
-                        path,
+                        calibre,
                         options.mirror,
                     )
                 )
             elif analysis_type == INCOMPLETE:
-                missing_works.extend(_collect_incomplete_works(path, output_file))
+                missing_works.extend(_collect_incomplete_works(calibre, output_file))
     except Exception as e:
         # Save work urls to file (add to existing content, don't overwrite)
         with open(options.input, "a") as fp:

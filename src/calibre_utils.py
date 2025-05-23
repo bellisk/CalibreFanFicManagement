@@ -47,7 +47,9 @@ def check_and_clean_output(command):
     return clean_output(check_subprocess_output(command))
 
 
-def collate_search_terms(authors=None, book_formats=None, series=None, urls=None):
+def collate_search_terms(
+    authors=None, book_formats=None, series=None, urls=None, incomplete=False
+):
     """Turn lists of search terms of different kinds into a search query for calibredb.
 
     All search terms of the same kind are joined with OR; each set of search terms
@@ -77,6 +79,8 @@ def collate_search_terms(authors=None, book_formats=None, series=None, urls=None
                 [f"Format:={book_format.upper()}" for book_format in book_formats]
             )
         )
+    if incomplete:
+        search_term_sets.append("#status:=In-Progress")
 
     return " AND ".join(search_term_sets)
 
@@ -189,7 +193,9 @@ class CalibreHelper(object):
                     f"{tag} {tag} text --is-multiple"
                 )
 
-    def search(self, authors=None, urls=None, series=None, book_formats=None):
+    def search(
+        self, authors=None, urls=None, series=None, book_formats=None, incomplete=False
+    ):
         """Accepts lists of authors/urls/series/formats to search calibredb for.
 
         All search terms of the same kind are joined with OR; each set of search terms
@@ -198,7 +204,9 @@ class CalibreHelper(object):
 
         Returns a list of book ids that match the search.
         """
-        search_terms = collate_search_terms(authors, book_formats, series, urls)
+        search_terms = collate_search_terms(
+            authors, book_formats, series, urls, incomplete
+        )
 
         command = f"calibredb search {search_terms} {self.library_access_string}"
         log(command)
@@ -240,9 +248,11 @@ class CalibreHelper(object):
             raise CalibreException(e.output)
 
     def list_titles_and_urls(
-        self, authors=None, urls=None, series=None, book_formats=None
+        self, authors=None, urls=None, series=None, book_formats=None, incomplete=False
     ):
-        search_terms = collate_search_terms(authors, book_formats, series, urls)
+        search_terms = collate_search_terms(
+            authors, book_formats, series, urls, incomplete
+        )
 
         command = (
             f"calibredb list --search {search_terms} {self.library_access_string} "
@@ -380,15 +390,3 @@ def get_all_metadata_options(metadata):
     options.update(get_tags_options(metadata))
 
     return options
-
-
-def get_incomplete_work_data(path):
-    result = check_and_clean_output(
-        f'calibredb list --search "#status:=In-Progress" {path} '
-        f"--fields title,*identifier --for-machine",
-    )
-    result_json = json.loads(result)
-    return [
-        {"title": r["title"], "url": r["*identifier"].replace("url:", "")}
-        for r in result_json
-    ]
