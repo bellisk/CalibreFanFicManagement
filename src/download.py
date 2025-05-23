@@ -8,9 +8,10 @@ from os import rename
 from shutil import rmtree
 from subprocess import CalledProcessError
 from tempfile import mkdtemp
+from test import calibre
 
 from .calibre_utils import (
-    check_library_and_get_path,
+    CalibreException,
     get_extra_series_options,
     get_series_options,
     get_tags_options,
@@ -320,8 +321,8 @@ def downloader(url, inout_file, fanficfare_config, path, force):
 
 def download(options):
     try:
-        path = check_library_and_get_path(options.library)
-    except RuntimeError as e:
+        calibre.check_library()
+    except CalibreException as e:
         log(str(e), Bcolors.FAIL)
         return
 

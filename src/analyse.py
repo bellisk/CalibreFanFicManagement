@@ -12,7 +12,8 @@ from .ao3_utils import (
     get_ao3_users_work_urls,
 )
 from .calibre_utils import (
-    check_library_and_get_path,
+    CalibreException,
+    CalibreHelper,
     get_author_work_urls,
     get_author_works_count,
     get_incomplete_work_data,
@@ -183,9 +184,11 @@ def _collect_incomplete_works(path, output_file):
 
 def analyse(options):
     setup_login(options)
+    calibre = CalibreHelper(library_path=options.path, user=None, password=None)
+
     try:
-        path = check_library_and_get_path(options.library)
-    except RuntimeError as e:
+        calibre.check_library()
+    except CalibreException as e:
         log(str(e), Bcolors.FAIL)
         return
 

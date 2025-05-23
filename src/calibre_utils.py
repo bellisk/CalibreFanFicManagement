@@ -1,13 +1,15 @@
 # encoding: utf-8
 import json
 import locale
+import os.path
 import re
 from errno import ENOENT
 from os import devnull
 from subprocess import PIPE, STDOUT, CalledProcessError, call, check_output
+from urllib.parse import urlparse
 
 from .ao3_utils import AO3_SERIES_KEYS
-from .utils import log
+from .utils import Bcolors, log
 
 TAG_TYPES = [
     "ao3categories",
@@ -28,14 +30,21 @@ print(db.pref("grouped_search_terms"))
 series_pattern = re.compile(r"(.*) \[(.*)]")
 
 
+class CalibreException(Exception):
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+
 def check_or_create_words_column(path):
     res = check_output(
         f"calibredb custom_columns {path}",
         shell=True,
         stderr=STDOUT,
         stdin=PIPE,
+        text=True,
     )
-    columns = res.decode("utf-8").split("\n")
+    columns = res.split("\n")
     for c in columns:
         if c.startswith("words ("):
             return
@@ -55,9 +64,10 @@ def check_or_create_extra_columns(path):
         shell=True,
         stderr=STDOUT,
         stdin=PIPE,
+        text=True,
     )
     # Get rid of the number after each column name, e.g. "columnname (1)"
-    columns = [c.split(" ")[0] for c in res.decode("utf-8").split("\n")]
+    columns = [c.split(" ")[0] for c in res.split("\n")]
     if set(columns).intersection(AO3_SERIES_KEYS) == set(AO3_SERIES_KEYS):
         log("Custom AO3 series columns are in Calibre Library")
     else:
@@ -86,31 +96,6 @@ def check_or_create_extra_columns(path):
             )
 
 
-def check_library_and_get_path(library_path):
-    if library_path is None:
-        return None
-
-    path = f'--with-library "{library_path}"'
-    try:
-        with open(devnull, "w") as nullout:
-            call(["calibredb"], stdout=nullout, stderr=nullout)
-    except OSError as e:
-        if e.errno == ENOENT:
-            raise RuntimeError(
-                "Calibredb is not installed on this system. Cannot search the "
-                "Calibre library or update it.",
-            )
-    try:
-        check_or_create_words_column(path)
-        check_or_create_extra_columns(path)
-    except CalledProcessError as e:
-        raise RuntimeError(
-            f"Error while making sure custom columns exist in Calibre library: {e}",
-        )
-
-    return path
-
-
 def _add_grouped_search_terms(path):
     # The path that we usually use is constructed out of several parts,
     # including '--with-path' option and potentially username and password.
@@ -128,6 +113,10 @@ def _add_grouped_search_terms(path):
     log(res)
 
 
+def clean_output(process_output):
+    return process_output.replace("Initialized urlfixer\n", "")
+
+
 class CalibreHelper(object):
     """Calls calibredb CLI commands."""
 
@@ -141,6 +130,54 @@ class CalibreHelper(object):
             self.library_access_string += f'--user="{self.user}" '
         if password:
             self.library_access_string += f'--password="{self.password}" '
+
+    def check_library(self):
+        # First, check if we have calibredb locally
+        try:
+            with open(devnull, "w") as nullout:
+                call(["calibredb"], stdout=nullout, stderr=nullout)
+        except OSError as e:
+            if e.errno == ENOENT:
+                raise CalibreException(
+                    "Calibredb is not installed on this system. Cannot search the "
+                    "Calibre library or update it.",
+                )
+
+        parsed_path = urlparse(self.path)
+        path_is_url = parsed_path.scheme and parsed_path.netloc
+        path_is_dir = os.path.isdir(self.path)
+
+        if not (path_is_url or path_is_dir):
+            log(
+                f"There is no Calibre library at the path '{self.path}', "
+                f"so Calibre will create one",
+                Bcolors.WARNING,
+            )
+
+        try:
+            # Check that our custom columns are set up, and set them up if not.
+            check_or_create_words_column(self.library_access_string)
+            check_or_create_extra_columns(self.library_access_string)
+        except CalledProcessError as e:
+            output = clean_output(e.output)
+
+            if "urllib.error.URLError" in output:
+                # The path is a url and it's wrong
+                message = f"Error connecting to the url {self.path}"
+            elif "Not Found" in output:
+                # The path is the url to a Calibre server, but the library name is wrong
+                message = f"No Calibre library found at the url {self.path}"
+            else:
+                # If the username or password is wrong, calibredb gives us a nice error
+                # message, so we can just output that.
+                # If there's a new kind of error not already handled, we get a stack
+                # trace. Just output it and deal with it then.
+                message = output
+
+            raise CalibreException(
+                f"Error while making sure custom columns exist in Calibre library: "
+                f"{message}",
+            )
 
     def search(self, author=None, urls=None, series=None, book_format=None):
         if urls is None:
