@@ -210,10 +210,7 @@ def do_download(loc, url, fanficfare_config, calibre, force):
 
     if story_id:
         log(f"\tRemoving {story_id} from library", Bcolors.OKBLUE)
-        try:
-            check_subprocess_output(f"calibredb remove {calibre} {story_id}")
-        except CalledProcessError:
-            raise
+        calibre.remove(story_id)
 
     rmtree(loc)
 

@@ -253,8 +253,13 @@ class CalibreHelper(object):
         except CalledProcessError as e:
             raise CalibreException(e.output)
 
-    def remove(self):
-        pass
+    def remove(self, book_id):
+        command = f"calibredb remove {book_id} {self.library_access_string}"
+
+        try:
+            check_and_clean_output(command)
+        except CalledProcessError as e:
+            raise CalibreException(e.output)
 
     def set_metadata(self, book_id, options):
         """Set metadata fields on an existing book in the Calibre library.
