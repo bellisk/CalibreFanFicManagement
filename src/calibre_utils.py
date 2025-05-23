@@ -128,6 +128,54 @@ def _add_grouped_search_terms(path):
     log(res)
 
 
+class CalibreHelper(object):
+    """Calls calibredb CLI commands."""
+
+    def __init__(self, library_path, user=None, password=None):
+        self.path = library_path
+        self.user = user
+        self.password = password
+
+        self.library_access_string = f'--with-library="{self.path}" '
+        if user:
+            self.library_access_string += f'--user="{self.user}" '
+        if password:
+            self.library_access_string += f'--password="{self.password}" '
+
+    def search(self, author=None, urls=None, series=None, book_format=None):
+        if urls is None:
+            urls = []
+        command = "calibredb search "
+
+        if author:
+            command += f'author:"={author} or \\({author}\\)" '
+        if urls:
+            command += " or ".join([f"Identifiers:url:={url}" for url in urls]) + " "
+        if series:
+            command += f'allseries:"=\\"{series}\\"" '
+        if book_format:
+            command += f"Format:={book_format.upper()} "
+
+        command += self.library_access_string
+        log(command)
+
+
+def export():
+    pass
+
+
+def add():
+    pass
+
+
+def set_custom():
+    pass
+
+
+def set_metadata():
+    pass
+
+
 def get_series_options(metadata):
     if len(metadata["series"]) > 0:
         m = series_pattern.match(metadata["series"])
