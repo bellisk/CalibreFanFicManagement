@@ -11,7 +11,7 @@ from .ao3_utils import (
     get_ao3_subscribed_users_work_counts,
     get_ao3_users_work_urls,
 )
-from .calibre_utils import (
+from .calibred import (
     CalibreException,
     CalibreHelper,
 )

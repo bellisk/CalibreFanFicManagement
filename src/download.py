@@ -9,7 +9,7 @@ from shutil import rmtree
 from subprocess import CalledProcessError
 from tempfile import mkdtemp
 
-from .calibre_utils import (
+from .calibred import (
     CalibreException,
     CalibreHelper,
     get_all_metadata_options,
