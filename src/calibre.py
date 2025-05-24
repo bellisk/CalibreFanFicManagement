@@ -275,12 +275,14 @@ class CalibreHelper(object):
             for r in result_json
         ]
 
-    def add(self, book_filepath, options):
+    def add(self, book_filepath, options=None):
         """Add a book to the Calibre library.
 
         options is a dictionary of option_name: option_value, which will be converted to
         CLI options.
         """
+        if options is None:
+            options = {}
         options_strings = [f'--{k}="{v}"' for k, v in options.items()]
 
         command = (
