@@ -21,7 +21,7 @@ def get_ao3_bookmark_urls(
     api = AO3(ao3_url=ao3_url)
     api.login(user, cookie)
     urls = [
-        _work_url_from_id(work_id, ao3_url)
+        _work_url_from_id(work_id)
         for work_id in api.user.bookmarks_ids(
             max_count, expand_series, oldest_date, sort_by_updated
         )
@@ -39,7 +39,7 @@ def get_ao3_users_work_urls(
     api = AO3(ao3_url=ao3_url)
     api.login(user, cookie)
     urls = [
-        _work_url_from_id(work_id, ao3_url)
+        _work_url_from_id(work_id)
         for work_id in api.author(username).work_ids(max_count, oldest_date)
     ]
     return set(urls)
@@ -52,7 +52,7 @@ def get_ao3_gift_urls(user, cookie, max_count, oldest_date, ao3_url=AO3_DEFAULT_
     api = AO3(ao3_url=ao3_url)
     api.login(user, cookie)
     urls = [
-        _work_url_from_id(work_id, ao3_url)
+        _work_url_from_id(work_id)
         for work_id in api.user.gift_ids(max_count, oldest_date)
     ]
     return set(urls)
@@ -67,7 +67,7 @@ def get_ao3_marked_for_later_urls(
     api = AO3(ao3_url=ao3_url)
     api.login(user, cookie)
     urls = [
-        _work_url_from_id(work_id, ao3_url)
+        _work_url_from_id(work_id)
         for work_id in api.user.marked_for_later_ids(max_count, oldest_date)
     ]
     return set(urls)
@@ -96,7 +96,7 @@ def get_ao3_work_subscription_urls(
         return set(urls)
 
     urls = [
-        _work_url_from_id(work_id, ao3_url)
+        _work_url_from_id(work_id)
         for work_id in api.user.work_subscription_ids(max_count)
     ]
 
@@ -109,8 +109,8 @@ def _append_work_id_if_newer_than_given_date(api, oldest_date, urls, work_id):
         urls.append(work.url)
 
 
-def _work_url_from_id(work_id, ao3_url=AO3_DEFAULT_URL):
-    return f"{ao3_url}/works/{work_id}"
+def _work_url_from_id(work_id):
+    return f"{AO3_DEFAULT_URL}/works/{work_id}"
 
 
 def get_ao3_series_subscription_urls(
@@ -126,7 +126,7 @@ def get_ao3_series_subscription_urls(
     urls = []
     for s in series_ids:
         urls += [
-            _work_url_from_id(work_id, ao3_url)
+            _work_url_from_id(work_id)
             for work_id in api.series(s).work_ids(max_count, oldest_date)
         ]
 
@@ -147,7 +147,7 @@ def get_ao3_user_subscription_urls(
     for u in user_ids:
         print(u)
         urls += [
-            _work_url_from_id(work_id, ao3_url)
+            _work_url_from_id(work_id)
             for work_id in api.author(u).work_ids(max_count, oldest_date)
         ]
 
@@ -164,7 +164,7 @@ def get_ao3_series_work_urls(
     api.login(user, cookie)
 
     urls = [
-        _work_url_from_id(work_id, ao3_url)
+        _work_url_from_id(work_id)
         for work_id in api.series(series_id).work_ids(max_count, oldest_date)
     ]
 
@@ -181,7 +181,7 @@ def get_ao3_collection_work_urls(
     api.login(user, cookie)
 
     urls = [
-        _work_url_from_id(work_id, ao3_url)
+        _work_url_from_id(work_id)
         for work_id in api.collection(collection_id).work_ids(max_count, oldest_date)
     ]
 

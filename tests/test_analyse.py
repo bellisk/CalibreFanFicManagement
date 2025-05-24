@@ -52,7 +52,7 @@ class TestAnalysisClass(object):
         # should be reported here.
         users_msg = (
             "\x1b[1m04/13/2024 09:00:00\x1b[0m: \t \x1b[95mSubscribed users "
-            "who have fewer works on Calibre than on AO3:"
+            "who have fewer works in Calibre library than on AO3:"
         )
 
         for username in ["user2", "user3"]:
@@ -79,7 +79,7 @@ class TestAnalysisClass(object):
         # they should be reported here.
         series_msg = (
             "\x1b[1m04/13/2024 09:00:00\x1b[0m: \t \x1b[95mSubscribed users "
-            "who have fewer works on Calibre than on AO3:"
+            "who have fewer works in Calibre library than on AO3:"
         )
         for series_id in ["Series 3", "Series 4", "Series 5"]:
             series_msg += (

@@ -144,6 +144,7 @@ def test_set_up_options_from_cli():
         "analysis_type": [
             "user_subscriptions",
             "series_subscriptions",
+            "work_subscriptions",
             "incomplete_works",
         ],
         "fix": False,
