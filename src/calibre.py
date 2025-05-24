@@ -65,19 +65,15 @@ def collate_search_terms(
             " OR ".join([f'author:"={author} or \\({author}\\)"' for author in authors])
         )
     if urls:
-        search_term_sets.append(
-            " OR ".join([f"Identifiers:url:={url}" for url in urls])
-        )
+        search_term_sets.append(f'Identifiers:url:"={" OR ".join(urls)}"')
     if series:
         # Calibre seems to escape only the character & in series titles
         search_term_sets.append(
-            " OR ".join(f'allseries:"=\\"{s.replace("&", "&amp;")}\\""' for s in series)
+            f'allseries:"=\\"{" OR ".join([s.replace("&", "&amp;") for s in series])}\\""'
         )
     if book_formats:
         search_term_sets.append(
-            " OR ".join(
-                [f"Format:={book_format.upper()}" for book_format in book_formats]
-            )
+            f'Format:"={" OR ".join([book_format.upper() for book_format in book_formats])}"'
         )
     if incomplete:
         search_term_sets.append("#status:=In-Progress")
