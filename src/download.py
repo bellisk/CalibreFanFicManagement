@@ -1,7 +1,6 @@
 # encoding: utf-8
 # Adapted from https://github.com/MrTyton/AutomatedFanfic
 
-import json
 import os.path
 import re
 import time

@@ -2,7 +2,6 @@
 import json
 import locale
 import os.path
-import re
 from errno import ENOENT
 from os import devnull
 from subprocess import CalledProcessError, call
