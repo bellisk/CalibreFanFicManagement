@@ -229,8 +229,6 @@ class CalibreHelper(object):
 
     def get_series_works_count(self, series_title):
         log(f"Getting work count for {series_title} in calibre")
-        # Calibre seems to escape only this character in series titles
-        series_title = series_title.replace("&", "&amp;")
         result = self.search(series=[series_title])
 
         return len(result)
