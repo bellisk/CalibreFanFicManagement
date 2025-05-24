@@ -77,7 +77,7 @@ def do_download(loc, url, fff_helper, calibre, force):
 
     try:
         # Throws an exception if we couldn't/shouldn't update the epub
-        filepath, metadata = fff_helper.download(url, loc, return_metadata=True)
+        filepath, metadata = fff_helper.download(cur, loc, return_metadata=True)
     except Exception as e:
         if isinstance(e, TempFileUpdatedMoreRecentlyException) or (
             force and isinstance(e, StoryUpToDateException)
