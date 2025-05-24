@@ -361,12 +361,10 @@ def get_tags_options(metadata):
             tags = metadata[tag_type].split(", ")
             # Replace characters that give Calibre trouble in tags.
             tags = [
-                '"'
-                + tag.replace('"', "'")
+                tag.replace('"', "'")
                 .replace("...", "…")
                 .replace(".", "．")
                 .replace("&amp;", "&")
-                + '"'
                 for tag in tags
             ]
             opts[f"#{tag_type}"] = f"{','.join(tags)}"
