@@ -47,7 +47,7 @@ def _compare_user_subscriptions(
     users_missing_works = []
 
     with open(output_file, "a") as f:
-        writer = DictWriter(f, ["author", "works on AO3", "works on Calibre"])
+        writer = DictWriter(f, ["author", "works on AO3", "works in Calibre"])
         writer.writeheader()
         for u in ao3_user_work_counts:
             if ao3_user_work_counts[u] > calibre_user_work_counts[u]:
@@ -56,20 +56,21 @@ def _compare_user_subscriptions(
             line = {
                 "author": u,
                 "works on AO3": ao3_user_work_counts[u],
-                "works on Calibre": calibre_user_work_counts[u],
+                "works in Calibre": calibre_user_work_counts[u],
             }
             writer.writerow(line)
 
     if len(users_missing_works) > 0:
         log(
-            "Subscribed users who have fewer works on Calibre than on AO3:",
+            "Subscribed users who have fewer works in Calibre library than on AO3:",
             Bcolors.HEADER,
         )
         for user in users_missing_works:
             log(f"\t{user}", Bcolors.OKBLUE)
     else:
         log(
-            "All subscribed users have as many or more works on Calibre than on AO3.",
+            "All subscribed users have as many or more works in Calibre library "
+            "than on AO3.",
             Bcolors.OKGREEN,
         )
 
@@ -96,7 +97,7 @@ def _compare_series_subscriptions(
     series_missing_works = {}
 
     with open(output_file, "a") as f:
-        writer = DictWriter(f, ["id", "title", "works on AO3", "works on Calibre"])
+        writer = DictWriter(f, ["id", "title", "works on AO3", "works in Calibre"])
         writer.writeheader()
         for series_id, stats in ao3_series_work_stats.items():
             ao3_count = locale.atoi(stats["Works"])
@@ -107,20 +108,21 @@ def _compare_series_subscriptions(
                 "id": series_id,
                 "title": stats["Title"],
                 "works on AO3": ao3_count,
-                "works on Calibre": calibre_series_work_counts[stats["Title"]],
+                "works in Calibre": calibre_series_work_counts[stats["Title"]],
             }
             writer.writerow(line)
 
     if len(series_missing_works) > 0:
         log(
-            "Subscribed series that have fewer works on Calibre than on AO3:",
+            "Subscribed series that have fewer works in Calibre library than on AO3:",
             Bcolors.HEADER,
         )
         for series in series_missing_works.values():
             log(f"\t{series}", Bcolors.OKBLUE)
     else:
         log(
-            "All subscribed series have as many or more works on Calibre than on AO3.",
+            "All subscribed series have as many or more works in Calibre library "
+            "than on AO3.",
             Bcolors.OKGREEN,
         )
 
