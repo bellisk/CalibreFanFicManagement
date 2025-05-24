@@ -1,7 +1,6 @@
 # encoding: utf-8
 import copy
 import logging
-import re
 from os import listdir
 from os.path import isfile, join
 from pprint import pformat
@@ -99,26 +98,18 @@ def setup_login(options):
 
 
 def check_subprocess_output(command):
-    return check_output(command, shell=True, stderr=STDOUT, stdin=PIPE)
+    return check_output(command, shell=True, stderr=STDOUT, stdin=PIPE, text=True)
 
 
 def get_options_for_display(options):
     options_copy = copy.copy(options)
     options_dict = vars(options_copy)
 
-    sensitive_options = ["cookie", "email_password"]
+    sensitive_options = ["calibre_password", "cookie", "email_password"]
     for o in sensitive_options:
         if options_dict.get(o):
             options_dict[o] = "****"
 
-    # If the Calibre library we're talking to is running on calibreserver, the library
-    # option might be something like this:
-    # 'http://localhost:8080/#calibre_library" --username=myuser --password="mypassword'
-    # Probably we should make this nicer and not abuse the library option for this. ;)
-    # In the meantime, redact the password from our output.
-    options_dict["library"] = re.sub(
-        r"(.*--password(?:=| ))\S+( |$)", r"\1****\2", options_dict["library"]
-    )
     return pformat(
         {k: v for k, v in options_dict.items() if k != "command"}, sort_dicts=False
     )

@@ -11,13 +11,9 @@ from .ao3_utils import (
     get_ao3_subscribed_users_work_counts,
     get_ao3_users_work_urls,
 )
-from .calibre_utils import (
-    check_library_and_get_path,
-    get_author_work_urls,
-    get_author_works_count,
-    get_incomplete_work_data,
-    get_series_work_urls,
-    get_series_works_count,
+from .calibre import (
+    CalibreException,
+    CalibreHelper,
 )
 from .download import download
 from .options import INCOMPLETE, SOURCE_SERIES_SUBSCRIPTIONS, SOURCE_USER_SUBSCRIPTIONS
@@ -25,7 +21,7 @@ from .utils import AO3_DEFAULT_URL, Bcolors, log, setup_login
 
 
 def _compare_user_subscriptions(
-    username, cookie, path, output_file, ao3_url=AO3_DEFAULT_URL
+    username, cookie, calibre_helper, output_file, ao3_url=AO3_DEFAULT_URL
 ):
     """Compares the number of fics downloaded for each user subscribed to with the
     number posted to AO3.
@@ -37,7 +33,7 @@ def _compare_user_subscriptions(
         username, cookie, ao3_url=ao3_url
     )
     calibre_user_work_counts = {
-        u: get_author_works_count(u, path) for u in ao3_user_work_counts.keys()
+        u: calibre_helper.get_author_works_count(u) for u in ao3_user_work_counts.keys()
     }
 
     users_missing_works = []
@@ -73,7 +69,7 @@ def _compare_user_subscriptions(
 
 
 def _compare_series_subscriptions(
-    username, cookie, path, output_file, ao3_url=AO3_DEFAULT_URL
+    username, cookie, calibre, output_file, ao3_url=AO3_DEFAULT_URL
 ):
     """Compares the number of fics downloaded for each series subscribed to with the
     number posted to AO3.
@@ -85,7 +81,7 @@ def _compare_series_subscriptions(
         username, cookie, ao3_url=ao3_url
     )
     calibre_series_work_counts = {
-        u["Title"]: get_series_works_count(u["Title"], path)
+        u["Title"]: calibre.get_series_works_count(u["Title"])
         for u in ao3_series_work_stats.values()
     }
 
@@ -124,7 +120,7 @@ def _compare_series_subscriptions(
 
 
 def _get_missing_work_urls_from_users(
-    users_missing_works, username, cookie, path, ao3_url=AO3_DEFAULT_URL
+    users_missing_works, username, cookie, calibre, ao3_url=AO3_DEFAULT_URL
 ):
     log("Getting urls for works missing from subscribed users.")
     missing_work_urls = []
@@ -138,7 +134,9 @@ def _get_missing_work_urls_from_users(
             oldest_date=None,
             ao3_url=ao3_url,
         )
-        calibre_urls = get_author_work_urls(u, path)
+        calibre_urls = [
+            work["url"] for work in calibre.list_titles_and_urls(authors=[u])
+        ]
         missing_work_urls.extend(set(ao3_urls) - set(calibre_urls))
 
     log(f"Found {len(missing_work_urls)} urls to import")
@@ -146,7 +144,7 @@ def _get_missing_work_urls_from_users(
 
 
 def _get_missing_work_urls_from_series(
-    series_missing_works, username, cookie, path, ao3_url=AO3_DEFAULT_URL
+    series_missing_works, username, cookie, calibre, ao3_url=AO3_DEFAULT_URL
 ):
     log("Getting urls for works missing from subscribed series.")
     missing_work_urls = []
@@ -159,16 +157,18 @@ def _get_missing_work_urls_from_series(
             series_id=series_id,
             ao3_url=ao3_url,
         )
-        calibre_urls = get_series_work_urls(series_title, path)
+        calibre_urls = [
+            work["url"] for work in calibre.list_titles_and_urls(series=[series_title])
+        ]
         missing_work_urls.extend(set(ao3_urls) - set(calibre_urls))
 
     log(f"Found {len(missing_work_urls)} urls to import.")
     return missing_work_urls
 
 
-def _collect_incomplete_works(path, output_file):
+def _collect_incomplete_works(calibre, output_file):
     log("Getting urls for all works in Calibre library that are marked In Progress.")
-    results = get_incomplete_work_data(path)
+    results = calibre.list_titles_and_urls(incomplete=True)
 
     with open(output_file, "a") as f:
         writer = DictWriter(f, ["title", "url"])
@@ -182,12 +182,29 @@ def _collect_incomplete_works(path, output_file):
 
 
 def analyse(options):
-    setup_login(options)
+    if not options.library:
+        log(
+            """To analyse the contents of a Calibre library, a path or url to the
+library is required.
+
+Examples: \"/home/myuser/Calibre Library\", \"http://localhost:8080/#calibre-library\"""",
+            Bcolors.FAIL,
+        )
+        return
+
+    calibre = CalibreHelper(
+        library_path=options.library,
+        user=options.calibre_user,
+        password=options.calibre_password,
+    )
+
     try:
-        path = check_library_and_get_path(options.library)
-    except RuntimeError as e:
+        calibre.check_library()
+    except CalibreException as e:
         log(str(e), Bcolors.FAIL)
         return
+
+    setup_login(options)
 
     if not isdir(options.analysis_dir):
         mkdir(options.analysis_dir)
@@ -201,32 +218,32 @@ def analyse(options):
 
             if analysis_type == SOURCE_USER_SUBSCRIPTIONS:
                 users_missing_works = _compare_user_subscriptions(
-                    options.user, options.cookie, path, output_file, options.mirror
+                    options.user, options.cookie, calibre, output_file, options.mirror
                 )
                 missing_works.extend(
                     _get_missing_work_urls_from_users(
                         users_missing_works,
                         options.user,
                         options.cookie,
-                        path,
+                        calibre,
                         options.mirror,
                     )
                 )
             elif analysis_type == SOURCE_SERIES_SUBSCRIPTIONS:
                 series_missing_works = _compare_series_subscriptions(
-                    options.user, options.cookie, path, output_file, options.mirror
+                    options.user, options.cookie, calibre, output_file, options.mirror
                 )
                 missing_works.extend(
                     _get_missing_work_urls_from_series(
                         series_missing_works,
                         options.user,
                         options.cookie,
-                        path,
+                        calibre,
                         options.mirror,
                     )
                 )
             elif analysis_type == INCOMPLETE:
-                missing_works.extend(_collect_incomplete_works(path, output_file))
+                missing_works.extend(_collect_incomplete_works(calibre, output_file))
     except Exception as e:
         # Save work urls to file (add to existing content, don't overwrite)
         with open(options.input, "a") as fp:

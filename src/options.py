@@ -285,7 +285,24 @@ program is run. Default: fanfiction.txt.""",
         action="store",
         dest="library",
         help="""Calibre library db location. If none is passed, then this merely
-downloads stories into the current directory as epub files.""",
+downloads stories into the current directory as epub files.
+Examples: \"/home/myuser/Calibre Library\", \"http://localhost:8080/#calibre-library\"""",
+    )
+
+    arg_parser.add_argument(
+        "--calibre-user",
+        action="store",
+        dest="calibre_user",
+        help="""The user for your Calibre library. Only needed if the library is running
+on a calibre-server and requires user/password to access it.""",
+    )
+
+    arg_parser.add_argument(
+        "--calibre-password",
+        action="store",
+        dest="calibre_password",
+        help="""The password for your Calibre library. Only needed if the library is
+running on a calibre-server and requires user/password to access it.""",
     )
 
     arg_parser.add_argument(
