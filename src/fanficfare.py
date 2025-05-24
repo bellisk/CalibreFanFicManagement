@@ -47,8 +47,11 @@ updated_more_recently = re.compile(
 def check_fff_output(output, command=""):
     if len(output) == 0:
         raise EmptyFanFicFareResponseException(command)
-    if equal_chapters.search(output):
-        raise StoryUpToDateException(output)
+
+    equal_chapters_result = equal_chapters.search(output)
+    if equal_chapters_result is not None:
+        raise StoryUpToDateException(equal_chapters_result.group(0))
+
     if bad_chapters.search(output):
         raise BadDataException(
             "Something is messed up with the site or the epub. No chapters found."
@@ -67,8 +70,12 @@ def check_fff_output(output, command=""):
         raise CloudflareWebsiteException()
     if chapter_difference.search(output):
         raise MoreChaptersLocallyException()
-    if updated_more_recently.search(output):
-        raise TempFileUpdatedMoreRecentlyException(output)
+
+    updated_more_recently_result = updated_more_recently.search(output)
+    if updated_more_recently_result is not None:
+        raise TempFileUpdatedMoreRecentlyException(
+            updated_more_recently_result.group(0)
+        )
 
 
 def get_metadata(output):
