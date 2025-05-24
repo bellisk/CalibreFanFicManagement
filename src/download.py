@@ -258,6 +258,7 @@ def download(options):
         return
 
     if not urls:
+        log("No new urls to fetch. Finished!", Bcolors.OKGREEN)
         return
 
     log(f"Unique URLs to fetch ({len(urls)}):", Bcolors.HEADER)
