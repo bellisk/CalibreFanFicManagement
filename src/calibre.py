@@ -209,7 +209,6 @@ class CalibreHelper(object):
         )
 
         command = f"calibredb search {search_terms} {self.library_access_string}"
-        log(command)
 
         try:
             result = check_and_clean_output(command)
@@ -256,7 +255,6 @@ class CalibreHelper(object):
             f"calibredb list --search {search_terms} {self.library_access_string} "
             f"--fields title,*identifier --for-machine"
         )
-        log(command)
 
         try:
             result = check_and_clean_output(command)
@@ -322,7 +320,6 @@ class CalibreHelper(object):
             f"calibredb set_metadata {book_id} {' '.join(options_strings)} "
             f"{self.library_access_string}"
         )
-        log(command)
 
         try:
             check_and_clean_output(command)
