@@ -174,6 +174,9 @@ def _compare_work_subscriptions(
 def _get_missing_work_urls_from_users(
     users_missing_works, username, cookie, calibre, ao3_url=AO3_DEFAULT_URL
 ):
+    if len(users_missing_works) == 0:
+        return []
+
     log("Getting urls for works missing from subscribed users.")
     missing_work_urls = []
     for u in users_missing_works:
@@ -198,6 +201,9 @@ def _get_missing_work_urls_from_users(
 def _get_missing_work_urls_from_series(
     series_missing_works, username, cookie, calibre, ao3_url=AO3_DEFAULT_URL
 ):
+    if len(series_missing_works) == 0:
+        return []
+
     log("Getting urls for works missing from subscribed series.")
     missing_work_urls = []
     for series_id, series_title in series_missing_works.items():
