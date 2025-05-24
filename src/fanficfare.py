@@ -1,4 +1,6 @@
+import json
 import re
+from subprocess import CalledProcessError
 
 from src.exceptions import (
     BadDataException,
@@ -10,6 +12,9 @@ from src.exceptions import (
     TooManyRequestsException,
 )
 from src.utils import check_subprocess_output, get_files
+
+# Compiled regular expressions
+metadata_dict = re.compile(r"\{.*}", flags=re.DOTALL)
 
 # Responses from fanficfare that mean we won't update the story (at least right now)
 bad_chapters = re.compile(
@@ -43,7 +48,7 @@ def check_fff_output(output, command=""):
     if len(output) == 0:
         raise EmptyFanFicFareResponseException(command)
     if equal_chapters.search(output):
-        raise StoryUpToDateException()
+        raise StoryUpToDateException(output)
     if bad_chapters.search(output):
         raise BadDataException(
             "Something is messed up with the site or the epub. No chapters found."
@@ -63,7 +68,19 @@ def check_fff_output(output, command=""):
     if chapter_difference.search(output):
         raise MoreChaptersLocallyException()
     if updated_more_recently.search(output):
-        raise TempFileUpdatedMoreRecentlyException
+        raise TempFileUpdatedMoreRecentlyException(output)
+
+
+def get_metadata(output):
+    """Get a fic metadata dictionary from the output of an FFF command.
+    If the output doesn't contain a metadata dictionary, raise a RuntimeError: something
+    has gone wrong that we didn't catch before, by checking the output for errors that
+    we know about.
+    """
+    metadata_json = metadata_dict.search(output)
+    if metadata_json:
+        return json.loads(metadata_json.group(0))
+    raise RuntimeError(f"Got unexpected response from FanFicFare: {output}")
 
 
 class FanFicFareHelper(object):
@@ -74,7 +91,7 @@ class FanFicFareHelper(object):
 
     def download(
         self,
-        url,
+        fic_to_download,
         location,
         update_epub=True,
         update_cover=True,
@@ -93,13 +110,23 @@ class FanFicFareHelper(object):
         if force:
             options.append("--force")
 
-        command = f'cd "{location}" && fanficfare {" ".join(options)} "{url}"'
-        result = check_subprocess_output(command)
+        command = (
+            f'cd "{location}" && fanficfare {" ".join(options)} "{fic_to_download}"'
+        )
+
+        try:
+            result = check_subprocess_output(command)
+        except CalledProcessError as e:
+            result = e.output
 
         # Throws exceptions if needed
         check_fff_output(result)
 
+        metadata = {}
+        if return_metadata:
+            metadata = get_metadata(result)
+
         # Return path to newly-downloaded epub file, metadata if any
         filepath = get_files(location, ".epub", True)[0]
 
-        return filepath, {}
+        return filepath, metadata

@@ -18,19 +18,15 @@ from .calibre import (
 from .exceptions import (
     BadDataException,
     CloudflareWebsiteException,
-    EmptyFanFicFareResponseException,
     InvalidConfig,
-    MoreChaptersLocallyException,
     StoryUpToDateException,
     TempFileUpdatedMoreRecentlyException,
-    TooManyRequestsException,
     UrlsCollectionException,
 )
 from .fanficfare import FanFicFareHelper
 from .get_urls import get_urls, update_last_updated_file
 from .utils import (
     Bcolors,
-    check_subprocess_output,
     get_files,
     log,
     setup_login,
@@ -38,19 +34,6 @@ from .utils import (
 
 story_name = re.compile("(.*)-.*")
 story_url = re.compile(r"(https://archiveofourown.org/works/\d*).*")
-metadata_dict = re.compile(r"\{.*}", flags=re.DOTALL)
-
-
-def get_metadata(output):
-    """Get a fic metadata dictionary from the output of an FFF command.
-    If the output doesn't contain a metadata dictionary, raise a RuntimeError: something
-    has gone wrong that we didn't catch before, by checking the output for errors that
-    we know about.
-    """
-    metadata_json = metadata_dict.search(output)
-    if metadata_json:
-        return json.loads(metadata_json.group(0))
-    raise RuntimeError(f"Got unexpected response from FanFicFare: {output}")
 
 
 def get_url_without_chapter(url):
@@ -92,35 +75,19 @@ def do_download(loc, url, fff_helper, calibre, force):
             Bcolors.OKGREEN,
         )
 
-    check_subprocess_output(f'cp "{fanficfare_config}" {loc}/personal.ini')
-
-    command = f'cd "{loc}" && fanficfare -j -u "{cur}" --update-cover'
-    log(f"\tRunning: {command}", Bcolors.OKBLUE)
-    try:
-        fff_update_result = check_subprocess_output(command)
-    except CalledProcessError as e:
-        fff_update_result = e.output
-
     try:
         # Throws an exception if we couldn't/shouldn't update the epub
-        check_fff_output(fff_update_result, command)
+        filepath, metadata = fff_helper.download(url, loc, return_metadata=True)
     except Exception as e:
         if isinstance(e, TempFileUpdatedMoreRecentlyException) or (
             force and isinstance(e, StoryUpToDateException)
         ):
             log("\tForcing download update. FanFicFare error message:", Bcolors.WARNING)
-            for line in fff_update_result.split("\n"):
-                if line == "{":
-                    break
-                log(f"\t\t{str(line)}", Bcolors.WARNING)
-            command += " --force"
+            log(f"\t\t{str(e.message)}", Bcolors.WARNING)
 
-            log(f"\tRunning: {command}", Bcolors.OKBLUE)
-            try:
-                fff_update_result = check_subprocess_output(command)
-            except CalledProcessError as e:
-                fff_update_result = e.output
-            check_fff_output(fff_update_result, command)
+            filepath, metadata = fff_helper.download(
+                url, loc, return_metadata=True, force=True
+            )
         else:
             raise e
 
@@ -135,7 +102,6 @@ def do_download(loc, url, fff_helper, calibre, force):
     new_story_id = result[-1]
     log(f"\tAdded {cur} to library with id {new_story_id}", Bcolors.OKGREEN)
 
-    metadata = get_metadata(fff_update_result)
     options = get_all_metadata_options(metadata)
     log(f"\tSetting custom fields on story {new_story_id}", Bcolors.OKBLUE)
     try:
