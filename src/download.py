@@ -22,7 +22,7 @@ from .exceptions import (
     TempFileUpdatedMoreRecentlyException,
     UrlsCollectionException,
 )
-from .fanficfare import FanFicFareHelper
+from .fanficfare_helper import FanFicFareHelper
 from .get_urls import get_urls, update_last_updated_file
 from .utils import (
     Bcolors,
