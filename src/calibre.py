@@ -27,7 +27,6 @@ db = db("%s").new_api
 db.set_pref("grouped_search_terms", {"allseries": ["series", "#series00", "#series01", "#series02", "#series03"]})
 print(db.pref("grouped_search_terms"))
 """
-series_pattern = re.compile(r"(.*) \[(.*)]")
 
 
 class CalibreException(Exception):
@@ -327,8 +326,7 @@ def get_series_options(metadata):
     if len(metadata["series"]) == 0:
         return {}
 
-    m = series_pattern.match(metadata["series"])
-    return {"series": m.group(1), "series-index": f'"{m.group(2)}"'}
+    return {"series": metadata["series"]}
 
 
 def get_extra_series_options(metadata):
@@ -337,8 +335,7 @@ def get_extra_series_options(metadata):
     opts = {}
     for key in series_keys:
         if len(metadata[key]) > 0 and metadata[key] != existing_series:
-            m = series_pattern.match(metadata[key])
-            opts[f"#{key}"] = f'"{m.group(0)}"'
+            opts[f"#{key}"] = metadata[key]
 
     return opts
 
