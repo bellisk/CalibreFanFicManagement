@@ -29,13 +29,6 @@ def mocked_localtime():
     return time.struct_time((2024, 4, 13, 9, 0, 0, 5, 104, 1))
 
 
-def mock_check_subprocess_output(command, *args, **kwargs):
-    if command.startswith("calibredb search author"):
-        return "1,2,3,4,5,6,7,8,9,10"
-    elif command.startswith("calibredb search allseries"):
-        return "1,2"
-
-
 @patch("src.ao3_utils.AO3", MockAO3)
 @patch("src.analyse.CalibreHelper", MockCalibreHelper)
 class TestAnalysisClass(object):
@@ -54,7 +47,7 @@ class TestAnalysisClass(object):
 
         captured = capsys.readouterr()
 
-        # mock_check_output tells us that every author has 10 works in Calibre.
+        # MockCalibre tells us that every author has 10 works in Calibre.
         # MockAO3 tells us that user2 and user3 have 20 and 30 fics on AO3, so they
         # should be reported here.
         users_msg = (
