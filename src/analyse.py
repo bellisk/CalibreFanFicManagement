@@ -5,6 +5,8 @@ from datetime import datetime
 from os import mkdir
 from os.path import isdir, join
 
+import ao3.utils
+
 from .ao3_utils import (
     get_ao3_series_work_urls,
     get_ao3_subscribed_series_work_stats,
@@ -126,13 +128,45 @@ def _compare_series_subscriptions(
 
 
 def _compare_work_subscriptions(
-    user, cookie, path, output_file, ao3_url=AO3_DEFAULT_URL
+    user, cookie, calibre, output_file, ao3_url=AO3_DEFAULT_URL
 ):
     log("Comparing work subscriptions on AO3 to Calibre library", Bcolors.HEADER)
 
-    ao3_subscribed_work_count = get_ao3_work_subscription_urls(
+    ao3_subscribed_work_urls = get_ao3_work_subscription_urls(
         user, cookie, max_count=None, oldest_date=None, ao3_url=ao3_url
     )
+    calibre_works = {
+        work["url"]: work
+        for work in calibre.list_titles_and_urls(urls=ao3_subscribed_work_urls)
+    }
+    missing_work_urls = ao3_subscribed_work_urls - calibre_works.keys()
+
+    with open(output_file, "a") as f:
+        writer = DictWriter(f, ["id", "url", "title", "in Calibre"])
+        writer.writeheader()
+        for url in ao3_subscribed_work_urls:
+            work_id = ao3.utils.work_id_from_url(url)
+
+            line = {
+                "id": work_id,
+                "url": url,
+                "title": calibre_works.get(url, {}).get("title", ""),
+                "in Calibre": url in calibre_works.keys(),
+            }
+
+            writer.writerow(line)
+
+    if len(missing_work_urls) > 0:
+        log(
+            f"There are {len(missing_work_urls)} works subscribed to on AO3 that are "
+            f"missing in Calibre:"
+        )
+        for work_url in missing_work_urls:
+            log(f"\t{work_url}", Bcolors.OKBLUE)
+    else:
+        log("All works subscribed to in AO3 are in Calibre.", Bcolors.OKGREEN)
+
+    return missing_work_urls
 
 
 def _get_missing_work_urls_from_users(
@@ -260,7 +294,7 @@ Examples: \"/home/myuser/Calibre Library\", \"http://localhost:8080/#calibre-lib
                 )
             elif analysis_type == SOURCE_WORK_SUBSCRIPTIONS:
                 subscribed_missing_works = _compare_work_subscriptions(
-                    options.user, options.cookie, path, output_file, options.mirror
+                    options.user, options.cookie, calibre, output_file, options.mirror
                 )
                 missing_works.extend(subscribed_missing_works)
             elif analysis_type == INCOMPLETE:
