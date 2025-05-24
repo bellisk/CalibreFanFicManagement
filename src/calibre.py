@@ -319,7 +319,7 @@ class CalibreHelper(object):
         options_strings = [f'--field={k}:"{v}"' for k, v in options.items()]
 
         command = (
-            f"calibredb set_metadata {book_id} {' '.join(options_strings)}"
+            f"calibredb set_metadata {book_id} {' '.join(options_strings)} "
             f"{self.library_access_string}"
         )
         log(command)
