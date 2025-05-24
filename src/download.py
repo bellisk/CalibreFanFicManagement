@@ -113,11 +113,6 @@ def get_url_without_chapter(url):
     raise BadDataException(f"Malformed url: '{url}'")
 
 
-def get_new_story_id(output):
-    # We get something like '123,124,125' and want the last id as a string
-    return output.replace("Initialized urlfixer\n", "").split(",")[-1]
-
-
 def do_download(loc, url, fanficfare_config, calibre, force):
     if not calibre:
         # We have no Calibre library, so just download the story.
