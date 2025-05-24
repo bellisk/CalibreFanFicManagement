@@ -12,7 +12,6 @@ from tempfile import mkdtemp
 from .calibre import (
     CalibreException,
     CalibreHelper,
-    get_all_metadata_options,
 )
 from .exceptions import (
     BadDataException,
@@ -26,6 +25,7 @@ from .fanficfare_helper import FanFicFareHelper
 from .get_urls import get_urls, update_last_updated_file
 from .utils import (
     Bcolors,
+    get_all_metadata_options,
     get_files,
     log,
     setup_login,
