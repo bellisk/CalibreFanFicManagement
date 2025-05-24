@@ -1,33 +1,20 @@
 # encoding: utf-8
 import json
-import locale
 import os.path
-import re
 from errno import ENOENT
 from os import devnull
 from subprocess import CalledProcessError, call
 from urllib.parse import urlparse
 
 from .ao3_utils import AO3_SERIES_KEYS
-from .utils import Bcolors, check_subprocess_output, log
+from .utils import TAG_TYPES, Bcolors, check_subprocess_output, log
 
-TAG_TYPES = [
-    "ao3categories",
-    "characters",
-    "fandoms",
-    "freeformtags",
-    "rating",
-    "ships",
-    "status",
-    "warnings",
-]
 ADD_GROUPED_SEARCH_SCRIPT = """from calibre.library import db
 
 db = db("%s").new_api
 db.set_pref("grouped_search_terms", {"allseries": ["series", "#series00", "#series01", "#series02", "#series03"]})
 print(db.pref("grouped_search_terms"))
 """
-series_pattern = re.compile(r"(.*) \[(.*)]")
 
 
 class CalibreException(Exception):
@@ -321,63 +308,3 @@ class CalibreHelper(object):
             check_and_clean_output(command)
         except CalledProcessError as e:
             raise CalibreException(e.output)
-
-
-def get_series_options(metadata):
-    if len(metadata["series"]) == 0:
-        return {}
-
-    m = series_pattern.match(metadata["series"])
-    return {"series": m.group(1), "series-index": f'"{m.group(2)}"'}
-
-
-def get_extra_series_options(metadata):
-    existing_series = metadata["series"]
-    series_keys = ["series00", "series01", "series02", "series03"]
-    opts = {}
-    for key in series_keys:
-        if len(metadata[key]) > 0 and metadata[key] != existing_series:
-            m = series_pattern.match(metadata[key])
-            opts[f"#{key}"] = f'"{m.group(0)}"'
-
-    return opts
-
-
-def get_tags_options(metadata):
-    # FFF will save all fic tags to the tags column, but we want to separate them out,
-    # so remove them from there.
-    opts = {"tags": ""}
-    for tag_type in TAG_TYPES:
-        if len(metadata[tag_type]) > 0:
-            tags = metadata[tag_type].split(", ")
-            # Replace characters that give Calibre trouble in tags.
-            tags = [
-                tag.replace('"', "'")
-                .replace("...", "…")
-                .replace(".", "．")
-                .replace("&amp;", "&")
-                for tag in tags
-            ]
-            opts[f"#{tag_type}"] = f"{','.join(tags)}"
-
-    return opts
-
-
-def get_word_count(metadata):
-    if metadata.get("numWords", 0) == "":
-        # A strange bug that seems to happen occasionally on AO3's side.
-        # The wordcount of the affected work is not actually 0.
-        # Returning an empty string here will set the wordcount in Calibre to None,
-        # so it can be distinguised from works that actually have 0 words (e.g. art).
-        return ""
-
-    return locale.atoi(metadata.get("numWords", 0))
-
-
-def get_all_metadata_options(metadata):
-    options = {"#words": get_word_count(metadata)}
-    options.update(get_series_options(metadata))
-    options.update(get_extra_series_options(metadata))
-    options.update(get_tags_options(metadata))
-
-    return options
