@@ -100,7 +100,7 @@ class FanFicFareHelper(object):
     ):
         options = []
         if self.config_path:
-            options.append(f"--config={self.config_path}")
+            options.append(f'--config="{self.config_path}"')
         if update_epub:
             options.append("--update-epub")
         if update_cover:
