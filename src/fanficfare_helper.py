@@ -137,7 +137,7 @@ class FanFicFareHelper(object):
             result = e.output
 
         # Throws exceptions if needed
-        check_fff_output(result)
+        check_fff_output(result, command)
 
         # Return path to newly-downloaded epub file, metadata
         metadata = get_metadata(result)
