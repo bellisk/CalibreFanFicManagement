@@ -201,7 +201,7 @@ class CalibreHelper(object):
             if "No books matching the search expression" in e.output:
                 return []
             else:
-                raise
+                raise CalibreException(e.output)
 
     def get_author_works_count(self, author):
         log(f"Getting work count for {author} in calibre")
@@ -250,7 +250,7 @@ class CalibreHelper(object):
             if "No books matching the search expression" in e.output:
                 return []
             else:
-                raise
+                raise CalibreException(e.output)
 
         return [
             {"title": r["title"], "url": r["*identifier"].replace("url:", "")}
