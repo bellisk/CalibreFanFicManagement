@@ -217,7 +217,7 @@ class CalibreHelper(object):
 
     def export(self, book_id, location):
         command = (
-            f'calibredb export {book_id} --to-dir "{location}" '
+            f'calibredb export {book_id} --to-dir "{location}" --template={{id}} '
             f"--dont-save-cover --dont-write-opf --single-dir "
             f"{self.library_access_string}"
         )
@@ -226,6 +226,9 @@ class CalibreHelper(object):
             check_and_clean_output(command)
         except CalledProcessError as e:
             raise CalibreException(e.output)
+
+        # Return the filepath to the new epub file
+        return os.path.join(location, f"{book_id}.epub")
 
     def list_titles_and_urls(
         self, authors=None, urls=None, series=None, book_formats=None, incomplete=False
