@@ -147,7 +147,8 @@ def download(options):
         log(e.message, Bcolors.FAIL)
         return
     except UrlsCollectionException as e:
-        log(f"Error getting urls: {e}")
+        log(e.message, Bcolors.FAIL)
+        log(f"All urls collected so far have been saved in {options.input}")
 
         return
 

@@ -38,6 +38,7 @@ from src.options import (
 from src.utils import AO3_DEFAULT_URL, DATE_FORMAT, Bcolors, log
 
 LAST_UPDATE_KEYS = [SOURCES, SOURCE_USERNAMES, SOURCE_COLLECTIONS, SOURCE_SERIES]
+story_url = re.compile(r"(https://archiveofourown.org/works/\d*).*")
 
 
 def get_all_sources_for_last_updated_file(options):
@@ -122,9 +123,6 @@ def update_last_updated_file(options):
         f.write(data)
 
 
-story_url = re.compile(r"(https://archiveofourown.org/works/\d*).*")
-
-
 def normalise_urls(urls, base_url=None):
     def normalise(url):
         url = url.replace("http://", "https://")
@@ -133,7 +131,7 @@ def normalise_urls(urls, base_url=None):
         m = story_url.match(url)
         if m:
             return m.group(1)
-        raise UrlsCollectionException(
+        raise RuntimeError(
             f"Malformed url: '{url}'. If you're using an AO3 mirror site, "
             f"please pass the url into the command with the option --mirror"
         )
@@ -356,10 +354,12 @@ def get_urls(options):
             )
             urls |= imap_urls
             log(f"{len(urls) - url_count} URLs from IMAP", Bcolors.OKGREEN)
+
+        urls = normalise_urls(urls, options.mirror)
     except Exception as e:
         with open(options.input, "w") as fp:
             for cur in urls:
                 fp.write(f"{cur}\n")
         raise UrlsCollectionException(e)
 
-    return normalise_urls(urls, options.mirror)
+    return urls
