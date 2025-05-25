@@ -78,7 +78,8 @@ def do_download(location, url, fff_helper, calibre, force):
             raise e
 
     log(
-        f'\tDownloaded story "{metadata["title"]}" by {metadata["author"]} to file {filepath}',
+        f'\tDownloaded story "{metadata["title"]}" by {metadata["author"]} '
+        f"to file {filepath}",
         Bcolors.OKGREEN,
     )
     log(f"\tAdding {filepath} to library", Bcolors.OKBLUE)
