@@ -5,7 +5,6 @@ import os.path
 from os import rename
 from pprint import pformat
 from shutil import rmtree
-from subprocess import CalledProcessError
 from tempfile import mkdtemp
 
 from .calibre import (
@@ -116,8 +115,7 @@ def downloader(url, inout_file, fff_helper, calibre, force):
         do_download(loc, url, fff_helper, calibre, force)
     except Exception as e:
         log(f"\tException: {e}", Bcolors.FAIL)
-        if isinstance(e, CalledProcessError):
-            log(f"\t{e.output}", Bcolors.FAIL)
+
         if not isinstance(e, StoryUpToDateException):
             with open(inout_file, "a") as fp:
                 fp.write(f"{url}\n")
