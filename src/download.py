@@ -13,7 +13,6 @@ from .calibre import (
     CalibreHelper,
 )
 from .exceptions import (
-    BadDataException,
     InvalidConfig,
     StoryUpToDateException,
     TempFileUpdatedMoreRecentlyException,
@@ -29,15 +28,6 @@ from .utils import (
 )
 
 story_name = re.compile("(.*)-.*")
-story_url = re.compile(r"(https://archiveofourown.org/works/\d*).*")
-
-
-def get_url_without_chapter(url):
-    url = url.replace("http://", "https://")
-    m = story_url.match(url)
-    if m:
-        return m.group(1)
-    raise BadDataException(f"Malformed url: '{url}'")
 
 
 def do_download(location, url, fff_helper, calibre, force):
@@ -114,13 +104,6 @@ def do_download(location, url, fff_helper, calibre, force):
 
 def downloader(url, inout_file, fff_helper, calibre, force):
     log(f"Working with url {url}", Bcolors.HEADER)
-
-    try:
-        url = get_url_without_chapter(url)
-    except BadDataException as e:
-        log(f"\tException: {e}", Bcolors.FAIL)
-        return
-
     loc = mkdtemp()
 
     try:
