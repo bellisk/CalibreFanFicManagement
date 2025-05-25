@@ -24,7 +24,6 @@ from .get_urls import get_urls, update_last_updated_file
 from .utils import (
     Bcolors,
     get_all_metadata_options,
-    get_files,
     log,
     setup_login,
 )
@@ -64,9 +63,8 @@ def do_download(loc, url, fff_helper, calibre, force):
         # Story is in Calibre
         log(f"\tStory is in Calibre with id {story_id}", Bcolors.OKBLUE)
         log("\tExporting file", Bcolors.OKBLUE)
-        calibre.export(book_id=story_id, location=loc)
+        cur = calibre.export(book_id=story_id, location=loc)
 
-        cur = get_files(loc, ".epub", True)[0]
         log(
             f'\tDownloading with fanficfare, updating file "{cur}"',
             Bcolors.OKGREEN,
