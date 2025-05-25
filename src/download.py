@@ -114,9 +114,11 @@ def downloader(url, inout_file, fff_helper, calibre, force):
     try:
         do_download(loc, url, fff_helper, calibre, force)
     except Exception as e:
-        log(f"\tException: {e}", Bcolors.FAIL)
-
-        if not isinstance(e, StoryUpToDateException):
+        if isinstance(e, StoryUpToDateException):
+            log(f"\tNot updating fic: {e}", Bcolors.WARNING)
+            log(f"\tTo force an update, run this command with --force", Bcolors.WARNING)
+        else:
+            log(f"\tException: {e}", Bcolors.FAIL)
             with open(inout_file, "a") as fp:
                 fp.write(f"{url}\n")
     finally:
