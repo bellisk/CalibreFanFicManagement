@@ -2,8 +2,8 @@
 # Adapted from https://github.com/MrTyton/AutomatedFanfic
 
 import os.path
-import re
 from os import rename
+from pprint import pformat
 from shutil import rmtree
 from subprocess import CalledProcessError
 from tempfile import mkdtemp
@@ -59,7 +59,7 @@ def do_download(location, url, fff_helper, calibre, force):
 
         log(
             f'\tDownloading with fanficfare, updating file "{story_to_download}"',
-            Bcolors.OKGREEN,
+            Bcolors.OKBLUE,
         )
 
     try:
@@ -78,6 +78,10 @@ def do_download(location, url, fff_helper, calibre, force):
         else:
             raise e
 
+    log(
+        f'\tDownloaded story "{metadata["title"]}" by {metadata["author"]} to file {filepath}',
+        Bcolors.OKGREEN,
+    )
     log(f"\tAdding {filepath} to library", Bcolors.OKBLUE)
     calibre.add(book_filepath=filepath)
 
@@ -88,7 +92,11 @@ def do_download(location, url, fff_helper, calibre, force):
     log(f"\tAdded {filepath} to library with id {new_story_id}", Bcolors.OKGREEN)
 
     options = get_all_metadata_options(metadata)
-    log(f"\tSetting custom fields on story {new_story_id}", Bcolors.OKBLUE)
+    log(
+        f"\tSetting custom fields on story {new_story_id}:\n{pformat(options)}",
+        Bcolors.OKBLUE,
+    )
+
     try:
         calibre.set_metadata(book_id=new_story_id, options=options)
     except CalibreException as e:
