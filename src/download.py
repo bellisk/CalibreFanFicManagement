@@ -3,7 +3,6 @@
 
 import os.path
 import re
-import time
 from os import rename
 from shutil import rmtree
 from subprocess import CalledProcessError
@@ -15,7 +14,6 @@ from .calibre import (
 )
 from .exceptions import (
     BadDataException,
-    CloudflareWebsiteException,
     InvalidConfig,
     StoryUpToDateException,
     TempFileUpdatedMoreRecentlyException,
@@ -134,10 +132,6 @@ def downloader(url, inout_file, fff_helper, calibre, force):
         if not isinstance(e, StoryUpToDateException):
             with open(inout_file, "a") as fp:
                 fp.write(f"{url}\n")
-        if isinstance(e, CloudflareWebsiteException):
-            # Let the outer loop know that we need to pause before downloading the next
-            # fic
-            raise
     finally:
         rmtree(loc, ignore_errors=True)
 
@@ -185,20 +179,12 @@ def download(options):
     fff_helper = FanFicFareHelper(config_path=options.fanficfare_config)
 
     for url in urls:
-        try:
-            downloader(
-                url,
-                options.input,
-                fff_helper,
-                calibre,
-                options.force,
-            )
-        except CloudflareWebsiteException:
-            pause = 30
-            log(
-                f"Waiting {pause} seconds to (hopefully) allow AO3 to recover from Cloudflare error",
-                Bcolors.WARNING,
-            )
-            time.sleep(pause)
+        downloader(
+            url,
+            options.input,
+            fff_helper,
+            calibre,
+            options.force,
+        )
 
     update_last_updated_file(options)
