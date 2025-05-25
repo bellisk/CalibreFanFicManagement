@@ -1,5 +1,5 @@
 import json
-import os
+import os.path
 import re
 from subprocess import CalledProcessError
 

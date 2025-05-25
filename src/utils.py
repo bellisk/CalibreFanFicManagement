@@ -2,8 +2,6 @@
 import copy
 import locale
 import logging
-from os import listdir
-from os.path import isfile, join
 from pprint import pformat
 from subprocess import PIPE, STDOUT, check_output
 from time import localtime, strftime
