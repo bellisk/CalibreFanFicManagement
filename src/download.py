@@ -72,7 +72,7 @@ def do_download(loc, url, fff_helper, calibre, force):
 
     try:
         # Throws an exception if we couldn't/shouldn't update the epub
-        filepath, metadata = fff_helper.download(cur, loc, return_metadata=True)
+        filepath, metadata = fff_helper.download(cur, loc)
     except Exception as e:
         if isinstance(e, TempFileUpdatedMoreRecentlyException) or (
             force and isinstance(e, StoryUpToDateException)
@@ -80,22 +80,18 @@ def do_download(loc, url, fff_helper, calibre, force):
             log("\tForcing download update. FanFicFare error message:", Bcolors.WARNING)
             log(f"\t\t{str(e.message)}", Bcolors.WARNING)
 
-            filepath, metadata = fff_helper.download(
-                url, loc, return_metadata=True, force=True
-            )
+            filepath, metadata = fff_helper.download(cur, loc, force=True)
         else:
             raise e
 
-    cur = get_files(loc, ".epub", True)[0]
-
-    log(f"\tAdding {cur} to library", Bcolors.OKBLUE)
-    calibre.add(book_filepath=cur)
+    log(f"\tAdding {filepath} to library", Bcolors.OKBLUE)
+    calibre.add(book_filepath=filepath)
 
     # The search returns a list of story ids in numerical order. The story we just
     # added has the highest id number and is at the end of the list.
     result = calibre.search(urls=[url])
     new_story_id = result[-1]
-    log(f"\tAdded {cur} to library with id {new_story_id}", Bcolors.OKGREEN)
+    log(f"\tAdded {filepath} to library with id {new_story_id}", Bcolors.OKGREEN)
 
     options = get_all_metadata_options(metadata)
     log(f"\tSetting custom fields on story {new_story_id}", Bcolors.OKBLUE)
