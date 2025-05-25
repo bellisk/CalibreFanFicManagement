@@ -27,8 +27,6 @@ from .utils import (
     setup_login,
 )
 
-story_name = re.compile("(.*)-.*")
-
 
 def do_download(location, url, fff_helper, calibre, force):
     if not calibre:
@@ -37,7 +35,7 @@ def do_download(location, url, fff_helper, calibre, force):
         name = os.path.basename(filepath)
         rename(filepath, name)
         log(
-            f"\tDownloaded story {story_name.search(name).group(1)} to {name}",
+            f"\tDownloaded story {metadata['title']} to {name}",
             Bcolors.OKGREEN,
         )
 
