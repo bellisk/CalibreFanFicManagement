@@ -1,5 +1,6 @@
 import json
 import os.path
+import re
 import sys
 from datetime import datetime
 from json import JSONDecodeError
@@ -37,6 +38,7 @@ from src.options import (
 from src.utils import AO3_DEFAULT_URL, DATE_FORMAT, Bcolors, log
 
 LAST_UPDATE_KEYS = [SOURCES, SOURCE_USERNAMES, SOURCE_COLLECTIONS, SOURCE_SERIES]
+story_url = re.compile(r"(https://archiveofourown.org/works/\d*).*")
 
 
 def get_all_sources_for_last_updated_file(options):
@@ -119,6 +121,24 @@ def update_last_updated_file(options):
 
     with open(options.last_update_file, "w") as f:
         f.write(data)
+
+
+def normalise_urls(urls, base_url=None):
+    def normalise(url):
+        url = url.replace("http://", "https://")
+        if base_url:
+            url = url.replace(base_url, AO3_DEFAULT_URL)
+        m = story_url.match(url)
+        if m:
+            return m.group(1)
+        raise RuntimeError(
+            f"Malformed url: '{url}'. If you're using an AO3 mirror site, "
+            f"please pass the url into the command with the option --mirror"
+        )
+
+    urls = set(urls)
+
+    return {normalise(url) for url in urls}
 
 
 def get_urls(options):
@@ -334,15 +354,12 @@ def get_urls(options):
             )
             urls |= imap_urls
             log(f"{len(urls) - url_count} URLs from IMAP", Bcolors.OKGREEN)
+
+        urls = normalise_urls(urls, options.mirror)
     except Exception as e:
         with open(options.input, "w") as fp:
             for cur in urls:
                 fp.write(f"{cur}\n")
         raise UrlsCollectionException(e)
-
-    # Convert urls to use default AO3 url, even if we're using a mirror.
-    # This makes checking that they're correctly formed, and passing them to FanFicFare,
-    # easier.
-    urls = set(url.replace(options.mirror, AO3_DEFAULT_URL) for url in urls)
 
     return urls

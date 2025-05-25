@@ -2,11 +2,9 @@
 # Adapted from https://github.com/MrTyton/AutomatedFanfic
 
 import os.path
-import re
-import time
 from os import rename
+from pprint import pformat
 from shutil import rmtree
-from subprocess import CalledProcessError
 from tempfile import mkdtemp
 
 from .calibre import (
@@ -14,8 +12,6 @@ from .calibre import (
     CalibreHelper,
 )
 from .exceptions import (
-    BadDataException,
-    CloudflareWebsiteException,
     InvalidConfig,
     StoryUpToDateException,
     TempFileUpdatedMoreRecentlyException,
@@ -26,57 +22,48 @@ from .get_urls import get_urls, update_last_updated_file
 from .utils import (
     Bcolors,
     get_all_metadata_options,
-    get_files,
     log,
     setup_login,
 )
 
-story_name = re.compile("(.*)-.*")
-story_url = re.compile(r"(https://archiveofourown.org/works/\d*).*")
 
-
-def get_url_without_chapter(url):
-    url = url.replace("http://", "https://")
-    m = story_url.match(url)
-    if m:
-        return m.group(1)
-    raise BadDataException(f"Malformed url: '{url}'")
-
-
-def do_download(loc, url, fff_helper, calibre, force):
+def do_download(location, url, fff_helper, calibre, force):
     if not calibre:
         # We have no Calibre library, so just download the story.
-        filepath, metadata = fff_helper.download(url, loc, update_epub=False)
+        filepath, metadata = fff_helper.download(url, location, update_epub=False)
         name = os.path.basename(filepath)
         rename(filepath, name)
         log(
-            f"\tDownloaded story {story_name.search(name).group(1)} to {name}",
+            f"\tDownloaded story {metadata['title']} to {name}",
             Bcolors.OKGREEN,
         )
 
         return
 
-    cur = url
+    # FanFicFare accepts either the url to a fic, or the path to an existing epub of the
+    # fic. If it gets an epub, it will go to the fic url saved in the epub's metadata,
+    # download the fic, and update the existing epub with the new contents.
+    story_to_download = url
     story_id = None
     result = calibre.search(urls=[url], book_formats=["EPUB"])
     if len(result) > 0:
         story_id = result[0]
 
     if story_id is not None:
-        # Story is in Calibre
+        # Story is in Calibre, so we can export an epub from Calibre and let FanFicFare
+        # update it.
         log(f"\tStory is in Calibre with id {story_id}", Bcolors.OKBLUE)
         log("\tExporting file", Bcolors.OKBLUE)
-        calibre.export(book_id=story_id, location=loc)
+        story_to_download = calibre.export(book_id=story_id, location=location)
 
-        cur = get_files(loc, ".epub", True)[0]
         log(
-            f'\tDownloading with fanficfare, updating file "{cur}"',
-            Bcolors.OKGREEN,
+            f'\tDownloading with fanficfare, updating file "{story_to_download}"',
+            Bcolors.OKBLUE,
         )
 
     try:
         # Throws an exception if we couldn't/shouldn't update the epub
-        filepath, metadata = fff_helper.download(cur, loc, return_metadata=True)
+        filepath, metadata = fff_helper.download(story_to_download, location)
     except Exception as e:
         if isinstance(e, TempFileUpdatedMoreRecentlyException) or (
             force and isinstance(e, StoryUpToDateException)
@@ -85,24 +72,31 @@ def do_download(loc, url, fff_helper, calibre, force):
             log(f"\t\t{str(e.message)}", Bcolors.WARNING)
 
             filepath, metadata = fff_helper.download(
-                url, loc, return_metadata=True, force=True
+                story_to_download, location, force=True
             )
         else:
             raise e
 
-    cur = get_files(loc, ".epub", True)[0]
-
-    log(f"\tAdding {cur} to library", Bcolors.OKBLUE)
-    calibre.add(book_filepath=cur)
+    log(
+        f'\tDownloaded story "{metadata["title"]}" by {metadata["author"]} '
+        f"to file {filepath}",
+        Bcolors.OKGREEN,
+    )
+    log(f"\tAdding {filepath} to library", Bcolors.OKBLUE)
+    calibre.add(book_filepath=filepath)
 
     # The search returns a list of story ids in numerical order. The story we just
     # added has the highest id number and is at the end of the list.
     result = calibre.search(urls=[url])
     new_story_id = result[-1]
-    log(f"\tAdded {cur} to library with id {new_story_id}", Bcolors.OKGREEN)
+    log(f"\tAdded {filepath} to library with id {new_story_id}", Bcolors.OKGREEN)
 
     options = get_all_metadata_options(metadata)
-    log(f"\tSetting custom fields on story {new_story_id}", Bcolors.OKBLUE)
+    log(
+        f"\tSetting custom fields on story {new_story_id}:\n{pformat(options)}",
+        Bcolors.OKBLUE,
+    )
+
     try:
         calibre.set_metadata(book_id=new_story_id, options=options)
     except CalibreException as e:
@@ -116,28 +110,18 @@ def do_download(loc, url, fff_helper, calibre, force):
 
 def downloader(url, inout_file, fff_helper, calibre, force):
     log(f"Working with url {url}", Bcolors.HEADER)
-
-    try:
-        url = get_url_without_chapter(url)
-    except BadDataException as e:
-        log(f"\tException: {e}", Bcolors.FAIL)
-        return
-
     loc = mkdtemp()
 
     try:
         do_download(loc, url, fff_helper, calibre, force)
     except Exception as e:
-        log(f"\tException: {e}", Bcolors.FAIL)
-        if isinstance(e, CalledProcessError):
-            log(f"\t{e.output}", Bcolors.FAIL)
-        if not isinstance(e, StoryUpToDateException):
+        if isinstance(e, StoryUpToDateException):
+            log(f"\tNot updating fic: {e}", Bcolors.WARNING)
+            log(f"\tTo force an update, run this command with --force", Bcolors.WARNING)
+        else:
+            log(f"\tException: {e}", Bcolors.FAIL)
             with open(inout_file, "a") as fp:
                 fp.write(f"{url}\n")
-        if isinstance(e, CloudflareWebsiteException):
-            # Let the outer loop know that we need to pause before downloading the next
-            # fic
-            raise
     finally:
         rmtree(loc, ignore_errors=True)
 
@@ -163,7 +147,8 @@ def download(options):
         log(e.message, Bcolors.FAIL)
         return
     except UrlsCollectionException as e:
-        log(f"Error getting urls: {e}")
+        log(e.message, Bcolors.FAIL)
+        log(f"All urls collected so far have been saved in {options.input}")
 
         return
 
@@ -185,20 +170,12 @@ def download(options):
     fff_helper = FanFicFareHelper(config_path=options.fanficfare_config)
 
     for url in urls:
-        try:
-            downloader(
-                url,
-                options.input,
-                fff_helper,
-                calibre,
-                options.force,
-            )
-        except CloudflareWebsiteException:
-            pause = 30
-            log(
-                f"Waiting {pause} seconds to (hopefully) allow AO3 to recover from Cloudflare error",
-                Bcolors.WARNING,
-            )
-            time.sleep(pause)
+        downloader(
+            url,
+            options.input,
+            fff_helper,
+            calibre,
+            options.force,
+        )
 
     update_last_updated_file(options)

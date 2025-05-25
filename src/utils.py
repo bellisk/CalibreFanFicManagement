@@ -2,8 +2,6 @@
 import copy
 import locale
 import logging
-from os import listdir
-from os.path import isfile, join
 from pprint import pformat
 from subprocess import PIPE, STDOUT, check_output
 from time import localtime, strftime
@@ -58,21 +56,6 @@ def log(msg, color=None, output=True):
         return ""
     else:
         return line + "\n"
-
-
-def get_files(mypath, filetype=None, fullpath=False):
-    if filetype:
-        ans = [
-            f
-            for f in listdir(mypath)
-            if isfile(join(mypath, f)) and f.endswith(filetype)
-        ]
-    else:
-        ans = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-    if fullpath:
-        return [join(mypath, f) for f in ans]
-    else:
-        return ans
 
 
 def setup_login(options):

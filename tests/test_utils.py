@@ -60,34 +60,6 @@ def test_log_live_output(capsys):
     )
 
 
-def test_get_files_no_fileteype():
-    files = utils.get_files(test_filepath, filetype=None, fullpath=False)
-
-    assert sorted(files) == ["test.csv", "test.ini", "test.txt"]
-
-
-def test_get_files_fileteype():
-    files = utils.get_files(test_filepath, filetype="csv", fullpath=False)
-
-    assert sorted(files) == ["test.csv"]
-
-
-def test_get_files_no_fileteype_fullpath():
-    files = utils.get_files(test_filepath, filetype=None, fullpath=True)
-
-    assert sorted(files) == [
-        os.path.join(test_filepath, "test.csv"),
-        os.path.join(test_filepath, "test.ini"),
-        os.path.join(test_filepath, "test.txt"),
-    ]
-
-
-def test_get_files_fileteype_fullpath():
-    files = utils.get_files(test_filepath, filetype="csv", fullpath=True)
-
-    assert sorted(files) == [os.path.join(test_filepath, "test.csv")]
-
-
 def test_setup_login_cookie(capsys):
     options = Namespace(
         cookie="testcookie", use_browser_cookie=False, mirror=utils.AO3_DEFAULT_URL

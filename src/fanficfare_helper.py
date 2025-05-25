@@ -1,4 +1,5 @@
 import json
+import os.path
 import re
 from subprocess import CalledProcessError
 
@@ -11,7 +12,7 @@ from src.exceptions import (
     TempFileUpdatedMoreRecentlyException,
     TooManyRequestsException,
 )
-from src.utils import check_subprocess_output, get_files
+from src.utils import check_subprocess_output
 
 # Compiled regular expressions
 metadata_dict = re.compile(r"\{.*}", flags=re.DOTALL)
@@ -102,18 +103,27 @@ class FanFicFareHelper(object):
         location,
         update_epub=True,
         update_cover=True,
-        return_metadata=False,
         force=False,
     ):
-        options = []
+        """Call fanficfare as a subprocess to download a fic and save it as an epub.
+
+        :param fic_to_download: Either the url to a fic or the filepath of a fic epub
+                                that should be updated
+        :param location:        The directory to save the downloaded fic epub in
+        :param update_epub:     Whether to update the existing epub of the fic
+        :param update_cover:    Whether to update the cover of the existing fic epub
+        :param force:           Whether to download the fic and update the fic epub
+                                despite the fic epub already containing as many chapters
+                                as the version of the fic online
+        :return:
+        """
+        options = ["--json-meta"]
         if self.config_path:
             options.append(f'--config="{self.config_path}"')
         if update_epub:
             options.append("--update-epub")
         if update_cover:
             options.append("--update-cover")
-        if return_metadata:
-            options.append("--json-meta")
         if force:
             options.append("--force")
 
@@ -129,11 +139,8 @@ class FanFicFareHelper(object):
         # Throws exceptions if needed
         check_fff_output(result)
 
-        metadata = {}
-        if return_metadata:
-            metadata = get_metadata(result)
-
-        # Return path to newly-downloaded epub file, metadata if any
-        filepath = get_files(location, ".epub", True)[0]
+        # Return path to newly-downloaded epub file, metadata
+        metadata = get_metadata(result)
+        filepath = os.path.join(location, metadata["output_filename"])
 
         return filepath, metadata
