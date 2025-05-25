@@ -40,10 +40,10 @@ def get_url_without_chapter(url):
     raise BadDataException(f"Malformed url: '{url}'")
 
 
-def do_download(loc, url, fff_helper, calibre, force):
+def do_download(location, url, fff_helper, calibre, force):
     if not calibre:
         # We have no Calibre library, so just download the story.
-        filepath, metadata = fff_helper.download(url, loc, update_epub=False)
+        filepath, metadata = fff_helper.download(url, location, update_epub=False)
         name = os.path.basename(filepath)
         rename(filepath, name)
         log(
@@ -53,26 +53,30 @@ def do_download(loc, url, fff_helper, calibre, force):
 
         return
 
-    cur = url
+    # FanFicFare accepts either the url to a fic, or the path to an existing epub of the
+    # fic. If it gets an epub, it will go to the fic url saved in the epub's metadata,
+    # download the fic, and update the existing epub with the new contents.
+    story_to_download = url
     story_id = None
     result = calibre.search(urls=[url], book_formats=["EPUB"])
     if len(result) > 0:
         story_id = result[0]
 
     if story_id is not None:
-        # Story is in Calibre
+        # Story is in Calibre, so we can export an epub from Calibre and let FanFicFare
+        # update it.
         log(f"\tStory is in Calibre with id {story_id}", Bcolors.OKBLUE)
         log("\tExporting file", Bcolors.OKBLUE)
-        cur = calibre.export(book_id=story_id, location=loc)
+        story_to_download = calibre.export(book_id=story_id, location=location)
 
         log(
-            f'\tDownloading with fanficfare, updating file "{cur}"',
+            f'\tDownloading with fanficfare, updating file "{story_to_download}"',
             Bcolors.OKGREEN,
         )
 
     try:
         # Throws an exception if we couldn't/shouldn't update the epub
-        filepath, metadata = fff_helper.download(cur, loc)
+        filepath, metadata = fff_helper.download(story_to_download, location)
     except Exception as e:
         if isinstance(e, TempFileUpdatedMoreRecentlyException) or (
             force and isinstance(e, StoryUpToDateException)
@@ -80,7 +84,9 @@ def do_download(loc, url, fff_helper, calibre, force):
             log("\tForcing download update. FanFicFare error message:", Bcolors.WARNING)
             log(f"\t\t{str(e.message)}", Bcolors.WARNING)
 
-            filepath, metadata = fff_helper.download(cur, loc, force=True)
+            filepath, metadata = fff_helper.download(
+                story_to_download, location, force=True
+            )
         else:
             raise e
 
