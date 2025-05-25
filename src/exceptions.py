@@ -2,10 +2,8 @@
 
 
 class StoryUpToDateException(Exception):
-    def __init__(self):
-        self.message = (
-            "Downloaded story already contains as many chapters as on the website."
-        )
+    def __init__(self, message):
+        self.message = message
         super().__init__(self.message)
 
 
@@ -18,10 +16,8 @@ class MoreChaptersLocallyException(Exception):
 
 
 class TempFileUpdatedMoreRecentlyException(Exception):
-    def __init__(self):
-        self.message = (
-            "The saved epub has been updated more recently than the source url."
-        )
+    def __init__(self, message):
+        self.message = message
         super().__init__(self.message)
 
 
