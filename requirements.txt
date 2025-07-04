@@ -6,7 +6,7 @@ certifi==2025.4.26
 chardet==4.0.0
 charset-normalizer==3.3.2
 cloudscraper @ git+https://github.com/VeNoMouS/cloudscraper.git@3.0.0
-FanFicFare==4.45.0
+FanFicFare==4.47.0
 html2text==2020.1.16
 html5lib==1.1
 idna==3.7
