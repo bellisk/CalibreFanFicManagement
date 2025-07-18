@@ -2,7 +2,7 @@
 beautifulsoup4==4.13.4
 Brotli==1.1.0
 browser-cookie3==0.20.1
-certifi==2025.4.26
+certifi~=2025.7.9
 chardet==4.0.0
 charset-normalizer==3.3.2
 cloudscraper @ git+https://github.com/VeNoMouS/cloudscraper.git@3.0.0
