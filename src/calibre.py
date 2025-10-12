@@ -63,7 +63,7 @@ def collate_search_terms(
             f'Format:"={" OR ".join([book_format.upper() for book_format in book_formats])}"'
         )
     if incomplete:
-        search_term_sets.append("#status:=In-Progress")
+        search_term_sets.append('"#status:=In-Progress"')
 
     return " AND ".join(search_term_sets)
 
