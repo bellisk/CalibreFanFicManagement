@@ -6,10 +6,11 @@ from pprint import pformat
 from shutil import rmtree
 from tempfile import mkdtemp
 
-from .calibre import (
+from calibre import (
     CalibreException,
     CalibreHelper,
 )
+
 from .exceptions import (
     InvalidConfig,
     StoryUpToDateException,
