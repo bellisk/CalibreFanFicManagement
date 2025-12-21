@@ -20,6 +20,7 @@ from .exceptions import (
 from .fanficfare_helper import FanFicFareHelper
 from .get_urls import get_urls, update_last_updated_file
 from .utils import (
+    TAG_TYPES,
     Bcolors,
     get_all_metadata_options,
     log,
@@ -133,6 +134,9 @@ def download(options):
             library_path=options.library,
             user=options.calibre_user,
             password=options.calibre_password,
+            words_column=True,
+            multiseries_search=True,
+            extra_tag_columns=TAG_TYPES,
         )
         try:
             calibre.check_library()
