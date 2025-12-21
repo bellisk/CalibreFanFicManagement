@@ -118,7 +118,7 @@ def downloader(url, inout_file, fff_helper, calibre, force):
     except Exception as e:
         if isinstance(e, StoryUpToDateException):
             log(f"\tNot updating fic: {e}", Bcolors.WARNING)
-            log(f"\tTo force an update, run this command with --force", Bcolors.WARNING)
+            log("\tTo force an update, run this command with --force", Bcolors.WARNING)
         else:
             log(f"\tException: {e}", Bcolors.FAIL)
             with open(inout_file, "a") as fp:

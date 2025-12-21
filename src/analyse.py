@@ -5,6 +5,10 @@ from os import mkdir
 from os.path import isdir, join
 
 import ao3.utils
+from calibre import (
+    CalibreException,
+    CalibreHelper,
+)
 
 from .ao3_utils import (
     get_ao3_series_work_urls,
@@ -12,10 +16,6 @@ from .ao3_utils import (
     get_ao3_subscribed_users_work_counts,
     get_ao3_users_work_urls,
     get_ao3_work_subscription_urls,
-)
-from calibre import (
-    CalibreException,
-    CalibreHelper,
 )
 from .download import download
 from .options import (
