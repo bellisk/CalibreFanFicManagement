@@ -1,6 +1,3 @@
-# encoding: utf-8
-
-
 class StoryUpToDateException(Exception):
     def __init__(self, message):
         self.message = message

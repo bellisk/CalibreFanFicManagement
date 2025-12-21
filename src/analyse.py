@@ -1,4 +1,3 @@
-# encoding: utf-8
 import locale
 from csv import DictWriter
 from datetime import datetime
@@ -6,6 +5,10 @@ from os import mkdir
 from os.path import isdir, join
 
 import ao3.utils
+from calibre import (
+    CalibreException,
+    CalibreHelper,
+)
 
 from .ao3_utils import (
     get_ao3_series_work_urls,
@@ -13,10 +16,6 @@ from .ao3_utils import (
     get_ao3_subscribed_users_work_counts,
     get_ao3_users_work_urls,
     get_ao3_work_subscription_urls,
-)
-from .calibre import (
-    CalibreException,
-    CalibreHelper,
 )
 from .download import download
 from .options import (
@@ -139,7 +138,11 @@ def _compare_work_subscriptions(
     )
     calibre_works = {
         work["url"]: work
-        for work in calibre.list_titles_and_urls(urls=ao3_subscribed_work_urls)
+        for work in calibre.list_metadata(
+            fields_to_show=["title"],
+            identifiers_to_show=["url"],
+            urls=ao3_subscribed_work_urls,
+        )
     }
     missing_work_urls = ao3_subscribed_work_urls - calibre_works.keys()
 
@@ -190,7 +193,10 @@ def _get_missing_work_urls_from_users(
             ao3_url=ao3_url,
         )
         calibre_urls = [
-            work["url"] for work in calibre.list_titles_and_urls(authors=[u])
+            work["url"]
+            for work in calibre.list_metadata(
+                fields_to_show=["title"], identifiers_to_show=["url"], authors=[u]
+            )
         ]
         missing_work_urls.extend(set(ao3_urls) - set(calibre_urls))
 
@@ -216,7 +222,12 @@ def _get_missing_work_urls_from_series(
             ao3_url=ao3_url,
         )
         calibre_urls = [
-            work["url"] for work in calibre.list_titles_and_urls(series=[series_title])
+            work["url"]
+            for work in calibre.list_metadata(
+                fields_to_show=["title"],
+                identifiers_to_show=["url"],
+                series=[series_title],
+            )
         ]
         missing_work_urls.extend(set(ao3_urls) - set(calibre_urls))
 
@@ -226,7 +237,9 @@ def _get_missing_work_urls_from_series(
 
 def _collect_incomplete_works(calibre, output_file):
     log("Getting urls for all works in Calibre library that are marked In Progress.")
-    results = calibre.list_titles_and_urls(incomplete=True)
+    results = calibre.list_titles_and_urls(
+        fields_to_show=["title"], identifiers_to_show=["url"], incomplete=True
+    )
 
     with open(output_file, "a") as f:
         writer = DictWriter(f, ["title", "url"])

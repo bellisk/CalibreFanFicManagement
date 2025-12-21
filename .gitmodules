@@ -1,3 +1,6 @@
 [submodule "ao3"]
 	path = ao3
 	url = git@github.com:bellisk/ao3.git
+[submodule "CalibreHelpers"]
+	path = CalibreHelpers
+	url = git@github.com:bellisk/CalibreHelpers.git

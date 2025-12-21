@@ -1,4 +1,3 @@
-# encoding: utf-8
 # Adapted from https://github.com/MrTyton/AutomatedFanfic
 
 import os.path
@@ -7,10 +6,11 @@ from pprint import pformat
 from shutil import rmtree
 from tempfile import mkdtemp
 
-from .calibre import (
+from calibre import (
     CalibreException,
     CalibreHelper,
 )
+
 from .exceptions import (
     InvalidConfig,
     StoryUpToDateException,
@@ -20,6 +20,7 @@ from .exceptions import (
 from .fanficfare_helper import FanFicFareHelper
 from .get_urls import get_urls, update_last_updated_file
 from .utils import (
+    TAG_TYPES,
     Bcolors,
     get_all_metadata_options,
     log,
@@ -117,7 +118,7 @@ def downloader(url, inout_file, fff_helper, calibre, force):
     except Exception as e:
         if isinstance(e, StoryUpToDateException):
             log(f"\tNot updating fic: {e}", Bcolors.WARNING)
-            log(f"\tTo force an update, run this command with --force", Bcolors.WARNING)
+            log("\tTo force an update, run this command with --force", Bcolors.WARNING)
         else:
             log(f"\tException: {e}", Bcolors.FAIL)
             with open(inout_file, "a") as fp:
@@ -133,6 +134,9 @@ def download(options):
             library_path=options.library,
             user=options.calibre_user,
             password=options.calibre_password,
+            words_column=True,
+            multiseries_search=True,
+            extra_tag_columns=TAG_TYPES,
         )
         try:
             calibre.check_library()
