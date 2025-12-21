@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# encoding: utf-8
 import locale
 import sys
 from argparse import ArgumentTypeError

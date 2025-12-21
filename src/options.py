@@ -1,4 +1,3 @@
-# encoding: utf-8
 import sys
 from argparse import ArgumentParser, ArgumentTypeError
 from configparser import ConfigParser

@@ -1,4 +1,3 @@
-# encoding: utf-8
 from ao3 import AO3
 
 from .utils import AO3_DEFAULT_URL

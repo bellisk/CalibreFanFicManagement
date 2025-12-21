@@ -1,4 +1,3 @@
-# encoding: utf-8
 import locale
 from csv import DictWriter
 from datetime import datetime

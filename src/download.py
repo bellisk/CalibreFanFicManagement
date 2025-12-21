@@ -1,4 +1,3 @@
-# encoding: utf-8
 # Adapted from https://github.com/MrTyton/AutomatedFanfic
 
 import os.path

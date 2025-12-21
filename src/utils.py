@@ -1,4 +1,3 @@
-# encoding: utf-8
 import copy
 import locale
 import logging
