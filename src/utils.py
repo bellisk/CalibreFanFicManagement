@@ -64,7 +64,7 @@ def setup_login(options):
     if options.use_browser_cookie:
         found_cookie = False
         ao3_domain = urlparse(options.mirror).netloc
-        cookie_jar = browser_cookie3.firefox(domain_name=ao3_domain)
+        cookie_jar = browser_cookie3.vivaldi(domain_name=ao3_domain)
         for cookie in cookie_jar:
             if cookie.name == "_otwarchive_session":
                 options.cookie = cookie.value
