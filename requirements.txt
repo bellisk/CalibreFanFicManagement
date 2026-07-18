@@ -1,12 +1,13 @@
 -e ao3/
+-e CalibreHelpers/
 beautifulsoup4==4.13.4
 Brotli==1.2.0
 browser-cookie3==0.20.1
-certifi~=2025.7.9
+certifi==2026.6.17
 chardet==4.0.0
 charset-normalizer==3.3.2
 cloudscraper @ git+https://github.com/VeNoMouS/cloudscraper.git@3.0.0
-FanFicFare==4.49.0
+FanFicFare==4.59.0
 html2text==2020.1.16
 html5lib==1.1
 idna==3.7
