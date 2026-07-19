@@ -1,6 +1,6 @@
 from random import randint
 
-from src.calibre import CalibreHelper
+from calibre import CalibreHelper
 
 
 class MockCalibreHelper(CalibreHelper):
@@ -8,13 +8,24 @@ class MockCalibreHelper(CalibreHelper):
         pass
 
     def search(
-        self, authors=None, urls=None, series=None, book_formats=None, incomplete=False
+        self,
+        saved_search=None,
+        authors=None,
+        urls=None,
+        series=None,
+        book_formats=None,
+        exclude_book_formats=None,
+        incomplete=False,
+        after_date=False,
+        before_date=False,
+        exclude_identifier_types=None,
     ):
         if authors:
             return [str(i) for i in range(10)]
         elif series:
             return [str(i) for i in range(2)]
 
+    @staticmethod
     def list_titles_and_urls(
         self, authors=None, urls=None, series=None, book_formats=None, incomplete=False
     ):
