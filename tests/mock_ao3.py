@@ -90,7 +90,7 @@ class MockCollection(Collection):
 
 class MockAO3(AO3):
     def login(self, username, cookie):
-        self.user = MockUser(username, self.session, self.ao3_url)
+        self.user = MockUser(username, self.session_handler)
 
     def work(self, id):
         work_published_date = {
@@ -107,10 +107,10 @@ class MockAO3(AO3):
         return mock_work
 
     def author(self, username):
-        return MockUser(username, self.session, self.ao3_url)
+        return MockUser(username, self.session_handler)
 
     def series(self, id):
-        return MockSeries(id, self.session, self.ao3_url)
+        return MockSeries(id, self.session_handler)
 
     def collection(self, id):
-        return MockCollection(id, self.session, self.ao3_url)
+        return MockCollection(id, self.session_handler)
