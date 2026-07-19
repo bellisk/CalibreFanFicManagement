@@ -4,12 +4,11 @@ from datetime import datetime
 from os import mkdir
 from os.path import isdir, join
 
+import ao3.utils
 from calibre import (
     CalibreException,
     CalibreHelper,
 )
-
-import ao3.utils
 
 from .ao3_utils import (
     get_ao3_series_work_urls,
