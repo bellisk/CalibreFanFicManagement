@@ -19,19 +19,25 @@ def mocked_localtime():
     return time.struct_time((2024, 4, 13, 9, 0, 0, 5, 104, 1))
 
 
-def mock_load_cookie(domain_name=None):
-    cookie = Mock()
-    cookie.name = "_otwarchive_session"
-    cookie.value = "test_browser_cookie"
-    jar = MagicMock()
-    jar.__iter__.return_value = [cookie]
-    return jar
+def mock_browser_with_cookie():
+    def browser(domain_name=None):
+        cookie = Mock()
+        cookie.name = "_otwarchive_session"
+        cookie.value = "test_browser_cookie"
+        jar = MagicMock()
+        jar.__iter__.return_value = [cookie]
+        return jar
+
+    return browser
 
 
-def mock_load_no_cookie(domain_name=None):
-    jar = MagicMock()
-    jar.__iter__.return_value = []
-    return jar
+def mock_browser_no_cookie():
+    def browser(domain_name=None):
+        jar = MagicMock()
+        jar.__iter__.return_value = []
+        return jar
+
+    return browser
 
 
 def test_log_no_color():
@@ -72,7 +78,7 @@ def test_setup_login_cookie(capsys):
     assert options.cookie == "testcookie"
 
 
-@patch("src.utils.browser_cookie3.firefox", mock_load_cookie)
+@patch("src.utils.browser_cookie3.all_browsers", [mock_browser_with_cookie()])
 def test_setup_login_use_browser_cookie(capsys):
     options = Namespace(
         cookie=None, use_browser_cookie=True, mirror=utils.AO3_DEFAULT_URL
@@ -85,7 +91,7 @@ def test_setup_login_use_browser_cookie(capsys):
     assert options.cookie == "test_browser_cookie"
 
 
-@patch("src.utils.browser_cookie3.firefox", mock_load_cookie)
+@patch("src.utils.browser_cookie3.all_browsers", [mock_browser_with_cookie()])
 def test_setup_login_cookie_and_use_browser_cookie(capsys):
     options = Namespace(
         cookie="testcookie", use_browser_cookie=True, mirror=utils.AO3_DEFAULT_URL
@@ -98,7 +104,23 @@ def test_setup_login_cookie_and_use_browser_cookie(capsys):
     assert options.cookie == "test_browser_cookie"
 
 
-@patch("src.utils.browser_cookie3.firefox", mock_load_no_cookie)
+@patch(
+    "src.utils.browser_cookie3.all_browsers",
+    [mock_browser_no_cookie(), mock_browser_with_cookie()],
+)
+def test_setup_login_ignore_browser_with_no_cookie_use_existing_browser_cookie(capsys):
+    options = Namespace(
+        cookie="testcookie", use_browser_cookie=True, mirror=utils.AO3_DEFAULT_URL
+    )
+    utils.setup_login(options)
+
+    captured = capsys.readouterr()
+    assert "Found _otwarchive_session cookie from the browser" in captured.out
+
+    assert options.cookie == "test_browser_cookie"
+
+
+@patch("src.utils.browser_cookie3.all_browsers", [mock_browser_no_cookie()])
 def test_setup_login_use_browser_cookie_but_browser_cookie_not_found(capsys):
     options = Namespace(
         cookie=None, use_browser_cookie=True, mirror=utils.AO3_DEFAULT_URL
@@ -110,7 +132,7 @@ def test_setup_login_use_browser_cookie_but_browser_cookie_not_found(capsys):
         utils.setup_login(options)
 
 
-@patch("src.utils.browser_cookie3.firefox", mock_load_no_cookie)
+@patch("src.utils.browser_cookie3.all_browsers", [mock_browser_no_cookie()])
 def test_setup_login_cookie_and_use_browser_cookie_but_browser_cookie_not_found(capsys):
     options = Namespace(
         cookie="testcookie", use_browser_cookie=True, mirror=utils.AO3_DEFAULT_URL
