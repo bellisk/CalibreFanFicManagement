@@ -4,9 +4,19 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Checkout submodules
-        run: git submodule update --init --recursive
+      - name: Get token from Github App
+        uses: actions/create-github-app-token@v1
+        id: app_token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PEM }}
+          # owner is required, otherwise the creds will fail the checkout step
+          owner: ${{ github.repository_owner }}
+      - name: Checkout from GitHub
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          token: ${{ steps.app_token.outputs.token }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.14'
