@@ -5,3 +5,4 @@ known_first_party = "ao3, calibre"
 
 [tool.black]
 line-length = 88
+target-version = ["py314"]
