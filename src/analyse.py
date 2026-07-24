@@ -237,7 +237,7 @@ def _get_missing_work_urls_from_series(
 
 def _collect_incomplete_works(calibre, output_file):
     log("Getting urls for all works in Calibre library that are marked In Progress.")
-    results = calibre.list_titles_and_urls(
+    results = calibre.list_metadata(
         fields_to_show=["title"], identifiers_to_show=["url"], incomplete=True
     )
 

@@ -25,9 +25,16 @@ class MockCalibreHelper(CalibreHelper):
         elif series:
             return [str(i) for i in range(2)]
 
-    @staticmethod
-    def list_titles_and_urls(
-        self, authors=None, urls=None, series=None, book_formats=None, incomplete=False
+    def list_metadata(
+        self,
+        fields_to_show=None,
+        identifiers_to_show=None,
+        book_id=None,
+        authors=None,
+        urls=None,
+        series=None,
+        book_formats=None,
+        incomplete=False,
     ):
         if authors:
             result = [
