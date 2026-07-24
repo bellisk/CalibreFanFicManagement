@@ -430,12 +430,12 @@ Default: '{AO3_DEFAULT_URL}'.""",
         default=False,
         help="""Whether to use a FlareSolverr proxy to get AO3 urls.
 
-See https://github.com/FlareSolverr/FlareSolverr for information about setting up 
+See https://github.com/FlareSolverr/FlareSolverr for information about setting up
 Flaresolverr.""",
     )
 
     arg_parser.add_argument(
-        "flaresolverr-url",
+        "--flaresolverr-url",
         action="store",
         dest="flaresolverr_url",
         default="",
