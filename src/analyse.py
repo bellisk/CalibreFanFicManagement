@@ -258,7 +258,8 @@ def analyse(options):
             """To analyse the contents of a Calibre library, a path or url to the
 library is required.
 
-Examples: \"/home/myuser/Calibre Library\", \"http://localhost:8080/#calibre-library\"""",
+Examples: \"/home/myuser/Calibre Library\",
+\"http://localhost:8080/#calibre-library\"""",
             Bcolors.FAIL,
         )
         return
