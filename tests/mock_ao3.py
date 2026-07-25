@@ -4,6 +4,10 @@ from unittest.mock import MagicMock
 from ao3 import AO3, Collection, Series, User
 
 
+class MockSessionsHandler(object):
+    pass
+
+
 class MockUser(User):
     def bookmarks_ids(
         self,
@@ -89,6 +93,8 @@ class MockCollection(Collection):
 
 
 class MockAO3(AO3):
+    session_handler = MockSessionsHandler()
+
     def login(self, username, cookie):
         self.user = MockUser(username, self.session_handler)
 
