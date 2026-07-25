@@ -6,8 +6,8 @@ authors = [{name = "Rae Knowler"}]
 requires-python = ">=3.14"
 classifiers = []
 dependencies = [
-    "ao3",
-    "calibre-helpers",
+    "ao3@git+https://github.com/bellisk/ao3.git#egg=59f9fb313a163f08909c0473058b097244fc1059",
+    "calibre-helpers@git+https://github.com/bellisk/CalibreHelpers.git#egg=main",
     "Brotli==1.2.0",
     "FanFicFare==4.59.0",
     "beautifulsoup4==4.13.4",
