@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
+from ao3_utils import AO3_DEFAULT_URL
 from src import utils
 from src.exceptions import InvalidConfig
 
@@ -68,9 +69,7 @@ def test_log_live_output(capsys):
 
 @patch("src.utils.browser_cookie3.all_browsers", [mock_browser_with_cookie()])
 def test_set_browser_cookie(capsys):
-    options = Namespace(
-        cookie=None, use_browser_cookie=True, mirror=utils.AO3_DEFAULT_URL
-    )
+    options = Namespace(cookie=None, use_browser_cookie=True, mirror=AO3_DEFAULT_URL)
     utils.set_browser_cookie(options)
 
     captured = capsys.readouterr()
@@ -82,7 +81,7 @@ def test_set_browser_cookie(capsys):
 @patch("src.utils.browser_cookie3.all_browsers", [mock_browser_with_cookie()])
 def test_set_browser_cookie_overrides_provided_cookie(capsys):
     options = Namespace(
-        cookie="testcookie", use_browser_cookie=True, mirror=utils.AO3_DEFAULT_URL
+        cookie="testcookie", use_browser_cookie=True, mirror=AO3_DEFAULT_URL
     )
     utils.set_browser_cookie(options)
 
@@ -97,9 +96,7 @@ def test_set_browser_cookie_overrides_provided_cookie(capsys):
     [mock_browser_no_cookie(), mock_browser_with_cookie()],
 )
 def test_set_browser_cookie_ignore_browser_with_no_cookie(capsys):
-    options = Namespace(
-        cookie=None, use_browser_cookie=True, mirror=utils.AO3_DEFAULT_URL
-    )
+    options = Namespace(cookie=None, use_browser_cookie=True, mirror=AO3_DEFAULT_URL)
     utils.set_browser_cookie(options)
 
     captured = capsys.readouterr()
@@ -110,9 +107,7 @@ def test_set_browser_cookie_ignore_browser_with_no_cookie(capsys):
 
 @patch("src.utils.browser_cookie3.all_browsers", [mock_browser_no_cookie()])
 def test_set_browser_cookie_browser_raises_error_when_cookie_not_found(capsys):
-    options = Namespace(
-        cookie=None, use_browser_cookie=True, mirror=utils.AO3_DEFAULT_URL
-    )
+    options = Namespace(cookie=None, use_browser_cookie=True, mirror=AO3_DEFAULT_URL)
 
     with pytest.raises(
         InvalidConfig, match="Tried to get the _otwarchive_session cookie"
@@ -125,7 +120,7 @@ def test_set_browser_cookie_falls_back_to_provided_cookie_when_browser_cookie_no
     capsys,
 ):
     options = Namespace(
-        cookie="testcookie", use_browser_cookie=True, mirror=utils.AO3_DEFAULT_URL
+        cookie="testcookie", use_browser_cookie=True, mirror=AO3_DEFAULT_URL
     )
     utils.set_browser_cookie(options)
 

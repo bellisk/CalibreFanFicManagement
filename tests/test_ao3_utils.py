@@ -71,7 +71,6 @@ def test_get_ao3_marked_for_later_urls():
     }
 
 
-@patch("src.ao3_utils.AO3", MockAO3)
 def test_get_ao3_work_subscription_urls_no_oldest_date():
     api = MockAO3()
     api.login("test_user", "test_cookie")

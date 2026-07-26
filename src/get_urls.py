@@ -18,6 +18,7 @@ from src.ao3_utils import (
     get_ao3_user_subscription_urls,
     get_ao3_users_work_urls,
     get_ao3_work_subscription_urls,
+    normalise_urls,
 )
 from src.exceptions import InvalidConfig, UrlsCollectionException
 from src.options import (
@@ -36,10 +37,9 @@ from src.options import (
     SOURCE_WORKS,
     SOURCES,
 )
-from src.utils import AO3_DEFAULT_URL, DATE_FORMAT, Bcolors, log
+from src.utils import DATE_FORMAT, Bcolors, log
 
 LAST_UPDATE_KEYS = [SOURCES, SOURCE_USERNAMES, SOURCE_COLLECTIONS, SOURCE_SERIES]
-story_url = re.compile(r"(https://archiveofourown.org/works/\d*).*")
 
 
 def get_all_sources_for_last_updated_file(options):
@@ -124,24 +124,6 @@ def update_last_updated_file(options):
         f.write(data)
 
 
-def normalise_urls(urls, base_url=None):
-    def normalise(url):
-        url = url.replace("http://", "https://")
-        if base_url:
-            url = url.replace(base_url, AO3_DEFAULT_URL)
-        m = story_url.match(url)
-        if m:
-            return m.group(1)
-        raise RuntimeError(
-            f"Malformed url: '{url}'. If you're using an AO3 mirror site, "
-            f"please pass the url into the command with the option --mirror"
-        )
-
-    urls = set(urls)
-
-    return {normalise(url) for url in urls}
-
-
 def get_urls(options):
     oldest_dates_per_source = get_oldest_date(options)
     urls = set([])
@@ -156,6 +138,8 @@ def get_urls(options):
                 for cur in urls:
                     fp.write(f"{cur}\n")
             raise UrlsCollectionException(source, e)
+
+    return normalise_urls(urls, options.mirror)
 
 
 def get_urls_for_source(source, options, oldest_dates_per_source):

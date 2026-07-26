@@ -17,6 +17,7 @@ from .ao3_utils import (
     get_ao3_subscribed_users_work_counts,
     get_ao3_users_work_urls,
     get_ao3_work_subscription_urls,
+    normalise_urls,
 )
 from .download import download
 from .options import (
@@ -127,6 +128,7 @@ def _compare_work_subscriptions(api, calibre, output_file):
     ao3_subscribed_work_urls = get_ao3_work_subscription_urls(
         api, max_count=None, oldest_date=None
     )
+    ao3_subscribed_work_urls = normalise_urls(ao3_subscribed_work_urls, api.ao3_url)
     calibre_works = {
         work["url"]: work
         for work in calibre.list_metadata(

@@ -3,7 +3,8 @@ from argparse import ArgumentParser, ArgumentTypeError
 from configparser import ConfigParser
 from datetime import datetime
 
-from src.utils import AO3_DEFAULT_URL, DATE_FORMAT, set_browser_cookie
+from src.ao3_utils import AO3_DEFAULT_URL
+from src.utils import DATE_FORMAT, set_browser_cookie
 
 COMMANDS = ["download", "analyse"]
 

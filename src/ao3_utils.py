@@ -1,4 +1,8 @@
+import re
+
+AO3_DEFAULT_URL = "https://archiveofourown.org"
 AO3_SERIES_KEYS = ["series00", "series01", "series02", "series03"]
+story_url = re.compile(r"(https://archiveofourown.org/works/\d*).*")
 
 
 def get_ao3_bookmark_urls(
@@ -131,3 +135,21 @@ def get_ao3_subscribed_series_work_stats(api):
         stats[s] = api.series(s).info()
 
     return stats
+
+
+def normalise_urls(urls, base_url=None):
+    def normalise(url):
+        url = url.replace("http://", "https://")
+        if base_url:
+            url = url.replace(base_url, AO3_DEFAULT_URL)
+        m = story_url.match(url)
+        if m:
+            return m.group(1)
+        raise RuntimeError(
+            f"Malformed url: '{url}'. If you're using an AO3 mirror site, "
+            f"please pass the url into the command with the option --mirror"
+        )
+
+    urls = set(urls)
+
+    return {normalise(url) for url in urls}
