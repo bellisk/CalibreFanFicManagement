@@ -314,6 +314,8 @@ Examples: \"/home/myuser/Calibre Library\",
         log(
             f"All work urls gathered so far have been saved in the file {options.input}"
         )
+    finally:
+        api.logout()
 
     if options.fix:
         log("Sending missing/incomplete works to be downloaded", Bcolors.HEADER)
