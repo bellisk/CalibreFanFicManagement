@@ -178,7 +178,7 @@ def get_urls_for_source(source, options, oldest_dates_per_source):
         use_flaresolverr=options.use_flaresolverr,
         flaresolverr_url=options.flaresolverr_url,
     )
-    api.login(options.username, options.cookie)
+    api.login(options.user, options.cookie)
     urls = set()
 
     if source == SOURCE_LATER:
