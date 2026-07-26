@@ -7,6 +7,7 @@ from json import JSONDecodeError
 
 from fanficfare.geturls import get_urls_from_imap
 
+from ao3 import AO3
 from src.ao3_utils import (
     get_ao3_bookmark_urls,
     get_ao3_collection_work_urls,
@@ -143,223 +144,157 @@ def normalise_urls(urls, base_url=None):
 
 def get_urls(options):
     oldest_dates_per_source = get_oldest_date(options)
-
     urls = set([])
-    url_count = 0
 
-    try:
-        if SOURCE_FILE in options.sources:
-            with open(options.input, "r") as fp:
-                urls = set([x.replace("\n", "") for x in fp.readlines()])
-
-            url_count = len(urls)
-            log(f"{url_count} URLs from file", Bcolors.OKGREEN)
-
+    for source in options.sources:
+        try:
+            source_urls = get_urls_for_source(source, options, oldest_dates_per_source)
+            log(f"{len(source_urls)} from source '{source}'")
+            urls |= source_urls
+        except Exception as e:
             with open(options.input, "w") as fp:
-                fp.write("")
+                for cur in urls:
+                    fp.write(f"{cur}\n")
+            raise UrlsCollectionException(source, e)
 
-        if SOURCE_LATER in options.sources:
-            log("Getting URLs from Marked for Later", Bcolors.HEADER)
-            urls |= get_ao3_marked_for_later_urls(
-                options.user,
-                options.cookie,
-                options.max_count,
-                oldest_dates_per_source[SOURCES][SOURCE_LATER],
-                ao3_url=options.mirror,
-            )
-            log(
-                f"{len(urls) - url_count} URLs from Marked for Later",
-                Bcolors.OKGREEN,
-            )
-            url_count = len(urls)
 
-        if SOURCE_BOOKMARKS in options.sources:
-            log(
-                "Getting URLs from Bookmarks (sorted by bookmarking date)",
-                Bcolors.HEADER,
-            )
+def get_urls_for_source(source, options, oldest_dates_per_source):
+    # Sources for which we don't need the AO3 client
+    if source == SOURCE_FILE:
+        with open(options.input, "r") as fp:
+            urls = set([x.replace("\n", "") for x in fp.readlines()])
+
+        with open(options.input, "w") as fp:
+            fp.write("")
+
+        return urls
+
+    if source == SOURCE_STDIN:
+        urls = set()
+        for line in sys.stdin:
+            urls.add(line.rstrip())
+        return urls
+
+    if source == SOURCE_IMAP:
+        mark_read = not options.email_leave_unread
+        return get_urls_from_imap(
+            srv=options.email_server,
+            user=options.email_user,
+            passwd=options.email_password,
+            folder=options.email_folder,
+            markread=mark_read,
+            normalize_urls=True,
+        )
+
+    # Sources for which we need the AO3 client
+    if options.max_count == 0:
+        return set()
+
+    api = AO3(
+        ao3_url=options.mirror,
+        use_flaresolverr=options.use_flaresolverr,
+        flaresolverr_url=options.flaresolverr_url,
+    )
+    api.login(options.username, options.cookie)
+    urls = set()
+
+    if source == SOURCE_LATER:
+        urls = get_ao3_marked_for_later_urls(
+            api,
+            options.max_count,
+            oldest_dates_per_source[SOURCES][SOURCE_LATER],
+        )
+
+    if source == SOURCE_BOOKMARKS:
+        urls = get_ao3_bookmark_urls(
+            api,
+            options.expand_series,
+            options.max_count,
+            oldest_dates_per_source[SOURCES][SOURCE_BOOKMARKS],
+            sort_by_updated=False,
+        )
+        # If we're getting bookmarks back to oldest_date, this should
+        # include works that have been updated since that date, as well as
+        # works bookmarked since that date.
+        if oldest_dates_per_source[SOURCES][SOURCE_BOOKMARKS]:
             urls |= get_ao3_bookmark_urls(
-                options.user,
-                options.cookie,
+                api,
                 options.expand_series,
                 options.max_count,
                 oldest_dates_per_source[SOURCES][SOURCE_BOOKMARKS],
-                sort_by_updated=False,
-                ao3_url=options.mirror,
+                sort_by_updated=True,
             )
-            # If we're getting bookmarks back to oldest_date, this should
-            # include works that have been updated since that date, as well as
-            # works bookmarked since that date.
-            if oldest_dates_per_source[SOURCES][SOURCE_BOOKMARKS]:
-                log(
-                    "Getting URLs from Bookmarks (sorted by updated date)",
-                    Bcolors.HEADER,
-                )
-                urls |= get_ao3_bookmark_urls(
-                    options.user,
-                    options.cookie,
-                    options.expand_series,
-                    options.max_count,
-                    oldest_dates_per_source[SOURCES][SOURCE_BOOKMARKS],
-                    sort_by_updated=True,
-                    ao3_url=options.mirror,
-                )
-            log(f"{len(urls) - url_count} URLs from bookmarks", Bcolors.OKGREEN)
-            url_count = len(urls)
 
-        if SOURCE_WORKS in options.sources:
-            log("Getting URLs from User's Works", Bcolors.HEADER)
+    if source == SOURCE_WORKS:
+        urls = get_ao3_users_work_urls(
+            api,
+            options.user,
+            options.max_count,
+            oldest_dates_per_source[SOURCES][SOURCE_WORKS],
+        )
+
+    if source == SOURCE_GIFTS:
+        urls = get_ao3_gift_urls(
+            api,
+            options.max_count,
+            oldest_dates_per_source[SOURCES][SOURCE_GIFTS],
+        )
+
+    if source == SOURCE_WORK_SUBSCRIPTIONS:
+        urls = get_ao3_work_subscription_urls(
+            api,
+            options.max_count,
+            oldest_dates_per_source[SOURCES][SOURCE_WORK_SUBSCRIPTIONS],
+        )
+
+    if source == SOURCE_SERIES_SUBSCRIPTIONS:
+        urls = get_ao3_series_subscription_urls(
+            api,
+            options.max_count,
+            oldest_dates_per_source[SOURCES][SOURCE_SERIES_SUBSCRIPTIONS],
+        )
+
+    if source == SOURCE_USER_SUBSCRIPTIONS:
+        urls = get_ao3_user_subscription_urls(
+            api,
+            options.max_count,
+            oldest_dates_per_source[SOURCES][SOURCE_USER_SUBSCRIPTIONS],
+        )
+
+    if source == SOURCE_USERNAMES:
+        log(f"Getting URLs from following users' works: {','.join(options.usernames)}")
+        urls = set()
+        for username in options.usernames:
             urls |= get_ao3_users_work_urls(
-                options.user,
-                options.cookie,
-                options.user,
+                api,
+                username,
                 options.max_count,
-                oldest_dates_per_source[SOURCES][SOURCE_WORKS],
-                ao3_url=options.mirror,
+                oldest_dates_per_source[SOURCE_USERNAMES][username],
             )
-            log(
-                f"{len(urls) - url_count} URLs from User's Works",
-                Bcolors.OKGREEN,
-            )
-            url_count = len(urls)
 
-        if SOURCE_GIFTS in options.sources:
-            log("Getting URLs from User's Gifts", Bcolors.HEADER)
-            urls |= get_ao3_gift_urls(
-                options.user,
-                options.cookie,
+    if source == SOURCE_SERIES:
+        log(f"Getting URLs from following series: {','.join(options.series)}")
+        urls = set()
+        for series_id in options.series:
+            urls |= get_ao3_series_work_urls(
+                api,
                 options.max_count,
-                oldest_dates_per_source[SOURCES][SOURCE_GIFTS],
-                ao3_url=options.mirror,
+                series_id,
+                oldest_dates_per_source[SOURCE_SERIES][series_id],
             )
-            log(
-                f"{len(urls) - url_count} URLs from User's Gifts",
-                Bcolors.OKGREEN,
-            )
-            url_count = len(urls)
 
-        if SOURCE_WORK_SUBSCRIPTIONS in options.sources:
-            log("Getting URLs from Subscribed Works", Bcolors.HEADER)
-            urls |= get_ao3_work_subscription_urls(
-                options.user,
-                options.cookie,
+    if source == SOURCE_COLLECTIONS:
+        log(f"Getting URLs from following collections: {','.join(options.collections)}")
+        urls = set()
+        for coll_name in options.collections:
+            urls |= get_ao3_collection_work_urls(
+                api,
                 options.max_count,
-                oldest_dates_per_source[SOURCES][SOURCE_WORK_SUBSCRIPTIONS],
-                ao3_url=options.mirror,
+                coll_name,
+                oldest_dates_per_source[SOURCE_COLLECTIONS][coll_name],
             )
-            log(
-                f"{len(urls) - url_count} URLs from work subscriptions",
-                Bcolors.OKGREEN,
-            )
-            url_count = len(urls)
 
-        if SOURCE_SERIES_SUBSCRIPTIONS in options.sources:
-            log("Getting URLs from Subscribed Series", Bcolors.HEADER)
-            urls |= get_ao3_series_subscription_urls(
-                options.user,
-                options.cookie,
-                options.max_count,
-                oldest_dates_per_source[SOURCES][SOURCE_SERIES_SUBSCRIPTIONS],
-                ao3_url=options.mirror,
-            )
-            log(
-                f"{len(urls) - url_count} URLs from series subscriptions",
-                Bcolors.OKGREEN,
-            )
-            url_count = len(urls)
-
-        if SOURCE_USER_SUBSCRIPTIONS in options.sources:
-            log("Getting URLs from Subscribed Users", Bcolors.HEADER)
-            urls |= get_ao3_user_subscription_urls(
-                options.user,
-                options.cookie,
-                options.max_count,
-                oldest_dates_per_source[SOURCES][SOURCE_USER_SUBSCRIPTIONS],
-                ao3_url=options.mirror,
-            )
-            log(
-                f"{len(urls) - url_count} URLs from user subscriptions",
-                Bcolors.OKGREEN,
-            )
-            url_count = len(urls)
-
-        if SOURCE_USERNAMES in options.sources:
-            log(
-                f"Getting URLs from following users' works: "
-                f"{','.join(options.usernames)}"
-            )
-            for u in options.usernames:
-                urls |= get_ao3_users_work_urls(
-                    options.user,
-                    options.cookie,
-                    u,
-                    options.max_count,
-                    oldest_dates_per_source[SOURCE_USERNAMES][u],
-                    ao3_url=options.mirror,
-                )
-            log(f"{len(urls) - url_count} URLs from usernames", Bcolors.OKGREEN)
-            url_count = len(urls)
-
-        if SOURCE_SERIES in options.sources:
-            log(f"Getting URLs from following series: {','.join(options.series)}")
-            for s in options.series:
-                urls |= get_ao3_series_work_urls(
-                    options.user,
-                    options.cookie,
-                    options.max_count,
-                    s,
-                    oldest_dates_per_source[SOURCE_SERIES][s],
-                    ao3_url=options.mirror,
-                )
-            log(f"{len(urls) - url_count} URLs from series", Bcolors.OKGREEN)
-            url_count = len(urls)
-
-        if SOURCE_COLLECTIONS in options.sources:
-            log(
-                f"Getting URLs from following collections: "
-                f"{','.join(options.collections)}"
-            )
-            for c in options.collections:
-                urls |= get_ao3_collection_work_urls(
-                    options.user,
-                    options.cookie,
-                    options.max_count,
-                    c,
-                    oldest_dates_per_source[SOURCE_COLLECTIONS][c],
-                    ao3_url=options.mirror,
-                )
-            log(
-                f"{len(urls) - url_count} URLs from collections",
-                Bcolors.OKGREEN,
-            )
-            url_count = len(urls)
-
-        if SOURCE_STDIN in options.sources:
-            stdin_urls = set()
-            for line in sys.stdin:
-                stdin_urls.add(line.rstrip())
-            urls |= stdin_urls
-            log(f"{len(urls) - url_count} URLs from STDIN", Bcolors.OKGREEN)
-            url_count = len(urls)
-
-        if SOURCE_IMAP in options.sources:
-            mark_read = not options.email_leave_unread
-            imap_urls = get_urls_from_imap(
-                srv=options.email_server,
-                user=options.email_user,
-                passwd=options.email_password,
-                folder=options.email_folder,
-                markread=mark_read,
-                normalize_urls=True,
-            )
-            urls |= imap_urls
-            log(f"{len(urls) - url_count} URLs from IMAP", Bcolors.OKGREEN)
-
-        urls = normalise_urls(urls, options.mirror)
-    except Exception as e:
-        with open(options.input, "w") as fp:
-            for cur in urls:
-                fp.write(f"{cur}\n")
-        raise UrlsCollectionException(e)
+    # Clear cookie and end sessions for AO3 client
+    api.logout()
 
     return urls
