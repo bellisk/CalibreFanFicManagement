@@ -438,7 +438,7 @@ Flaresolverr.""",
         "--flaresolverr-url",
         action="store",
         dest="flaresolverr_url",
-        default="",
+        default=None,
         help="""A custom url to use for FlareSolverr. Will only be used if
 --use-flaresolverr is set. If not set, the default FlareSolverr url will be used
 (http://localhost:8191/v1).""",
