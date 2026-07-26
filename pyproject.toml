@@ -7,7 +7,7 @@ requires-python = ">=3.14"
 classifiers = []
 dependencies = [
     "ao3@git+https://github.com/bellisk/ao3.git@v2.1.0",
-    "calibre-helpers@git+https://github.com/bellisk/CalibreHelpers.git@0.1.0",
+    "calibre-helpers@git+https://github.com/bellisk/CalibreHelpers.git@0.1.1",
     "Brotli==1.2.0",
     "FanFicFare==4.59.0",
     "beautifulsoup4==4.13.4",
