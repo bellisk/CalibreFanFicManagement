@@ -18,7 +18,7 @@ class MockUser(User):
     ):
         ids = ["1", "2", "3", "4", "5"]
 
-        if max_count:
+        if max_count is not None:
             return ids[:max_count]
         else:
             return ids

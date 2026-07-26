@@ -8,11 +8,11 @@ from .mock_ao3 import MockAO3
 oldest_date = datetime.strptime("01.01.2020", "%d.%m.%Y")
 
 
-@patch("src.ao3_utils.AO3", MockAO3)
 def test_get_ao3_bookmark_urls():
+    api = MockAO3()
+    api.login("test_user", "test_cookie")
     urls = ao3_utils.get_ao3_bookmark_urls(
-        user="testuser",
-        cookie="cookie",
+        api,
         expand_series=True,
         max_count=3,
         oldest_date=oldest_date,
@@ -27,9 +27,10 @@ def test_get_ao3_bookmark_urls():
 
 
 def test_get_ao3_bookmark_urls_max_count_zero():
+    api = MockAO3()
+    api.login("test_user", "test_cookie")
     urls = ao3_utils.get_ao3_bookmark_urls(
-        user="testuser",
-        cookie="cookie",
+        api,
         expand_series=True,
         max_count=0,
         oldest_date=oldest_date,
