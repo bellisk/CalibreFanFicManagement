@@ -1,41 +1,49 @@
 # CalibreFanFicManagement
 A commandline utility to fill my own needs for managing fanfic on Calibre.
 
-Currently, there is one command, `download`, which is adapted from 
-[AutomatedFanFic](https://github.com/MrTyton/AutomatedFanfic). It will scrape
-bookmarks from a user's AO3 account, download the works as epub files and add
-them to a calibre library.
-
-Planned:
-- mass editing of calibre tags for fanfics
-- deduplicating AO3 bookmarks in cases where I have both a series and individual
-  works bookmarked
-- statistics about bookmarked/downloaded fics
-- import from page with list of urls, e.g. collection or author page
-- import all works from author
+This tool uses [FanFicFare](https://github.com/JimmXinu/FanFicFare) to download fics from the 
+[Archive of Our Own (AO3)](https://archiveofourown.org) and imports them to a [Calibre](https://calibre-ebook.com)
+library. It can download all works for an author, a series, a collection, etc. and, if a logged-in user allows it to use
+their browser cookie for AO3, it can download works from the user's bookmarks, marked-for-later list, etc.
 
 ## Usage
-If you want to save bookmarks in a calibre library, you will need to install the
-[calibre CLI](https://manual.calibre-ebook.com/generated/en/cli-index.html).
+If you want to save bookmarks in a Calibre library (optional), you will need to install Calibre and set up the library
+first.
 
 - Clone this repository and `cd` into the `CalibreFanFicManagement` directory
-- `git submodule update --init`
-- `pip install -r requirements.txt`
-- If needed, copy `config.ini.dist` to `config.ini` and fill in
-- Copy [FanFicFare example config](https://github.com/JimmXinu/FanFicFare/blob/master/fanficfare/example.ini)
+- `pip install .`
+- Copy `config.ini.dist` to `config.ini` and fill it in: this lets you save config options and use them without always
+  having to pass them in via the command line
+- Copy the [FanFicFare example config](https://github.com/JimmXinu/FanFicFare/blob/master/fanficfare/example.ini)
   to `personal.ini` and fill in necessary fields
   - NB: if you want to include images in your downloaded fanfics, you must set `include_images: true` in `personal.ini`.
     See the [FanFicFare docs](https://github.com/JimmXinu/FanFicFare/wiki/FAQs#can-fanficfare-download-a-story-containing-images)
     for more details.
-- `python fanficmanagement.py download -C config.ini`
+- To download works with the config specified in `config.ini`: `python fanficmanagement.py download -C config.ini`
 - For help: `python fanficmanagement.py -h`
+
+## Development installation
+
+```shell
+git clone git@github.com:bellisk/CalibreFanFicManagement.git
+cd CalibreFanFicManagement
+pip install -e .[dev]
+pip install -e ao3/
+pip install -e CalibreHelpers/
+```
+
+To run tests:
+
+```shell
+pytest tests/
+```
 
 ## Resources
 - [Calibre CLI](https://manual.calibre-ebook.com/generated/en/cli-index.html)
 - [FanFicFare](https://github.com/JimmXinu/FanFicFare)
 - Unofficial [ao3 client](https://github.com/ladyofthelog/ao3.git)
   and [my fork](https://github.com/bellisk/ao3) with custom changes
-- [AutomatedFanFic](https://github.com/MrTyton/AutomatedFanfic)
+- [AutomatedFanFic](https://github.com/MrTyton/AutomatedFanfic): a former version inspired this tool
 
 ## Requirements
 I want to:

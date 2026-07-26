@@ -45,8 +45,10 @@ class InvalidConfig(Exception):
 
 
 class UrlsCollectionException(Exception):
-    def __init__(self, error_message):
-        self.message = f"Error collecting fic urls: {error_message}"
+    def __init__(self, source, error_message):
+        self.message = (
+            f"Error collecting fic urls from source {source}: {error_message}"
+        )
         super().__init__(self.message)
 
 

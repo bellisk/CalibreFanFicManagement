@@ -10,7 +10,6 @@ import browser_cookie3
 
 from src.exceptions import InvalidConfig
 
-AO3_DEFAULT_URL = "https://archiveofourown.org"
 DATE_FORMAT = "%d.%m.%Y"
 TAG_TYPES = [
     "ao3categories",
@@ -57,37 +56,46 @@ def log(msg, color=None, output=True):
         return line + "\n"
 
 
-def setup_login(options):
-    # We have already validated in setup_options that we have at least one of
-    # options.cookie and options.use_browser_cookie.
-    if options.use_browser_cookie:
-        found_cookie = False
-        ao3_domain = urlparse(options.mirror).netloc
-        cookie_jar = browser_cookie3.vivaldi(domain_name=ao3_domain)
-        for cookie in cookie_jar:
-            if cookie.name == "_otwarchive_session":
-                options.cookie = cookie.value
-                found_cookie = True
+def set_browser_cookie(options):
+    found_cookie = False
+    ao3_domain = urlparse(options.mirror).netloc
+    cookie_jar = []
+
+    for browser in browser_cookie3.all_browsers:
+        try:
+            cookie_jar = browser(domain_name=ao3_domain)
+            if len(cookie_jar) > 0:
                 break
+        except browser_cookie3.BrowserCookieError:
+            # BrowserCookieError means this browser is not installed.
+            continue
+        except TypeError:
+            if browser.__name__ == "arc":
+                # Known bug in browser_cookie3 for Arc browser
+                continue
 
-        if found_cookie:
-            log("Found _otwarchive_session cookie from the browser")
-            return
+    for cookie in cookie_jar:
+        if cookie.name == "_otwarchive_session":
+            options.cookie = cookie.value
+            found_cookie = True
+            break
 
+    if found_cookie:
+        log("Found _otwarchive_session cookie from the browser")
+        return
+
+    if options.cookie:
         log(
-            f"Tried to get the _otwarchive_session cookie from your browser, "
-            f"but couldn't find it. Are you logged in to {options.mirror}?"
+            "Tried to get the _otwarchive_session cookie from your browser, "
+            f"but couldn't find it. Are you logged in to {options.mirror}?\n"
+            "Falling back to the cookie value you passed in"
         )
-        if options.cookie:
-            log("Falling back to the cookie value you passed in")
-            return
+        return
 
-        raise InvalidConfig(
-            f"Tried to get the _otwarchive_session cookie from your browser, "
-            f"but couldn't find it. Are you logged in to {options.mirror}?"
-        )
-
-    log("Using the cookie value you passed in")
+    raise InvalidConfig(
+        f"Tried to get the _otwarchive_session cookie from your browser, "
+        f"but couldn't find it. Are you logged in to {options.mirror}?"
+    )
 
 
 def check_subprocess_output(command):

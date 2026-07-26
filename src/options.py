@@ -3,7 +3,8 @@ from argparse import ArgumentParser, ArgumentTypeError
 from configparser import ConfigParser
 from datetime import datetime
 
-from src.utils import AO3_DEFAULT_URL, DATE_FORMAT
+from src.ao3_utils import AO3_DEFAULT_URL
+from src.utils import DATE_FORMAT, set_browser_cookie
 
 COMMANDS = ["download", "analyse"]
 
@@ -101,6 +102,8 @@ def validate_cookie(options):
             "It's required either to pass in a cookie with -c/--cookie or to use the "
             "--use-browser-cookie option."
         )
+    if options.use_browser_cookie:
+        set_browser_cookie(options)
 
 
 def validate_user(options):
@@ -289,8 +292,8 @@ program is run. Default: fanfiction.txt.""",
         action="store",
         dest="library",
         help="""Calibre library db location. If none is passed, then this merely
-downloads stories into the current directory as epub files.
-Examples: \"/home/myuser/Calibre Library\", \"http://localhost:8080/#calibre-library\"""",
+downloads stories into the current directory as epub files. Examples:
+\"/home/myuser/Calibre Library\", \"http://localhost:8080/#calibre-library\"""",
     )
 
     arg_parser.add_argument(
@@ -421,6 +424,27 @@ If using this option, use an official mirror such as
 - https://archiveofourown.gay
 
 Default: '{AO3_DEFAULT_URL}'.""",
+    )
+
+    arg_parser.add_argument(
+        "--use-flaresolverr",
+        action="store_true",
+        dest="use_flaresolverr",
+        default=False,
+        help="""Whether to use a FlareSolverr proxy to get AO3 urls.
+
+See https://github.com/FlareSolverr/FlareSolverr for information about setting up
+Flaresolverr.""",
+    )
+
+    arg_parser.add_argument(
+        "--flaresolverr-url",
+        action="store",
+        dest="flaresolverr_url",
+        default=None,
+        help="""A custom url to use for FlareSolverr. Will only be used if
+--use-flaresolverr is set. If not set, the default FlareSolverr url will be used
+(http://localhost:8191/v1).""",
     )
 
     arg_parser.add_argument(

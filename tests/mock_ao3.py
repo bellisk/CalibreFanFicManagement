@@ -4,6 +4,10 @@ from unittest.mock import MagicMock
 from ao3 import AO3, Collection, Series, User
 
 
+class MockSessionsHandler(object):
+    pass
+
+
 class MockUser(User):
     def bookmarks_ids(
         self,
@@ -14,7 +18,7 @@ class MockUser(User):
     ):
         ids = ["1", "2", "3", "4", "5"]
 
-        if max_count:
+        if max_count is not None:
             return ids[:max_count]
         else:
             return ids
@@ -22,7 +26,7 @@ class MockUser(User):
     def gift_ids(self, max_count=None, oldest_date=None):
         ids = ["1", "2", "3", "4", "5"]
 
-        if max_count:
+        if max_count is not None:
             return ids[:max_count]
         else:
             return ids
@@ -30,7 +34,7 @@ class MockUser(User):
     def marked_for_later_ids(self, max_count=None, oldest_date=None):
         ids = ["1", "2", "3", "4", "5"]
 
-        if max_count:
+        if max_count is not None:
             return ids[:max_count]
         else:
             return ids
@@ -47,7 +51,7 @@ class MockUser(User):
             self.username[-1] + "5",
         ]
 
-        if max_count:
+        if max_count is not None:
             return ids[:max_count]
         else:
             return ids
@@ -55,7 +59,7 @@ class MockUser(User):
     def work_subscription_ids(self, max_count=None):
         ids = ["1", "2", "3", "4", "5"]
 
-        if max_count:
+        if max_count is not None:
             return ids[:max_count]
         else:
             return ids
@@ -63,7 +67,7 @@ class MockUser(User):
     def series_subscription_ids(self, max_count=None):
         ids = ["1", "2", "3", "4", "5"]
 
-        if max_count:
+        if max_count is not None:
             return ids[:max_count]
         else:
             return ids
@@ -89,8 +93,10 @@ class MockCollection(Collection):
 
 
 class MockAO3(AO3):
+    session_handler = MockSessionsHandler()
+
     def login(self, username, cookie):
-        self.user = MockUser(username, self.session, self.ao3_url)
+        self.user = MockUser(username, self.session_handler)
 
     def work(self, id):
         work_published_date = {
@@ -107,10 +113,10 @@ class MockAO3(AO3):
         return mock_work
 
     def author(self, username):
-        return MockUser(username, self.session, self.ao3_url)
+        return MockUser(username, self.session_handler)
 
     def series(self, id):
-        return MockSeries(id, self.session, self.ao3_url)
+        return MockSeries(id, self.session_handler)
 
     def collection(self, id):
-        return MockCollection(id, self.session, self.ao3_url)
+        return MockCollection(id, self.session_handler)

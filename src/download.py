@@ -24,7 +24,6 @@ from .utils import (
     Bcolors,
     get_all_metadata_options,
     log,
-    setup_login,
 )
 
 
@@ -145,7 +144,6 @@ def download(options):
             return
 
     try:
-        setup_login(options)
         urls = get_urls(options)
     except InvalidConfig as e:
         log(e.message, Bcolors.FAIL)

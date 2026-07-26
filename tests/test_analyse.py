@@ -29,7 +29,7 @@ def mocked_localtime():
     return time.struct_time((2024, 4, 13, 9, 0, 0, 5, 104, 1))
 
 
-@patch("src.ao3_utils.AO3", MockAO3)
+@patch("src.analyse.AO3", MockAO3)
 @patch("src.analyse.CalibreHelper", MockCalibreHelper)
 class TestAnalysisClass(object):
     def teardown_method(self):
