@@ -5,6 +5,7 @@ from os import mkdir
 from os.path import isdir, join
 
 import ao3.utils
+from ao3 import AO3
 from calibre import (
     CalibreException,
     CalibreHelper,
@@ -27,18 +28,14 @@ from .options import (
 from .utils import AO3_DEFAULT_URL, Bcolors, log, setup_login
 
 
-def _compare_user_subscriptions(
-    username, cookie, calibre_helper, output_file, ao3_url=AO3_DEFAULT_URL
-):
+def _compare_user_subscriptions(api, calibre_helper, output_file):
     """Compares the number of fics downloaded for each user subscribed to with the
     number posted to AO3.
     :return:
     """
     log("Comparing user subscriptions on AO3 to Calibre library", Bcolors.HEADER)
 
-    ao3_user_work_counts = get_ao3_subscribed_users_work_counts(
-        username, cookie, ao3_url=ao3_url
-    )
+    ao3_user_work_counts = get_ao3_subscribed_users_work_counts(api)
     calibre_user_work_counts = {
         u: calibre_helper.get_author_works_count(u) for u in ao3_user_work_counts.keys()
     }
@@ -76,18 +73,14 @@ def _compare_user_subscriptions(
     return users_missing_works
 
 
-def _compare_series_subscriptions(
-    username, cookie, calibre, output_file, ao3_url=AO3_DEFAULT_URL
-):
+def _compare_series_subscriptions(api, calibre, output_file):
     """Compares the number of fics downloaded for each series subscribed to with the
     number posted to AO3.
     :return:
     """
     log("Comparing series subscriptions on AO3 to Calibre library", Bcolors.HEADER)
 
-    ao3_series_work_stats = get_ao3_subscribed_series_work_stats(
-        username, cookie, ao3_url=ao3_url
-    )
+    ao3_series_work_stats = get_ao3_subscribed_series_work_stats(api)
     calibre_series_work_counts = {
         u["Title"]: calibre.get_series_works_count(u["Title"])
         for u in ao3_series_work_stats.values()
@@ -128,13 +121,11 @@ def _compare_series_subscriptions(
     return series_missing_works
 
 
-def _compare_work_subscriptions(
-    user, cookie, calibre, output_file, ao3_url=AO3_DEFAULT_URL
-):
+def _compare_work_subscriptions(api, calibre, output_file):
     log("Comparing work subscriptions on AO3 to Calibre library", Bcolors.HEADER)
 
     ao3_subscribed_work_urls = get_ao3_work_subscription_urls(
-        user, cookie, max_count=None, oldest_date=None, ao3_url=ao3_url
+        api, max_count=None, oldest_date=None
     )
     calibre_works = {
         work["url"]: work
@@ -174,9 +165,7 @@ def _compare_work_subscriptions(
     return missing_work_urls
 
 
-def _get_missing_work_urls_from_users(
-    users_missing_works, username, cookie, calibre, ao3_url=AO3_DEFAULT_URL
-):
+def _get_missing_work_urls_from_users(users_missing_works, api, calibre):
     if len(users_missing_works) == 0:
         return []
 
@@ -185,12 +174,10 @@ def _get_missing_work_urls_from_users(
     for u in users_missing_works:
         log(u)
         ao3_urls = get_ao3_users_work_urls(
-            user=username,
-            cookie=cookie,
+            api,
             username=u,
             max_count=None,
             oldest_date=None,
-            ao3_url=ao3_url,
         )
         calibre_urls = [
             work["url"]
@@ -204,9 +191,7 @@ def _get_missing_work_urls_from_users(
     return missing_work_urls
 
 
-def _get_missing_work_urls_from_series(
-    series_missing_works, username, cookie, calibre, ao3_url=AO3_DEFAULT_URL
-):
+def _get_missing_work_urls_from_series(series_missing_works, api, calibre):
     if len(series_missing_works) == 0:
         return []
 
@@ -215,11 +200,9 @@ def _get_missing_work_urls_from_series(
     for series_id, series_title in series_missing_works.items():
         log(series_title, series_id)
         ao3_urls = get_ao3_series_work_urls(
-            user=username,
-            cookie=cookie,
+            api,
             max_count=None,
             series_id=series_id,
-            ao3_url=ao3_url,
         )
         calibre_urls = [
             work["url"]
@@ -277,6 +260,8 @@ Examples: \"/home/myuser/Calibre Library\",
         return
 
     setup_login(options)
+    api = AO3(options.mirror, options.use_flaresolverr, options.flaresolverr_url)
+    api.login(options.user, options.cookie)
 
     if not isdir(options.analysis_dir):
         mkdir(options.analysis_dir)
@@ -285,38 +270,35 @@ Examples: \"/home/myuser/Calibre Library\",
 
     try:
         for analysis_type in options.analysis_type:
-            filename = f"{analysis_type}_{datetime.strftime(datetime.now(), '%Y%m%d_%H%M%S')}.csv"
+            now = datetime.strftime(datetime.now(), "%Y%m%d_%H%M%S")
+            filename = f"{analysis_type}_{now}.csv"
             output_file = join(options.analysis_dir, filename)
 
             if analysis_type == SOURCE_USER_SUBSCRIPTIONS:
                 users_missing_works = _compare_user_subscriptions(
-                    options.user, options.cookie, calibre, output_file, options.mirror
+                    api, calibre, output_file
                 )
                 missing_works.extend(
                     _get_missing_work_urls_from_users(
                         users_missing_works,
-                        options.user,
-                        options.cookie,
+                        api,
                         calibre,
-                        options.mirror,
                     )
                 )
             elif analysis_type == SOURCE_SERIES_SUBSCRIPTIONS:
                 series_missing_works = _compare_series_subscriptions(
-                    options.user, options.cookie, calibre, output_file, options.mirror
+                    api, calibre, output_file
                 )
                 missing_works.extend(
                     _get_missing_work_urls_from_series(
                         series_missing_works,
-                        options.user,
-                        options.cookie,
+                        api,
                         calibre,
-                        options.mirror,
                     )
                 )
             elif analysis_type == SOURCE_WORK_SUBSCRIPTIONS:
                 subscribed_missing_works = _compare_work_subscriptions(
-                    options.user, options.cookie, calibre, output_file, options.mirror
+                    api, calibre, output_file
                 )
                 missing_works.extend(subscribed_missing_works)
             elif analysis_type == INCOMPLETE:
