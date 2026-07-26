@@ -101,17 +101,17 @@ def test_validate_cookie_only_cookie():
     assert namespace.cookie == "testcookie"
 
 
-def test_validate_cookie_only_use_browser_cookie():
-    namespace = Namespace(
-        cookie="testcookie", use_browser_cookie=True, mirror=DEFAULT_AO3_URL
-    )
-    options.validate_cookie(namespace)
-
-    assert namespace.use_browser_cookie is True
-
-
 def mock_set_browser_cookie(options):
     options.cookie = "test_browser_cookie"
+
+
+@patch("src.options.set_browser_cookie", mock_set_browser_cookie)
+def test_validate_cookie_only_use_browser_cookie():
+    namespace = Namespace(cookie=None, use_browser_cookie=True, mirror=DEFAULT_AO3_URL)
+    options.validate_cookie(namespace)
+
+    assert namespace.cookie == "test_browser_cookie"
+    assert namespace.use_browser_cookie is True
 
 
 @patch("src.options.set_browser_cookie", mock_set_browser_cookie)
@@ -126,7 +126,7 @@ def test_validate_cookie_both_options():
 
 
 def test_validate_cookie_neither_option():
-    namespace = Namespace(cookie=None, use_browser_cookie=None)
+    namespace = Namespace(cookie=None, use_browser_cookie=False)
     with pytest.raises(
         ArgumentTypeError, match="It's required either to pass in a cookie"
     ):
