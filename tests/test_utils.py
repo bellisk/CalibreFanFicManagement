@@ -66,24 +66,12 @@ def test_log_live_output(capsys):
     )
 
 
-def test_setup_login_cookie(capsys):
-    options = Namespace(
-        cookie="testcookie", use_browser_cookie=False, mirror=utils.AO3_DEFAULT_URL
-    )
-    utils.setup_login(options)
-
-    captured = capsys.readouterr()
-    assert "Using the cookie value you passed in" in captured.out
-
-    assert options.cookie == "testcookie"
-
-
 @patch("src.utils.browser_cookie3.all_browsers", [mock_browser_with_cookie()])
-def test_setup_login_use_browser_cookie(capsys):
+def test_set_browser_cookie(capsys):
     options = Namespace(
         cookie=None, use_browser_cookie=True, mirror=utils.AO3_DEFAULT_URL
     )
-    utils.setup_login(options)
+    utils.set_browser_cookie(options)
 
     captured = capsys.readouterr()
     assert "Found _otwarchive_session cookie from the browser" in captured.out
@@ -92,11 +80,11 @@ def test_setup_login_use_browser_cookie(capsys):
 
 
 @patch("src.utils.browser_cookie3.all_browsers", [mock_browser_with_cookie()])
-def test_setup_login_cookie_and_use_browser_cookie(capsys):
+def test_set_browser_cookie_overrides_provided_cookie(capsys):
     options = Namespace(
         cookie="testcookie", use_browser_cookie=True, mirror=utils.AO3_DEFAULT_URL
     )
-    utils.setup_login(options)
+    utils.set_browser_cookie(options)
 
     captured = capsys.readouterr()
     assert "Found _otwarchive_session cookie from the browser" in captured.out
@@ -108,11 +96,11 @@ def test_setup_login_cookie_and_use_browser_cookie(capsys):
     "src.utils.browser_cookie3.all_browsers",
     [mock_browser_no_cookie(), mock_browser_with_cookie()],
 )
-def test_setup_login_ignore_browser_with_no_cookie_use_existing_browser_cookie(capsys):
+def test_set_browser_cookie_ignore_browser_with_no_cookie(capsys):
     options = Namespace(
-        cookie="testcookie", use_browser_cookie=True, mirror=utils.AO3_DEFAULT_URL
+        cookie=None, use_browser_cookie=True, mirror=utils.AO3_DEFAULT_URL
     )
-    utils.setup_login(options)
+    utils.set_browser_cookie(options)
 
     captured = capsys.readouterr()
     assert "Found _otwarchive_session cookie from the browser" in captured.out
@@ -121,7 +109,7 @@ def test_setup_login_ignore_browser_with_no_cookie_use_existing_browser_cookie(c
 
 
 @patch("src.utils.browser_cookie3.all_browsers", [mock_browser_no_cookie()])
-def test_setup_login_use_browser_cookie_but_browser_cookie_not_found(capsys):
+def test_set_browser_cookie_browser_raises_error_when_cookie_not_found(capsys):
     options = Namespace(
         cookie=None, use_browser_cookie=True, mirror=utils.AO3_DEFAULT_URL
     )
@@ -129,15 +117,17 @@ def test_setup_login_use_browser_cookie_but_browser_cookie_not_found(capsys):
     with pytest.raises(
         InvalidConfig, match="Tried to get the _otwarchive_session cookie"
     ):
-        utils.setup_login(options)
+        utils.set_browser_cookie(options)
 
 
 @patch("src.utils.browser_cookie3.all_browsers", [mock_browser_no_cookie()])
-def test_setup_login_cookie_and_use_browser_cookie_but_browser_cookie_not_found(capsys):
+def test_set_browser_cookie_falls_back_to_provided_cookie_when_browser_cookie_not_found(
+    capsys,
+):
     options = Namespace(
         cookie="testcookie", use_browser_cookie=True, mirror=utils.AO3_DEFAULT_URL
     )
-    utils.setup_login(options)
+    utils.set_browser_cookie(options)
 
     captured = capsys.readouterr()
     assert "Falling back to the cookie value you passed in" in captured.out

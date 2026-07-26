@@ -57,20 +57,13 @@ def log(msg, color=None, output=True):
         return line + "\n"
 
 
-def setup_login(options):
-    # We have already validated in setup_options that we have at least one of
-    # options.cookie and options.use_browser_cookie.
-    if not options.use_browser_cookie:
-        log("Using the cookie value you passed in")
-        return
-
+def set_browser_cookie(options):
     found_cookie = False
     ao3_domain = urlparse(options.mirror).netloc
     cookie_jar = []
 
     for browser in browser_cookie3.all_browsers:
         try:
-            print(browser)
             cookie_jar = browser(domain_name=ao3_domain)
             if len(cookie_jar) > 0:
                 break

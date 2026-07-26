@@ -3,7 +3,7 @@ from argparse import ArgumentParser, ArgumentTypeError
 from configparser import ConfigParser
 from datetime import datetime
 
-from src.utils import AO3_DEFAULT_URL, DATE_FORMAT
+from src.utils import AO3_DEFAULT_URL, DATE_FORMAT, set_browser_cookie
 
 COMMANDS = ["download", "analyse"]
 
@@ -101,6 +101,8 @@ def validate_cookie(options):
             "It's required either to pass in a cookie with -c/--cookie or to use the "
             "--use-browser-cookie option."
         )
+    if options.use_browser_cookie:
+        set_browser_cookie(options)
 
 
 def validate_user(options):

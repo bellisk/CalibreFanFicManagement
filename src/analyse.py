@@ -25,7 +25,7 @@ from .options import (
     SOURCE_USER_SUBSCRIPTIONS,
     SOURCE_WORK_SUBSCRIPTIONS,
 )
-from .utils import AO3_DEFAULT_URL, Bcolors, log, setup_login
+from .utils import Bcolors, log
 
 
 def _compare_user_subscriptions(api, calibre_helper, output_file):
@@ -259,7 +259,6 @@ Examples: \"/home/myuser/Calibre Library\",
         log(str(e), Bcolors.FAIL)
         return
 
-    setup_login(options)
     api = AO3(options.mirror, options.use_flaresolverr, options.flaresolverr_url)
     api.login(options.user, options.cookie)
 
