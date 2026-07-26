@@ -117,9 +117,7 @@ def get_ao3_collection_work_urls(api, max_count, collection_id, oldest_date=None
     return set(urls)
 
 
-def get_ao3_subscribed_users_work_counts(user, cookie, ao3_url=AO3_DEFAULT_URL):
-    api = AO3(ao3_url=ao3_url)
-    api.login(user, cookie)
+def get_ao3_subscribed_users_work_counts(api):
     user_ids = api.user.user_subscription_ids()
 
     counts = {}
@@ -129,9 +127,7 @@ def get_ao3_subscribed_users_work_counts(user, cookie, ao3_url=AO3_DEFAULT_URL):
     return counts
 
 
-def get_ao3_subscribed_series_work_stats(user, cookie, ao3_url=AO3_DEFAULT_URL):
-    api = AO3(ao3_url=ao3_url)
-    api.login(user, cookie)
+def get_ao3_subscribed_series_work_stats(api):
     series_ids = api.user.series_subscription_ids()
 
     stats = {}

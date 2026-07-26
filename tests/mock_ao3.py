@@ -26,7 +26,7 @@ class MockUser(User):
     def gift_ids(self, max_count=None, oldest_date=None):
         ids = ["1", "2", "3", "4", "5"]
 
-        if max_count:
+        if max_count is not None:
             return ids[:max_count]
         else:
             return ids
@@ -34,7 +34,7 @@ class MockUser(User):
     def marked_for_later_ids(self, max_count=None, oldest_date=None):
         ids = ["1", "2", "3", "4", "5"]
 
-        if max_count:
+        if max_count is not None:
             return ids[:max_count]
         else:
             return ids
@@ -51,7 +51,7 @@ class MockUser(User):
             self.username[-1] + "5",
         ]
 
-        if max_count:
+        if max_count is not None:
             return ids[:max_count]
         else:
             return ids
@@ -59,7 +59,7 @@ class MockUser(User):
     def work_subscription_ids(self, max_count=None):
         ids = ["1", "2", "3", "4", "5"]
 
-        if max_count:
+        if max_count is not None:
             return ids[:max_count]
         else:
             return ids
@@ -67,7 +67,7 @@ class MockUser(User):
     def series_subscription_ids(self, max_count=None):
         ids = ["1", "2", "3", "4", "5"]
 
-        if max_count:
+        if max_count is not None:
             return ids[:max_count]
         else:
             return ids
