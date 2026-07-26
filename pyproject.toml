@@ -1,6 +1,6 @@
 [project]
 name = "CalibreFanFicManagement"
-version = "0.2.1"
+version = "0.2.2"
 description = "A tool to automatically download fics from AO3"
 authors = [{name = "Rae Knowler"}]
 requires-python = ">=3.14"
